@@ -48,20 +48,16 @@ To develop a scientifically rigorous system that:
 ---
 
 ## Project Structure
-
----
-
 astraeus/
-│
-├── core/ # Physics models (orbital mechanics, transit models)
-├── data/ # Data loading and preprocessing
-├── analysis/ # Parameter fitting and error analysis
-├── visualization/ # Plotting and result visualization
-├── notebooks/ # Experimental workflows and exploration
-├── logs/ # Research logs and notes
-└── main.py # Entry point
 
----
+- **core/** – Physics models (orbital mechanics, transit models)  
+- **data/** – Data loading and preprocessing  
+- **analysis/** – Parameter fitting and error analysis  
+- **visualization/** – Plotting and result visualization  
+- **notebooks/** – Experimental workflows and exploration  
+- **logs/** – Research logs and notes  
+- **main.py** – Entry point  
+
 
 ## Tech Stack
 
