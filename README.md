@@ -48,6 +48,9 @@ To develop a scientifically rigorous system that:
 ---
 
 ## Project Structure
+
+---
+
 astraeus/
 │
 ├── core/ # Physics models (orbital mechanics, transit models)
@@ -57,8 +60,6 @@ astraeus/
 ├── notebooks/ # Experimental workflows and exploration
 ├── logs/ # Research logs and notes
 └── main.py # Entry point
----
-
 
 ---
 
