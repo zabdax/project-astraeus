@@ -15,6 +15,7 @@ def run_mcmc(
     param_names: list[str] = None,
     n_walkers: int = 32,
     n_steps: int = 2000,
+    progress_callback: callable = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Run an MCMC simulation to quantify the uncertainty of recovered parameters.
 
@@ -47,7 +48,11 @@ def run_mcmc(
     )
     
     # Run the MCMC simulation
-    sampler.run_mcmc(pos, n_steps, progress=True)
+    if progress_callback is None:
+        sampler.run_mcmc(pos, n_steps, progress=True)
+    else:
+        for i, _ in enumerate(sampler.sample(pos, iterations=n_steps)):
+            progress_callback(i + 1, n_steps)
     
     # Discard the first 20% of steps as "burn-in" and flatten the remaining chain
     burnin = int(0.2 * n_steps)
