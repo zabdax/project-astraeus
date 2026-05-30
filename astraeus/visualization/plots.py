@@ -115,3 +115,61 @@ def plot_corner(
     plt.close(fig)
 
     return output
+
+
+def plot_real_retrieval(
+    time: np.ndarray,
+    observed_flux: np.ndarray,
+    theoretical_flux: np.ndarray,
+    output_path: str | Path,
+) -> Path:
+    """Save a validation plot of real phase-folded data against the best-fit model.
+
+    Args:
+        time: Phase-folded time array.
+        observed_flux: Observed flux array.
+        theoretical_flux: Best-fit model flux array.
+        output_path: Path to save the plot.
+
+    Returns:
+        Path: Path to the saved plot.
+    """
+    time_arr = np.asarray(time, dtype=float)
+    observed = np.asarray(observed_flux, dtype=float)
+    theoretical = np.asarray(theoretical_flux, dtype=float)
+
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+
+    fig, ax = plt.subplots(figsize=(10.0, 6.0), constrained_layout=True)
+
+    # Sort the theoretical curve so it plots smoothly
+    sort_mask = np.argsort(time_arr)
+    
+    ax.scatter(
+        time_arr,
+        observed,
+        color="0.6",
+        s=4,
+        alpha=0.5,
+        linewidths=0,
+        label="Phase-folded data",
+    )
+    ax.plot(
+        time_arr[sort_mask],
+        theoretical[sort_mask],
+        color="tab:red",
+        linewidth=2.5,
+        label="Best-fit model (Quadratic LD)",
+    )
+    
+    ax.set_xlabel("Phase [days]")
+    ax.set_ylabel("Relative Flux")
+    ax.set_title("Exoplanet Parameter Retrieval Validation")
+    ax.legend(loc="best")
+    ax.grid(alpha=0.25)
+
+    fig.savefig(output, dpi=200)
+    plt.close(fig)
+
+    return output

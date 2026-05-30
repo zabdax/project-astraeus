@@ -41,7 +41,7 @@ def log_likelihood(
     Returns:
         float: The log-likelihood value: -0.5 * sum(((flux - model) / flux_err)^2).
     """
-    radius_ratio, inclination_deg = theta
+    radius_ratio, inclination_deg, u1, u2 = theta
 
     R_star = fixed_params["R_star"]
     period = fixed_params["period"]
@@ -66,6 +66,8 @@ def log_likelihood(
         separation=separation,
         R_star=R_star,
         R_planet=R_planet,
+        u1=u1,
+        u2=u2,
     )
     flux_drop = flux_drop_quantity.to_value(u.dimensionless_unscaled)
 
@@ -96,12 +98,15 @@ def log_prior(theta: tuple[float, ...]) -> float:
     Returns:
         float: 0.0 if parameters are within bounds (log of 1), or -np.inf if outside bounds (log of 0).
     """
-    radius_ratio, inclination_deg = theta
+    radius_ratio, inclination_deg, u1, u2 = theta
 
     if not (0.0 < radius_ratio < 1.0):
         return -np.inf
 
     if not (0.0 <= inclination_deg <= 90.0):
+        return -np.inf
+
+    if not (0.0 <= u1 <= 1.0) or not (0.0 <= u2 <= 1.0):
         return -np.inf
 
     return 0.0

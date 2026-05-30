@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.integrate import quad_vec
 from astropy import units as u
 
 from astraeus.core.geometry import (
@@ -24,29 +25,30 @@ def generate_geometric_transit(
     separation: u.Quantity,
     R_star: u.Quantity,
     R_planet: u.Quantity,
+    u1: float = 0.0,
+    u2: float = 0.0,
 ) -> u.Quantity:
-    """Calculate relative flux drop for a uniform-disk geometric transit.
+    """Calculate relative flux drop for a transit with quadratic limb darkening.
 
     Physics derivation:
-    With a uniform stellar surface brightness, the fractional loss of light is
-    the occulted stellar area divided by the stellar disk area. If the planet
-    disk is fully inside the stellar disk, ``d <= R_star - R_planet`` and the
-    blocked fraction is ``delta_F = (R_planet / R_star)**2``. If the disks do
-    not overlap, ``d >= R_star + R_planet`` and ``delta_F = 0``. In the
-    boundary-intersection regime, ``R_star - R_planet < d < R_star + R_planet``,
-    the occulted area is delegated to the analytic circle-overlap equation in
-    ``astraeus.core.geometry`` and normalized by ``pi R_star**2``.
+    This model accounts for the standard quadratic limb darkening law:
+    I(mu) / I(1) = 1 - u1 * (1 - mu) - u2 * (1 - mu)**2
+    where mu = sqrt(1 - z**2) and z is the normalized distance from the center
+    of the stellar disk to the given point. The total blocked flux is computed
+    by numerically integrating over concentric stellar rings. For each ring, the
+    geometric intersection with the planet disk determines the blocked arc length.
 
     Geometric assumptions:
-    The star and planet are circular disks in projection, the stellar disk has
-    uniform surface brightness, limb darkening is ignored, and the planet is
-    smaller than or equal to the star. The caller is responsible for ensuring
-    the planet is between the observer and the star.
+    The star and planet are circular disks in projection. The limb darkening
+    is radially symmetric. The planet is smaller than or equal to the star,
+    and is assumed to be fully opaque. The caller is responsible for ensuring
+    the planet is in front of the star.
 
     Unit expectations:
     ``separation``, ``R_star``, and ``R_planet`` must be Astropy length
-    quantities with compatible units. Radii must be strictly positive. The
-    returned relative flux drop is an Astropy dimensionless quantity.
+    quantities with compatible units. Radii must be strictly positive.
+    The limb darkening coefficients ``u1`` and ``u2`` are dimensionless floats.
+    The returned relative flux drop is an Astropy dimensionless quantity.
     """
 
     require_positive_quantity(R_star, "R_star")
@@ -56,13 +58,52 @@ def generate_geometric_transit(
     if np.any(R_planet.to_value(R_star.unit) > R_star.to_value(R_star.unit)):
         raise ValueError("R_planet must be less than or equal to R_star.")
 
-    occulted_area = calculate_circle_overlap_area(
-        separation=separation,
-        first_radius=R_star,
-        second_radius=R_planet,
-    )
-    stellar_disk_area = np.pi * R_star**2
+    delta = (separation / R_star).to_value(u.dimensionless_unscaled)
+    rho = (R_planet / R_star).to_value(u.dimensionless_unscaled)
+    
+    delta_arr = np.atleast_1d(delta)
+    
+    def I(z):
+        mu = np.sqrt(1 - z**2)
+        return 1 - u1 * (1 - mu) - u2 * (1 - mu)**2
 
-    return (occulted_area.to(stellar_disk_area.unit) / stellar_disk_area).to(
-        u.dimensionless_unscaled
-    )
+    def integrand(z):
+        res = np.zeros_like(delta_arr, dtype=float)
+        
+        # When z == 0
+        if z == 0:
+            mask = rho >= delta_arr
+            res[mask] = I(0) * 2 * np.pi * 0 # Always 0
+            return res
+            
+        cos_theta = np.zeros_like(delta_arr, dtype=float)
+        
+        mask_nonzero = delta_arr > 0
+        cos_theta[mask_nonzero] = (z**2 + delta_arr[mask_nonzero]**2 - rho**2) / (2 * z * delta_arr[mask_nonzero])
+        
+        mask_zero = ~mask_nonzero
+        if np.any(mask_zero):
+            cos_theta[mask_zero] = -1.0 if z <= rho else 1.0
+            
+        theta = np.zeros_like(delta_arr, dtype=float)
+        
+        mask_ge = cos_theta >= 1
+        theta[mask_ge] = 0.0
+        
+        mask_le = cos_theta <= -1
+        theta[mask_le] = np.pi
+        
+        mask_mid = ~(mask_ge | mask_le)
+        theta[mask_mid] = np.arccos(cos_theta[mask_mid])
+        
+        return I(z) * 2 * theta * z
+
+    blocked_flux, _ = quad_vec(integrand, 0, 1, limit=200, epsabs=1e-8, epsrel=1e-8)
+    total_flux = np.pi * (1 - u1/3 - u2/6)
+    
+    relative_flux_drop = blocked_flux / total_flux
+    
+    if np.isscalar(delta) or (isinstance(delta, np.ndarray) and delta.ndim == 0):
+        relative_flux_drop = relative_flux_drop[0]
+        
+    return relative_flux_drop * u.dimensionless_unscaled
