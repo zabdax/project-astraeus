@@ -61,10 +61,20 @@ def generate_model_flux(
 
 def main() -> None:
     """Run full parameter retrieval on TrES-2b."""
-    print("Phase 1: Fetching and preprocessing real data for TrES-2b...")
+    print("Phase 1: Fetching and preprocessing real data for TrES-2b (Quarter 1)...")
+    import lightkurve as lk
     try:
-        time_raw, flux_raw, flux_err_raw = load_nasa_lightcurve("TrES-2b", mission="Kepler")
-    except ValueError as e:
+        # Using lightkurve directly to fetch only Quarter 1 for speed
+        print("Searching MAST for TrES-2b Q1 data...")
+        search = lk.search_lightcurve("TrES-2b", mission="Kepler", quarter=1)
+        if len(search) == 0:
+            raise ValueError("No data found for TrES-2b in Q1.")
+        
+        print("Downloading data...")
+        lc = search.download()
+        lc = lc[lc.quality == 0].remove_nans().normalize()
+        time_raw, flux_raw = lc.time.value, lc.flux.value
+    except Exception as e:
         print(f"Error loading data: {e}")
         return
         
@@ -100,7 +110,7 @@ def main() -> None:
         "R_star": 1.0 * u.R_sun,
         "period": period_days * u.day,
         "semi_major_axis": 0.03556 * u.AU,
-        "eccentricity": 0.0,
+        "eccentricity": 0.0 * u.dimensionless_unscaled,
     }
 
     # Initial guess for the 4 free parameters
