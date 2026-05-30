@@ -12,6 +12,7 @@ def run_mcmc(
     flux: np.ndarray,
     flux_err: np.ndarray,
     fixed_params: dict,
+    param_names: list[str] = None,
     n_walkers: int = 32,
     n_steps: int = 2000,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -42,7 +43,7 @@ def run_mcmc(
         n_walkers, 
         ndim, 
         log_probability, 
-        args=(time, flux, flux_err, fixed_params)
+        args=(time, flux, flux_err, fixed_params, param_names)
     )
     
     # Run the MCMC simulation

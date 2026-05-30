@@ -15,6 +15,7 @@ def find_best_fit(
     flux: np.ndarray,
     flux_err: np.ndarray,
     fixed_params: dict,
+    param_names: list[str] = None,
 ) -> tuple[np.ndarray, bool]:
     """Find the best-fit parameters using non-linear optimization.
 
@@ -33,7 +34,7 @@ def find_best_fit(
         indicating whether the optimizer successfully converged.
     """
     def neg_log_prob(theta):
-        lp = log_probability(tuple(theta), time, flux, flux_err, fixed_params)
+        lp = log_probability(tuple(theta), time, flux, flux_err, fixed_params, param_names)
         if not np.isfinite(lp):
             return np.inf
         return -lp

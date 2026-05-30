@@ -14,10 +14,12 @@ from astraeus.core.validation import (
     require_convertible_unit,
     require_positive_quantity,
 )
+from astraeus.core.orbital_models import calculate_orbital_position
 
 __all__ = [
     "calculate_sky_separation",
     "generate_geometric_transit",
+    "generate_model_flux",
 ]
 
 
@@ -107,3 +109,41 @@ def generate_geometric_transit(
         relative_flux_drop = relative_flux_drop[0]
         
     return relative_flux_drop * u.dimensionless_unscaled
+
+
+def generate_model_flux(
+    time: u.Quantity,
+    period: u.Quantity,
+    semi_major_axis: u.Quantity,
+    eccentricity: u.Quantity,
+    inclination: u.Quantity,
+    R_star: u.Quantity,
+    R_planet: u.Quantity,
+    u1: float = 0.0,
+    u2: float = 0.0,
+) -> np.ndarray:
+    """Generate theoretical flux for the given physical parameters."""
+    
+    x, y, z = calculate_orbital_position(
+        time=time,
+        period=period,
+        semi_major_axis=semi_major_axis,
+        eccentricity=eccentricity,
+        inclination=inclination,
+    )
+
+    separation = calculate_sky_separation(x, y, z)
+
+    flux_drop_quantity = generate_geometric_transit(
+        separation=separation,
+        R_star=R_star,
+        R_planet=R_planet,
+        u1=u1,
+        u2=u2,
+    )
+    flux_drop = flux_drop_quantity.to_value(u.dimensionless_unscaled)
+
+    z_values = z.to_value(semi_major_axis.unit)
+    flux_drop[z_values < 0] = 0.0
+
+    return 1.0 - flux_drop

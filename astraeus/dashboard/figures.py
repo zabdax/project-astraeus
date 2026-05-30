@@ -164,3 +164,33 @@ def make_residuals_figure(simulation: DashboardSimulation) -> go.Figure:
         hovermode="x unified",
     )
     return fig
+
+
+def make_raw_light_curve_figure(time: np.ndarray, flux: np.ndarray, flux_err: np.ndarray) -> go.Figure:
+    """Build a scatter plot of raw ingested light curve data."""
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=time,
+            y=flux,
+            error_y={
+                "type": "data",
+                "array": flux_err,
+                "visible": True,
+                "color": "rgba(14, 165, 233, 0.3)",
+            },
+            mode="markers",
+            marker={"size": 4, "color": "rgba(14, 165, 233, 0.8)"},
+            name="Raw Data",
+            hovertemplate="t=%{x:.4f}<br>flux=%{y:.6f} ± %{error_y.array:.6f}<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        height=430,
+        margin={"l": 12, "r": 12, "t": 12, "b": 8},
+        xaxis_title="Time",
+        yaxis_title="Flux",
+        hovermode="x unified",
+    )
+    return fig
