@@ -82,3 +82,36 @@ def plot_synthetic_validation(
     plt.close(fig)
 
     return output
+
+
+def plot_corner(
+    flat_samples: np.ndarray,
+    labels: list[str],
+    true_values: list[float],
+    output_path: str | Path,
+) -> Path:
+    """Generate a corner plot of the posterior distributions.
+
+    Args:
+        flat_samples: Flattened array of MCMC samples.
+        labels: Parameter labels for the axes.
+        true_values: True values for the parameters.
+        output_path: Path to save the plot.
+    """
+    import corner
+
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+
+    fig = corner.corner(
+        flat_samples,
+        labels=labels,
+        truths=true_values,
+        truth_color="tab:blue",
+        show_titles=True,
+        title_kwargs={"fontsize": 12},
+    )
+    fig.savefig(output, dpi=200)
+    plt.close(fig)
+
+    return output
