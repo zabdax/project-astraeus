@@ -11,6 +11,7 @@ from astraeus.core.geometry import calculate_sky_separation
 from astraeus.core.orbital_models import calculate_orbital_position
 from astraeus.core.transit_model import generate_geometric_transit
 from astraeus.dashboard.scenario import DashboardTransitScenario
+from astraeus.dashboard.validation import validate_scenario, generate_stable_seed
 from astraeus.data.preprocessing import inject_gaussian_noise
 
 STELLAR_RADIUS = 1.0 * u.R_sun
@@ -47,7 +48,7 @@ def generate_dashboard_simulation(
 ) -> DashboardSimulation:
     """Generate orbit, light-curve, and residual data for one slider state."""
 
-    scenario.validate()
+    validate_scenario(scenario)
 
     time_days = np.linspace(0.0, scenario.period_days, scenario.samples)
     time = time_days * u.day
@@ -71,7 +72,7 @@ def generate_dashboard_simulation(
     observed_flux = inject_gaussian_noise(
         theoretical_flux,
         snr=float(scenario.snr),
-        seed=scenario.stable_seed,
+        seed=generate_stable_seed(scenario),
     )
 
     return DashboardSimulation(
