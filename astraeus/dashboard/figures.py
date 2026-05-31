@@ -9,7 +9,7 @@ from astraeus.dashboard.simulation import DashboardSimulation
 
 
 def make_orbit_figure(simulation: DashboardSimulation) -> go.Figure:
-    """Build a 3D orbit view with the observer line of sight marked."""
+    """Build a 3D orbit view with the observer line of sight marked and an animated planet."""
 
     x = simulation.x_rsun
     y = simulation.y_rsun
@@ -20,7 +20,6 @@ def make_orbit_figure(simulation: DashboardSimulation) -> go.Figure:
         float(np.max(np.abs(z))),
         1.0,
     )
-    midpoint = len(x) // 4
 
     fig = go.Figure()
     fig.add_trace(
@@ -32,7 +31,7 @@ def make_orbit_figure(simulation: DashboardSimulation) -> go.Figure:
             line={
                 "color": np.linspace(0.0, 1.0, len(x)),
                 "colorscale": "Viridis",
-                "width": 5,
+                "width": 3,
             },
             name="Planet path",
             hovertemplate=(
@@ -59,35 +58,92 @@ def make_orbit_figure(simulation: DashboardSimulation) -> go.Figure:
     )
     fig.add_trace(
         go.Scatter3d(
-            x=[x[midpoint]],
-            y=[y[midpoint]],
-            z=[z[midpoint]],
+            x=[0.0, 0.0],
+            y=[0.0, 0.0],
+            z=[-axis_limit, axis_limit],
+            mode="lines",
+            line={"color": "#EF4444", "dash": "dash", "width": 3},
+            name="Line of sight",
+            hoverinfo="skip",
+        )
+    )
+    fig.add_trace(
+        go.Scatter3d(
+            x=[x[0]],
+            y=[y[0]],
+            z=[z[0]],
             mode="markers",
-            marker={"size": 6, "color": "#38BDF8"},
-            name="Quarter phase",
+            marker={
+                "size": 8,
+                "color": "#10B981",
+                "line": {"color": "#047857", "width": 2},
+            },
+            name="Planet",
             hovertemplate=(
-                "Quarter phase<br>"
+                "Planet<br>"
                 "x=%{x:.3f} R_sun<br>"
                 "y=%{y:.3f} R_sun<br>"
                 "z=%{z:.3f} R_sun<extra></extra>"
             ),
         )
     )
-    fig.add_trace(
-        go.Scatter3d(
-            x=[0.0, 0.0],
-            y=[0.0, 0.0],
-            z=[-axis_limit, axis_limit],
-            mode="lines",
-            line={"color": "#EF4444", "dash": "dash", "width": 5},
-            name="Line of sight",
-            hoverinfo="skip",
+
+    step_size = max(1, len(x) // 100)
+    frames = []
+    for i in range(0, len(x), step_size):
+        frames.append(
+            go.Frame(
+                data=[go.Scatter3d(x=[x[i]], y=[y[i]], z=[z[i]])],
+                traces=[3],
+                name=f"frame{i}"
+            )
         )
-    )
+        
+    if (len(x) - 1) % step_size != 0:
+        i = len(x) - 1
+        frames.append(
+            go.Frame(
+                data=[go.Scatter3d(x=[x[i]], y=[y[i]], z=[z[i]])],
+                traces=[3],
+                name=f"frame{i}"
+            )
+        )
+        
+    fig.frames = frames
+
     fig.update_layout(
         height=520,
-        margin={"l": 0, "r": 0, "t": 16, "b": 0},
+        margin={"l": 0, "r": 0, "t": 32, "b": 0},
         legend={"orientation": "h", "y": 1.02, "x": 0.0},
+        uirevision="constant",
+        updatemenus=[
+            {
+                "buttons": [
+                    {
+                        "args": [
+                            None,
+                            {
+                                "frame": {"duration": 40, "redraw": True},
+                                "fromcurrent": True,
+                                "transition": {"duration": 0},
+                                "mode": "immediate",
+                                "loop": True,
+                            },
+                        ],
+                        "label": "▶ Play",
+                        "method": "animate",
+                    },
+                ],
+                "direction": "left",
+                "pad": {"r": 10, "t": 10},
+                "showactive": False,
+                "type": "buttons",
+                "x": 0.0,
+                "xanchor": "left",
+                "y": 1.15,
+                "yanchor": "top",
+            }
+        ],
         scene={
             "xaxis": {"title": "x (R_sun)", "range": [-axis_limit, axis_limit]},
             "yaxis": {"title": "y (R_sun)", "range": [-axis_limit, axis_limit]},
