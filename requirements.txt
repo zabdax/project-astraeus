@@ -5,3 +5,4 @@ astropy==6.1.7
 plotly==5.24.1
 streamlit==1.41.1
 lightkurve>=2.4.0
+fpdf2>=2.7.9

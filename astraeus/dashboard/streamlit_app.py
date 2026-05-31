@@ -50,6 +50,14 @@ def _render_sidebar() -> DashboardTransitScenario:
 
     with st.sidebar:
         st.title("ASTRAEUS")
+        
+        st.markdown("---")
+        st.subheader("Model Settings")
+        st.session_state["llm_api_key"] = st.text_input("API Key", type="password")
+        st.session_state["llm_provider"] = st.selectbox("Provider", ["google", "openai", "anthropic", "ollama"], index=0)
+        st.session_state["llm_model"] = st.text_input("Model Name", value="gemini-1.5-pro-latest")
+        st.markdown("---")
+
         radius_ratio = st.slider(
             "Planetary Radius Ratio (Rp/Rs)",
             0.01,
@@ -237,6 +245,8 @@ def _render_mcmc_analysis_panel(time_array, flux_array, err_array) -> None:
             rp_rs_guess, inc_guess, u1_guess, u2_guess,
             n_steps
         )
+        
+    _render_action_deck()
 
 def _execute_mcmc_retrieval(
     time_raw, flux_raw, err_raw,
@@ -391,5 +401,100 @@ def _execute_mcmc_retrieval(
         hovermode="x unified"
     )
     st.plotly_chart(fig, width="stretch")
+
+    # Calculate residuals statistics
+    residuals_arr = folded_flux[sort_idx] - theoretical_flux[sort_idx]
+    rms = np.sqrt(np.mean(residuals_arr**2))
+    residual_stats = {
+        "rms": float(rms),
+        "mean": float(np.mean(residuals_arr)),
+        "std": float(np.std(residuals_arr))
+    }
+    
+    params_dict_str = {name: float(val) for name, val in zip(param_names, median_params)}
+    uncertainties_dict = {
+        name: {
+            "lower_bound": float(percentiles[i, 0]),
+            "upper_bound": float(percentiles[i, 2]),
+            "minus_error": float(median_params[i] - percentiles[i, 0]),
+            "plus_error": float(percentiles[i, 2] - median_params[i])
+        } for i, name in enumerate(param_names)
+    }
+    
+    st.session_state["mcmc_data"] = {
+        "params": params_dict_str,
+        "uncertainties": uncertainties_dict,
+        "residuals": residual_stats,
+    }
+
+
+def _render_action_deck() -> None:
+    """Render the Action Deck for MCMC results."""
+    import os
+    if "mcmc_data" not in st.session_state:
+        return
+        
+    st.markdown("---")
+    st.subheader("Action Deck")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("Explain Results"):
+            with st.spinner("Generating explanation..."):
+                from astraeus.analysis.explanation import get_scientific_explanation
+                data = st.session_state["mcmc_data"]
+                explanation = get_scientific_explanation(
+                    data["params"], 
+                    data["uncertainties"], 
+                    data["residuals"],
+                    provider=st.session_state.get("llm_provider", "google"),
+                    model_name=st.session_state.get("llm_model", "gemini-1.5-pro-latest"),
+                    api_key=st.session_state.get("llm_api_key", "")
+                )
+                st.session_state["scientific_explanation"] = explanation
+                
+        if "scientific_explanation" in st.session_state:
+            with st.expander("Scientific Explanation", expanded=True):
+                exp = st.session_state["scientific_explanation"]
+                st.markdown("#### Physics Interpretation")
+                st.write(exp.get("physics_interpretation", ""))
+                st.markdown("#### Parameter Breakdown")
+                st.write(exp.get("parameter_breakdown", ""))
+                st.markdown("#### Uncertainty Analysis")
+                st.write(exp.get("uncertainty_analysis", ""))
+                
+    with col2:
+        export_format = st.radio("Export Format", ["PDF", "Markdown"], horizontal=True)
+        if st.button("Export Report"):
+            with st.spinner("Generating report..."):
+                from astraeus.analysis.reporting import generate_report
+                data = st.session_state["mcmc_data"]
+                exp = st.session_state.get("scientific_explanation", {})
+                
+                try:
+                    report_path = generate_report(
+                        data_summary=data["params"],
+                        figures_paths=[], 
+                        discussion_text=exp,
+                        output_format=export_format.lower()
+                    )
+                    st.session_state["report_path"] = report_path
+                    st.session_state["report_format"] = export_format.lower()
+                except Exception as e:
+                    st.error(f"Error generating report: {e}")
+                    
+        if "report_path" in st.session_state and os.path.exists(st.session_state["report_path"]):
+            with open(st.session_state["report_path"], "rb") as f:
+                file_data = f.read()
+            ext = st.session_state["report_format"]
+            mime = "application/pdf" if ext == "pdf" else "text/markdown"
+            st.download_button(
+                label=f"Download {ext.upper()}",
+                data=file_data,
+                file_name=os.path.basename(st.session_state["report_path"]),
+                mime=mime
+            )
+
 
 
