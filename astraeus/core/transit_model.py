@@ -21,6 +21,7 @@ __all__ = [
     "calculate_sky_separation",
     "generate_geometric_transit",
     "generate_model_flux",
+    "generate_multi_planet_transit",
 ]
 
 
@@ -149,3 +150,29 @@ def generate_model_flux(
     flux_drop[z_values < 0] = 0.0
 
     return 1.0 - flux_drop
+
+
+def generate_multi_planet_transit(
+    time: u.Quantity,
+    planet_list: list[dict],
+) -> np.ndarray:
+    """Generate theoretical flux for a system with multiple planets.
+    
+    Args:
+        time: Array of time values.
+        planet_list: A list of dictionaries, where each dictionary contains
+            the parameters for a single planet to pass to generate_model_flux.
+            
+    Returns:
+        The total relative flux (product of individual transits).
+    """
+    total_flux = np.ones(len(time), dtype=float)
+    
+    for planet_params in planet_list:
+        flux = generate_model_flux(
+            time=time,
+            **planet_params
+        )
+        total_flux *= flux
+        
+    return total_flux

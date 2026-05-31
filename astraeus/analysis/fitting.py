@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import copy
 import numpy as np
 from astropy import units as u
 
-from astraeus.core.transit_model import generate_model_flux
+from astraeus.core.transit_model import generate_multi_planet_transit
 
 
 def log_likelihood(
@@ -17,38 +18,68 @@ def log_likelihood(
     param_names: list[str] = None,
 ) -> float:
     """Calculate the Gaussian log-likelihood of the transit model."""
-    params = fixed_params.copy()
+    params = copy.deepcopy(fixed_params)
     if param_names is None:
         param_names = ["radius_ratio", "inclination_deg", "u1", "u2"]
         
     for name, val in zip(param_names, theta):
-        params[name] = val
+        if name.startswith("planet_"):
+            parts = name.split("_", 2)
+            if len(parts) == 3 and parts[1].isdigit():
+                idx = int(parts[1])
+                if "planets" not in params:
+                    params["planets"] = []
+                while len(params["planets"]) <= idx:
+                    params["planets"].append({})
+                params["planets"][idx][parts[2]] = val
+            else:
+                params[name] = val
+        else:
+            params[name] = val
 
     R_star = params.get("R_star", 1.0 * u.R_sun)
-    period = params["period"]
-    semi_major_axis = params["semi_major_axis"]
-    eccentricity = params.get("eccentricity", 0.0 * u.dimensionless_unscaled)
-    
-    radius_ratio = params.get("radius_ratio", 0.1)
-    inclination = params.get("inclination_deg", 90.0) * u.deg
-    if "inclination" in params:
-        inclination = params["inclination"]
-        
     u1 = params.get("u1", 0.0)
     u2 = params.get("u2", 0.0)
-    R_planet = params.get("R_planet", R_star * radius_ratio)
     
-    model_flux = generate_model_flux(
-        time=time,
-        period=period,
-        semi_major_axis=semi_major_axis,
-        eccentricity=eccentricity,
-        inclination=inclination,
-        R_star=R_star,
-        R_planet=R_planet,
-        u1=u1,
-        u2=u2,
-    )
+    planet_list = []
+    
+    if "planets" in params:
+        for p in params["planets"]:
+            p_dict = {
+                "R_star": R_star,
+                "u1": u1,
+                "u2": u2,
+                "period": p["period"],
+                "semi_major_axis": p["semi_major_axis"],
+                "eccentricity": p.get("eccentricity", 0.0 * u.dimensionless_unscaled),
+            }
+            radius_ratio = p.get("radius_ratio", 0.1)
+            p_dict["R_planet"] = p.get("R_planet", R_star * radius_ratio)
+            
+            inclination = p.get("inclination_deg", 90.0) * u.deg
+            if "inclination" in p:
+                inclination = p["inclination"]
+            p_dict["inclination"] = inclination
+            planet_list.append(p_dict)
+    else:
+        p_dict = {
+            "R_star": R_star,
+            "u1": u1,
+            "u2": u2,
+            "period": params["period"],
+            "semi_major_axis": params["semi_major_axis"],
+            "eccentricity": params.get("eccentricity", 0.0 * u.dimensionless_unscaled),
+        }
+        radius_ratio = params.get("radius_ratio", 0.1)
+        p_dict["R_planet"] = params.get("R_planet", R_star * radius_ratio)
+        
+        inclination = params.get("inclination_deg", 90.0) * u.deg
+        if "inclination" in params:
+            inclination = params["inclination"]
+        p_dict["inclination"] = inclination
+        planet_list.append(p_dict)
+    
+    model_flux = generate_multi_planet_transit(time, planet_list)
 
     return -0.5 * np.sum(((flux - model_flux) / flux_err) ** 2)
 
@@ -59,13 +90,19 @@ def log_prior(theta: tuple[float, ...], param_names: list[str] = None) -> float:
         param_names = ["radius_ratio", "inclination_deg", "u1", "u2"]
         
     for name, val in zip(param_names, theta):
-        if name == "radius_ratio" and not (0.0 < val < 1.0):
+        base_name = name
+        if name.startswith("planet_"):
+            parts = name.split("_", 2)
+            if len(parts) == 3 and parts[1].isdigit():
+                base_name = parts[2]
+
+        if base_name == "radius_ratio" and not (0.0 < val < 1.0):
             return -np.inf
-        if name == "inclination_deg" and not (0.0 <= val <= 90.0):
+        if base_name == "inclination_deg" and not (0.0 <= val <= 90.0):
             return -np.inf
-        if name in ["u1", "u2"] and not (0.0 <= val <= 1.0):
+        if base_name in ["u1", "u2"] and not (0.0 <= val <= 1.0):
             return -np.inf
-        if name == "eccentricity" and not (0.0 <= val < 1.0):
+        if base_name == "eccentricity" and not (0.0 <= val < 1.0):
             return -np.inf
             
     return 0.0
