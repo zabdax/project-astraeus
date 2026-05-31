@@ -142,7 +142,7 @@ def _render_data_ingestion_panel() -> None:
     if source_type == "NASA Archive API":
         col1, col2 = st.columns(2)
         target_id = col1.text_input("Target ID (e.g., 'WASP-12b')", value="WASP-12b")
-        mission = col2.selectbox("Telescope Mission", ["Kepler", "TESS"])
+        mission = col2.selectbox("Telescope Mission", ["Kepler", "K2", "TESS"])
         
         if st.button("Load from NASA Archive"):
             with st.spinner(f"Fetching {target_id} from {mission}..."):
