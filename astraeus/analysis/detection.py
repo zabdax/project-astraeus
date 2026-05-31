@@ -16,48 +16,33 @@ def detect_transit_candidate(time, flux, threshold=5.0):
     time = np.asarray(time)
     flux = np.asarray(flux)
 
-    # Initialize the BLS model
     model = BoxLeastSquares(time, flux)
+    res = model.autopower(np.linspace(0.01, 0.2, 20), frequency_factor=20.0)
+    best_idx = np.argmax(res.power)
+    best_period = res.period[best_idx]
+    best_power = res.power[best_idx]
     
-    # Define a range of durations to search (e.g., 0.01 to 0.2 days is typical for short transits)
-    # Adjusting based on time baseline to be safe
-    baseline = np.max(time) - np.min(time)
-    durations = np.linspace(0.01 * baseline, 0.1 * baseline, 20)
-    
-    # Compute the periodogram using autopower (automatically determines period grid)
-    try:
-        results = model.autopower(durations)
-    except ValueError:
-        # Fallback if autopower fails (e.g., baseline too short)
-        periods = np.linspace(0.1, max(0.2, baseline / 2.0), 1000)
-        results = model.power(periods, durations)
-
-    # Find the peak of the periodogram
-    best_idx = np.argmax(results.power)
-    best_power = results.power[best_idx]
-    best_period = results.period[best_idx]
-    best_depth = results.depth[best_idx]
-    best_duration = results.duration[best_idx]
-    best_t0 = results.transit_time[best_idx]
-    
-    # Calculate noise floor (median of the power spectrum)
-    noise_floor = np.median(results.power)
-    
-    # Calculate confidence score (ratio of power to noise floor)
-    if noise_floor > 0:
-        confidence_score = float(best_power / noise_floor)
-    else:
-        confidence_score = float('inf')
+    # Check for P/2 harmonic
+    idx_half = np.argmin(np.abs(res.period - (best_period / 2.0)))
+    if res.power[idx_half] > (0.9 * best_power):
+        best_period /= 2.0
         
+    confidence_score = float(best_power / np.median(res.power))
+    
+    # The user provided threshold_sigma=5.0 but the original signature had threshold=5.0
+    # The return dict returned 'candidate_found' but the original also had 'is_candidate'
+    # For compatibility with UI tests:
     return {
+        'candidate_found': confidence_score > threshold,
+        'is_candidate': confidence_score > threshold,
+        'period_days': float(best_period),
         'period': float(best_period),
-        'depth': float(best_depth),
-        'duration': float(best_duration),
-        't0': float(best_t0),
         'confidence_score': confidence_score,
-        'is_candidate': confidence_score >= threshold,
+        'depth': float(res.depth[best_idx]),
+        'duration': float(res.duration[best_idx]),
+        't0': float(res.transit_time[best_idx]),
         'periodogram': {
-            'periods': results.period.tolist(),
-            'powers': results.power.tolist()
+            'periods': res.period.tolist(),
+            'powers': res.power.tolist()
         }
     }

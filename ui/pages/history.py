@@ -50,12 +50,22 @@ def render(main_panel, right_panel) -> None:
                     st.caption(str(exp.get("params", {})))
                 with col_action:
                     if st.button("Restore", key=f"restore_{exp.get('id')}"):
-                        params = exp.get("params", {})
-                        for k, v in params.items():
-                            st.session_state[k] = v
-                        st.success(f"Restored state from experiment {exp.get('id')[:8]}")
+                        current_hash = st.session_state.get('current_dataset_hash')
+                        exp_hash = exp.get("dataset_hash")
+                        
+                        if not current_hash or current_hash != exp_hash:
+                            st.warning("Warning: Active dataset missing or mismatch. Ensure the correct dataset is loaded first.")
+                        else:
+                            params = exp.get("params", {})
+                            for k, v in params.items():
+                                st.session_state[k] = v
+                            st.success(f"Restored state from experiment {exp.get('id')[:8]}")
 
     if right_panel:
         with right_panel:
-            st.subheader("History Details")
-            st.write("View past experiments, compare dataset hashes, and restore parameters for reproducible research.")
+            if 'detective_results' in st.session_state:
+                st.subheader("Detection Report")
+                st.json(st.session_state['detective_results'])
+            else:
+                st.subheader("History Details")
+                st.write("View past experiments, compare dataset hashes, and restore parameters for reproducible research.")

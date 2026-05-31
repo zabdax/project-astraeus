@@ -16,7 +16,8 @@ def run_mcmc(
     n_walkers: int = 32,
     n_steps: int = 2000,
     progress_callback: callable = None,
-) -> tuple[np.ndarray, np.ndarray]:
+    return_acceptance: bool = False,
+):
     """Run an MCMC simulation to quantify the uncertainty of recovered parameters.
 
     Args:
@@ -27,11 +28,14 @@ def run_mcmc(
         fixed_params: Dictionary of fixed parameters required for the forward model.
         n_walkers: Number of walkers in the ensemble.
         n_steps: Number of MCMC steps to run.
+        progress_callback: Optional callback for progress updates.
+        return_acceptance: If True, returns the mean acceptance fraction.
 
     Returns:
-        tuple[np.ndarray, np.ndarray]: The flattened chain of posterior samples 
-        (after discarding 20% burn-in), and an array containing the 16th, 50th, 
-        and 84th percentiles for each parameter.
+        If return_acceptance is False:
+            tuple[np.ndarray, np.ndarray]: The flattened chain and percentiles array.
+        If return_acceptance is True:
+            tuple[np.ndarray, np.ndarray, float]: The flattened chain, percentiles array, and mean acceptance fraction.
     """
     ndim = len(best_fit_theta)
     
@@ -64,4 +68,8 @@ def run_mcmc(
     # Transpose to get shape (n_params, 3) if there are multiple parameters
     percentiles = percentiles.T
     
+    if return_acceptance:
+        mean_acc = np.mean(sampler.acceptance_fraction)
+        return flat_samples, percentiles, mean_acc
+        
     return flat_samples, percentiles

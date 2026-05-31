@@ -30,43 +30,45 @@ def render(main_panel, right_panel) -> None:
     with main_panel:
         st.title("ASTRAEUS Transit Dashboard - System Builder")
         
-        st.session_state.snr = st.slider("Target Signal-to-Noise Ratio (SNR)", 50, 500, st.session_state.snr, 10)
+        col_charts, col_controls = st.columns([0.8, 0.2])
         
-        if st.button("Add Planet"):
-            new_period = 5.0 + 2.0 * len(st.session_state.multi_planets)
-            new_name = f"Planet {len(st.session_state.multi_planets) + 1}"
-            st.session_state.multi_planets.append(
-                {"name": new_name, "radius_ratio": 0.05, "period_days": new_period, "eccentricity": 0.0, "inclination_degrees": 90.0}
-            )
+        with col_controls:
+            st.session_state.snr = st.slider("Target Signal-to-Noise Ratio (SNR)", 50, 500, st.session_state.snr, 10)
             
-        for i, p in enumerate(list(st.session_state.multi_planets)):
-            col1, col2, col3 = st.columns([0.65, 0.15, 0.20])
-            
-            edit_key = f"edit_name_{i}"
-            if edit_key not in st.session_state:
-                st.session_state[edit_key] = False
+            if st.button("Add Planet"):
+                new_period = 5.0 + 2.0 * len(st.session_state.multi_planets)
+                new_name = f"Planet {len(st.session_state.multi_planets) + 1}"
+                st.session_state.multi_planets.append(
+                    {"name": new_name, "radius_ratio": 0.05, "period_days": new_period, "eccentricity": 0.0, "inclination_degrees": 90.0}
+                )
                 
-            if st.session_state[edit_key]:
-                p["name"] = col1.text_input("Name", p.get("name", f"Planet {i+1}"), key=f"name_input_{i}", label_visibility="collapsed")
-                if col2.button("Save", key=f"save_{i}"):
+            for i, p in enumerate(list(st.session_state.multi_planets)):
+                st.markdown("---")
+                
+                edit_key = f"edit_name_{i}"
+                if edit_key not in st.session_state:
                     st.session_state[edit_key] = False
-                    st.rerun()
-            else:
-                col1.markdown(f"### {p.get('name', f'Planet {i+1}')}")
-                if col2.button("Edit", key=f"edit_btn_{i}"):
-                    st.session_state[edit_key] = True
+                    
+                if st.session_state[edit_key]:
+                    p["name"] = st.text_input("Name", p.get("name", f"Planet {i+1}"), key=f"name_input_{i}", label_visibility="collapsed")
+                    if st.button("💾 Save", key=f"save_{i}", use_container_width=True):
+                        st.session_state[edit_key] = False
+                        st.rerun()
+                else:
+                    st.markdown(f"**{p.get('name', f'Planet {i+1}')}**")
+                    if st.button("✏️ Edit", key=f"edit_btn_{i}", use_container_width=True):
+                        st.session_state[edit_key] = True
+                        st.rerun()
+                        
+                if st.button("❌ Remove", key=f"remove_{i}", use_container_width=True):
+                    st.session_state.multi_planets.pop(i)
                     st.rerun()
                     
-            if col3.button("Remove", key=f"remove_{i}"):
-                st.session_state.multi_planets.pop(i)
-                st.rerun()
+                p["radius_ratio"] = st.slider("Radius Ratio", 0.01, 0.20, p["radius_ratio"], 0.005, key=f"rr_{i}")
+                p["period_days"] = st.slider("Period (days)", 0.5, 20.0, float(p["period_days"]), 0.1, key=f"pd_{i}")
+                p["eccentricity"] = st.slider("Eccentricity", 0.0, 0.9, p["eccentricity"], 0.01, key=f"ecc_{i}")
+                p["inclination_degrees"] = st.slider("Inclination", 80.0, 90.0, p["inclination_degrees"], 0.1, key=f"inc_{i}")
                 
-            cols = st.columns(4)
-            p["radius_ratio"] = cols[0].slider("Radius Ratio", 0.01, 0.20, p["radius_ratio"], 0.005, key=f"rr_{i}")
-            p["period_days"] = cols[1].slider("Period (days)", 0.5, 20.0, float(p["period_days"]), 0.1, key=f"pd_{i}")
-            p["eccentricity"] = cols[2].slider("Eccentricity", 0.0, 0.9, p["eccentricity"], 0.01, key=f"ecc_{i}")
-            p["inclination_degrees"] = cols[3].slider("Inclination", 80.0, 90.0, p["inclination_degrees"], 0.1, key=f"inc_{i}")
-            
         # Simulation
         samples = 900
         max_period = max([p["period_days"] for p in st.session_state.multi_planets]) if st.session_state.multi_planets else 1.0
@@ -125,14 +127,15 @@ def render(main_panel, right_panel) -> None:
             orbits=orbits,
         )
         
-        st.subheader("Orbit View")
-        st.plotly_chart(make_multi_orbit_figure(simulation), width="stretch")
-        
-        st.subheader("Light Curve")
-        st.plotly_chart(make_light_curve_figure(simulation), width="stretch")
-        
-        st.subheader("Residuals")
-        st.plotly_chart(make_residuals_figure(simulation), width="stretch")
+        with col_charts:
+            st.subheader("Orbit View")
+            st.plotly_chart(make_multi_orbit_figure(simulation), width="stretch")
+            
+            st.subheader("Light Curve")
+            st.plotly_chart(make_light_curve_figure(simulation), width="stretch")
+            
+            st.subheader("Residuals")
+            st.plotly_chart(make_residuals_figure(simulation), width="stretch")
         
     if right_panel:
         with right_panel:

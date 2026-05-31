@@ -161,6 +161,24 @@ class DataFactory:
             raise ValueError(f"Unsupported source_type: '{source_type}'. Expected one of {list(cls._strategies.keys())}.")
             
         t, f, e = strategy.load(source_path_or_id, **kwargs)
+        
+        # Ensure numpy arrays for cleaning
+        t = np.asarray(t, dtype=np.float64)
+        f = np.asarray(f, dtype=np.float64)
+        e = np.asarray(e, dtype=np.float64)
+        
+        # 1. Clean NaNs
+        valid = ~(np.isnan(t) | np.isnan(f) | np.isnan(e))
+        t, f, e = t[valid], f[valid], e[valid]
+        
+        # 2. Check negative flux
+        if (f < 0).any():
+            raise AssertionError("Negative flux values detected in light curve.")
+            
+        # 3. Sort by time indices
+        if len(t) > 0:
+            sort_idx = np.argsort(t)
+            t, f, e = t[sort_idx], f[sort_idx], e[sort_idx]
 
         time_unit = kwargs.get('time_unit')
         flux_unit = kwargs.get('flux_unit')
