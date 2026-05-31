@@ -10,7 +10,7 @@ from astraeus.dashboard.simulation import (
     generate_dashboard_simulation,
 )
 from astraeus.dashboard.ui.data_ingestion_panel import render_data_ingestion_panel
-from astraeus.dashboard.ui.sidebar import render_scenario_controls
+from astraeus.dashboard.ui.sidebar import render_app_sidebar
 from astraeus.dashboard.ui.simulation_panel import render_simulation_panel
 from astraeus.dashboard.ui.styles import inject_page_styles
 
@@ -24,6 +24,7 @@ def render_dashboard() -> None:
         layout="wide",
     )
     inject_page_styles()
+    scenario = render_app_sidebar()
 
     st.title("ASTRAEUS Transit Dashboard")
     tab_data, tab_sim = st.tabs(["Data Ingestion", "Transit Simulation"])
@@ -32,7 +33,6 @@ def render_dashboard() -> None:
         render_data_ingestion_panel()
 
     with tab_sim:
-        scenario = render_scenario_controls()
         simulation = _cached_simulation(scenario)
         render_simulation_panel(simulation)
 
