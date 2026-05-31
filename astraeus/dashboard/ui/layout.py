@@ -61,13 +61,103 @@ def apply_astro_theme() -> None:
             overflow-y: auto;
         }
 
-        /* Footer in sidebar */
+        /* Sticky Header logic using :has() */
+        div[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div.element-container:has(.sidebar-header-wrapper) {
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            background-color: #0F172A;
+            margin-top: -6rem; 
+            padding-top: 6rem;
+            margin-left: -1.5rem;
+            margin-right: -1.5rem;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #1E293B;
+        }
+
+        /* Sticky Footer logic using :has() */
+        div[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div.element-container:has(.astro-footer) {
+            position: sticky;
+            bottom: 0;
+            z-index: 999;
+            background-color: #0F172A;
+            margin-bottom: -6rem; 
+            padding-bottom: 6rem;
+            margin-left: -1.5rem;
+            margin-right: -1.5rem;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #1E293B;
+        }
+
         .astro-footer {
-            margin-top: auto;
-            padding-top: 2rem;
             color: #64748B;
             font-size: 0.8rem;
             text-align: center;
+        }
+
+        /* Customize Sidebar Toggle Icon (SVG Dashboard Icon) */
+        [data-testid="stSidebarCollapseButton"], [data-testid="collapsedControl"], button[kind="headerNoPadding"], button[aria-label="Expand sidebar"] {
+            position: relative;
+        }
+
+        [data-testid="stSidebarCollapseButton"] svg, [data-testid="collapsedControl"] svg, button[kind="headerNoPadding"] svg, button[aria-label="Expand sidebar"] svg {
+            opacity: 0 !important; /* Keep original dimensions intact */
+        }
+        
+        [data-testid="stSidebarCollapseButton"]::after, [data-testid="collapsedControl"]::after, button[kind="headerNoPadding"]::after, button[aria-label="Expand sidebar"]::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            transform: translate(-50%, -50%); /* Perfectly center it inside the button */
+            background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='9' y1='3' x2='9' y2='21'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            transition: all 0.2s ease-in-out;
+            pointer-events: none; /* Do not block clicks */
+        }
+        
+        [data-testid="stSidebarCollapseButton"]:hover::after, [data-testid="collapsedControl"]:hover::after, button[kind="headerNoPadding"]:hover::after, button[aria-label="Expand sidebar"]:hover::after {
+            background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23F8FAFC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='9' y1='3' x2='9' y2='21'/%3E%3C/svg%3E");
+        }
+
+        /* Sidebar Navigation Button Styling */
+        [data-testid="stSidebar"] div[data-testid="stButton"] > button {
+            width: 100% !important;
+            text-align: left !important;
+            display: flex !important;
+            justify-content: flex-start !important;
+            padding: 0.5rem 1rem !important;
+            background-color: transparent !important;
+            border: none !important;
+            color: #94A3B8 !important;
+            border-radius: 8px !important;
+            font-weight: 500 !important;
+            transition: all 0.2s ease-in-out !important;
+            box-shadow: none !important;
+        }
+
+        [data-testid="stSidebar"] div[data-testid="stButton"] > button:hover {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: #F8FAFC !important;
+        }
+
+        [data-testid="stSidebar"] div[data-testid="stButton"] > button[kind="primary"] {
+            background-color: rgba(167, 139, 250, 0.15) !important;
+            color: #A78BFA !important;
+            border-left: 3px solid #A78BFA !important;
+            border-radius: 4px 8px 8px 4px !important;
+        }
+        
+        [data-testid="stSidebar"] div[data-testid="stButton"] > button p {
+            font-size: 1rem !important;
+            margin: 0 !important;
         }
         </style>
         """,
@@ -81,18 +171,45 @@ def render_left_nav() -> str:
     Returns the currently selected feature.
     """
     with st.sidebar:
-        st.markdown("## 🚀 ASTRAEUS")
-        st.markdown("<span style='color: #64748B; font-size: 0.9em; margin-bottom: 2rem; display: block;'>Professional Workbench</span>", unsafe_allow_html=True)
-        
-        # Feature List Navigation
-        st.markdown("### Navigation")
-        selected_feature = st.radio(
-            "Features",
-            options=["Simulation", "Lab", "Detective", "History", "Settings"],
-            label_visibility="collapsed",
+        # Sticky Header
+        st.markdown(
+            """
+            <div class='sidebar-header-wrapper'>
+                <h2 style='margin:0; color:#A78BFA; font-family:"Fira Code", monospace; font-size: 1.5rem;'>🚀 ASTRAEUS</h2>
+                <span style='color: #64748B; font-size: 0.8rem;'>Professional Workbench</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
         
-        # Branding / Footer at bottom
+        # Add some vertical space to push buttons down
+        st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
+        
+        if "current_route" not in st.session_state:
+            st.session_state.current_route = "Simulation"
+            
+        # Navigation Options with Professional Icons
+        options = [
+            ("Simulation", ":material/rocket_launch:"),
+            ("Lab", ":material/science:"),
+            ("Detective", ":material/manage_search:"),
+            ("History", ":material/history:"),
+            ("Settings", ":material/settings:")
+        ]
+        
+        for feature, icon in options:
+            # Highlight the currently selected button
+            btn_type = "primary" if st.session_state.current_route == feature else "secondary"
+            if st.button(feature, icon=icon, use_container_width=True, type=btn_type):
+                st.session_state.current_route = feature
+                st.rerun()
+                
+        selected_feature = st.session_state.current_route
+        
+        # Push footer down dynamically 
+        st.markdown("<div style='flex-grow: 1; min-height: 15rem;'></div>", unsafe_allow_html=True)
+        
+        # Sticky Footer
         st.markdown(
             """
             <div class='astro-footer'>
