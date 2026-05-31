@@ -15,6 +15,7 @@ from astraeus.dashboard.ui.simulation_panel import render_simulation_panel
 from astraeus.dashboard.ui.styles import inject_page_styles
 from astraeus.dashboard.ui.layout import workbench_layout
 from astraeus.dashboard.ui.settings import render_settings_panel
+from astraeus.dashboard.ui.components import render_floating_chat
 
 def render_dashboard() -> None:
     """Render the interactive ASTRAEUS dashboard."""
@@ -43,6 +44,9 @@ def render_dashboard() -> None:
         else:
             with main_panel:
                 st.title(f"{selected_feature} - Coming Soon")
+                
+    # Render the persistent floating AI Chat
+    render_floating_chat()
 
 @st.cache_data(show_spinner=False)
 def _cached_simulation(scenario: DashboardTransitScenario) -> DashboardSimulation:
