@@ -76,6 +76,7 @@ def make_multi_orbit_figure(simulation) -> go.Figure:
     # Plot orbit paths
     for idx, orb in enumerate(simulation.orbits):
         x, y, z = orb["x"], orb["y"], orb["z"]
+        name = orb.get("name", f"Planet {idx+1}")
         color = PLANET_COLORS[idx % len(PLANET_COLORS)]
         
         # Create a faded color sequence for the path so it still shows progression
@@ -88,7 +89,7 @@ def make_multi_orbit_figure(simulation) -> go.Figure:
                     "color": color["main"],
                     "width": 2,
                 },
-                name=f"Planet {idx+1} path",
+                name=f"{name} path",
                 hoverinfo="skip",
             )
         )
@@ -97,6 +98,7 @@ def make_multi_orbit_figure(simulation) -> go.Figure:
     planet_traces_start = len(fig.data)
     for idx, orb in enumerate(simulation.orbits):
         x, y, z = orb["x"], orb["y"], orb["z"]
+        name = orb.get("name", f"Planet {idx+1}")
         color = PLANET_COLORS[idx % len(PLANET_COLORS)]
         fig.add_trace(
             go.Scatter3d(
@@ -107,9 +109,9 @@ def make_multi_orbit_figure(simulation) -> go.Figure:
                     "color": color["main"],
                     "line": {"color": color["line"], "width": 2},
                 },
-                name=f"Planet {idx+1}",
+                name=name,
                 hovertemplate=(
-                    f"Planet {idx+1}<br>"
+                    f"{name}<br>"
                     f"x=%{{x:.3f}} R_sun<br>"
                     f"y=%{{y:.3f}} R_sun<br>"
                     f"z=%{{z:.3f}} R_sun<extra></extra>"

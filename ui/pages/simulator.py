@@ -21,7 +21,7 @@ def render(main_panel, right_panel) -> None:
     
     if "multi_planets" not in st.session_state:
         st.session_state.multi_planets = [
-            {"radius_ratio": 0.10, "period_days": 3.0, "eccentricity": 0.0, "inclination_degrees": 88.5}
+            {"name": "Planet 1", "radius_ratio": 0.10, "period_days": 3.0, "eccentricity": 0.0, "inclination_degrees": 88.5}
         ]
         
     if "snr" not in st.session_state:
@@ -34,14 +34,30 @@ def render(main_panel, right_panel) -> None:
         
         if st.button("Add Planet"):
             new_period = 5.0 + 2.0 * len(st.session_state.multi_planets)
+            new_name = f"Planet {len(st.session_state.multi_planets) + 1}"
             st.session_state.multi_planets.append(
-                {"radius_ratio": 0.05, "period_days": new_period, "eccentricity": 0.0, "inclination_degrees": 90.0}
+                {"name": new_name, "radius_ratio": 0.05, "period_days": new_period, "eccentricity": 0.0, "inclination_degrees": 90.0}
             )
             
         for i, p in enumerate(list(st.session_state.multi_planets)):
-            col1, col2 = st.columns([0.85, 0.15])
-            col1.markdown(f"### Planet {i+1}")
-            if col2.button("Remove", key=f"remove_{i}"):
+            col1, col2, col3 = st.columns([0.65, 0.15, 0.20])
+            
+            edit_key = f"edit_name_{i}"
+            if edit_key not in st.session_state:
+                st.session_state[edit_key] = False
+                
+            if st.session_state[edit_key]:
+                p["name"] = col1.text_input("Name", p.get("name", f"Planet {i+1}"), key=f"name_input_{i}", label_visibility="collapsed")
+                if col2.button("Save", key=f"save_{i}"):
+                    st.session_state[edit_key] = False
+                    st.rerun()
+            else:
+                col1.markdown(f"### {p.get('name', f'Planet {i+1}')}")
+                if col2.button("Edit", key=f"edit_btn_{i}"):
+                    st.session_state[edit_key] = True
+                    st.rerun()
+                    
+            if col3.button("Remove", key=f"remove_{i}"):
                 st.session_state.multi_planets.pop(i)
                 st.rerun()
                 
@@ -80,6 +96,7 @@ def render(main_panel, right_panel) -> None:
                 inclination=p["inclination_degrees"] * u.deg,
             )
             orbits.append({
+                "name": p.get("name", f"Planet {len(orbits)+1}"),
                 "x": x.to_value(u.R_sun),
                 "y": y.to_value(u.R_sun),
                 "z": z.to_value(u.R_sun),
