@@ -12,25 +12,10 @@ def render_app_sidebar() -> DashboardTransitScenario:
 
     with st.sidebar:
         st.title("ASTRAEUS")
-        render_model_settings()
-        st.markdown("---")
         return render_scenario_controls()
 
 
-def render_model_settings() -> None:
-    """Render app-wide AI model settings used by Action Deck features."""
 
-    st.subheader("API Settings")
-    st.session_state["llm_api_key"] = st.text_input("API Key", type="password")
-    st.session_state["llm_provider"] = st.selectbox(
-        "Provider",
-        ["google", "openai", "anthropic", "ollama"],
-        index=0,
-    )
-    st.session_state["llm_model"] = st.text_input(
-        "Model Name",
-        value="gemini-1.5-pro-latest",
-    )
 
 
 def render_scenario_controls() -> DashboardTransitScenario:

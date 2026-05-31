@@ -1,0 +1,9 @@
+{
+    "llm_provider": "google",
+    "llm_model": "gemini-1.5-pro-latest",
+    "api_keys": {
+        "google": "",
+        "openai": "",
+        "anthropic": ""
+    }
+}

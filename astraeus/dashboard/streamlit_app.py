@@ -13,7 +13,8 @@ from astraeus.dashboard.ui.data_ingestion_panel import render_data_ingestion_pan
 from astraeus.dashboard.ui.sidebar import render_app_sidebar
 from astraeus.dashboard.ui.simulation_panel import render_simulation_panel
 from astraeus.dashboard.ui.styles import inject_page_styles
-
+from astraeus.dashboard.ui.layout import workbench_layout
+from astraeus.dashboard.ui.settings import render_settings_panel
 
 def render_dashboard() -> None:
     """Render the interactive ASTRAEUS dashboard."""
@@ -24,18 +25,24 @@ def render_dashboard() -> None:
         layout="wide",
     )
     inject_page_styles()
-    scenario = render_app_sidebar()
-
-    st.title("ASTRAEUS Transit Dashboard")
-    tab_data, tab_sim = st.tabs(["Data Ingestion", "Transit Simulation"])
-
-    with tab_data:
-        render_data_ingestion_panel()
-
-    with tab_sim:
-        simulation = _cached_simulation(scenario)
-        render_simulation_panel(simulation)
-
+    
+    with workbench_layout() as (selected_feature, main_panel, right_panel):
+        if selected_feature == "Settings":
+            with main_panel:
+                render_settings_panel()
+        elif selected_feature == "Simulation":
+            scenario = render_app_sidebar()
+            with main_panel:
+                st.title("ASTRAEUS Transit Dashboard")
+                simulation = _cached_simulation(scenario)
+                render_simulation_panel(simulation)
+        elif selected_feature == "Lab":
+            with main_panel:
+                st.title("Data Ingestion Lab")
+                render_data_ingestion_panel()
+        else:
+            with main_panel:
+                st.title(f"{selected_feature} - Coming Soon")
 
 @st.cache_data(show_spinner=False)
 def _cached_simulation(scenario: DashboardTransitScenario) -> DashboardSimulation:

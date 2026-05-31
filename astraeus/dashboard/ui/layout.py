@@ -88,7 +88,7 @@ def render_left_nav() -> str:
         st.markdown("### Navigation")
         selected_feature = st.radio(
             "Features",
-            options=["Simulation", "Lab", "Detective", "History"],
+            options=["Simulation", "Lab", "Detective", "History", "Settings"],
             label_visibility="collapsed",
         )
         
