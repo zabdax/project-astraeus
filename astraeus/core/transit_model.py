@@ -12,6 +12,7 @@ from astraeus.core.geometry import (
 )
 from astraeus.core.validation import (
     require_convertible_unit,
+    require_non_negative_quantity,
     require_positive_quantity,
 )
 from astraeus.core.orbital_models import calculate_orbital_position
@@ -53,6 +54,7 @@ def generate_geometric_transit(
     The returned relative flux drop is an Astropy dimensionless quantity.
     """
 
+    require_non_negative_quantity(separation, "separation")
     require_positive_quantity(R_star, "R_star")
     require_positive_quantity(R_planet, "R_planet")
     require_convertible_unit(R_planet, R_star.unit, "R_planet")

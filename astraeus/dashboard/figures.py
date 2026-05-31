@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 import plotly.graph_objects as go
 
 from astraeus.dashboard.simulation import DashboardSimulation
+
+if TYPE_CHECKING:
+    from astraeus.dashboard.services.mcmc_retrieval import MCMCRetrievalResult
 
 
 def make_orbit_figure(simulation: DashboardSimulation) -> go.Figure:
@@ -130,7 +135,7 @@ def make_orbit_figure(simulation: DashboardSimulation) -> go.Figure:
                                 "loop": True,
                             },
                         ],
-                        "label": "▶ Play",
+                        "label": "Play",
                         "method": "animate",
                     },
                 ],
@@ -239,7 +244,7 @@ def make_raw_light_curve_figure(time: np.ndarray, flux: np.ndarray, flux_err: np
             mode="markers",
             marker={"size": 4, "color": "rgba(14, 165, 233, 0.8)"},
             name="Raw Data",
-            hovertemplate="t=%{x:.4f}<br>flux=%{y:.6f} ± %{error_y.array:.6f}<extra></extra>",
+            hovertemplate="t=%{x:.4f}<br>flux=%{y:.6f} +/- %{error_y.array:.6f}<extra></extra>",
         )
     )
     fig.update_layout(
@@ -247,6 +252,41 @@ def make_raw_light_curve_figure(time: np.ndarray, flux: np.ndarray, flux_err: np
         margin={"l": 12, "r": 12, "t": 12, "b": 8},
         xaxis_title="Time",
         yaxis_title="Flux",
+        hovermode="x unified",
+    )
+    return fig
+
+
+def make_retrieval_validation_figure(result: MCMCRetrievalResult) -> go.Figure:
+    """Build a phase-folded validation plot for MCMC retrieval results."""
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=result.folded_time,
+            y=result.folded_flux,
+            mode="markers",
+            marker={"size": 3, "color": "rgba(148, 163, 184, 0.4)"},
+            name="Phase-folded Data",
+        )
+    )
+
+    sort_idx = np.argsort(result.folded_time)
+    fig.add_trace(
+        go.Scatter(
+            x=result.folded_time[sort_idx],
+            y=result.theoretical_flux[sort_idx],
+            mode="lines",
+            line={"color": "#ff2a6d", "width": 3},
+            name="MCMC Best Fit Model",
+        )
+    )
+
+    fig.update_layout(
+        xaxis_title="Phase (days from mid-transit)",
+        yaxis_title="Relative Flux",
+        template="plotly_dark",
+        margin={"l": 40, "r": 40, "t": 40, "b": 40},
         hovermode="x unified",
     )
     return fig
