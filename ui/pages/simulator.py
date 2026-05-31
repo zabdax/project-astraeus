@@ -8,10 +8,12 @@ from types import SimpleNamespace
 from astraeus.dashboard.figures import (
     make_light_curve_figure,
     make_residuals_figure,
+    make_multi_orbit_figure,
 )
 from astraeus.core.transit_model import generate_multi_planet_transit
 from astraeus.dashboard.simulation import semi_major_axis_for_solar_mass
 from astraeus.data.preprocessing import inject_gaussian_noise
+from astraeus.core.orbital_models import calculate_orbital_position
 
 
 def render(main_panel, right_panel) -> None:
@@ -31,12 +33,18 @@ def render(main_panel, right_panel) -> None:
         st.session_state.snr = st.slider("Target Signal-to-Noise Ratio (SNR)", 50, 500, st.session_state.snr, 10)
         
         if st.button("Add Planet"):
+            new_period = 5.0 + 2.0 * len(st.session_state.multi_planets)
             st.session_state.multi_planets.append(
-                {"radius_ratio": 0.05, "period_days": 5.0, "eccentricity": 0.0, "inclination_degrees": 90.0}
+                {"radius_ratio": 0.05, "period_days": new_period, "eccentricity": 0.0, "inclination_degrees": 90.0}
             )
             
-        for i, p in enumerate(st.session_state.multi_planets):
-            st.markdown(f"### Planet {i+1}")
+        for i, p in enumerate(list(st.session_state.multi_planets)):
+            col1, col2 = st.columns([0.85, 0.15])
+            col1.markdown(f"### Planet {i+1}")
+            if col2.button("Remove", key=f"remove_{i}"):
+                st.session_state.multi_planets.pop(i)
+                st.rerun()
+                
             cols = st.columns(4)
             p["radius_ratio"] = cols[0].slider("Radius Ratio", 0.01, 0.20, p["radius_ratio"], 0.005, key=f"rr_{i}")
             p["period_days"] = cols[1].slider("Period (days)", 0.5, 20.0, float(p["period_days"]), 0.1, key=f"pd_{i}")
@@ -50,6 +58,7 @@ def render(main_panel, right_panel) -> None:
         time = time_days * u.day
         
         planet_list = []
+        orbits = []
         for p in st.session_state.multi_planets:
             sma = semi_major_axis_for_solar_mass(p["period_days"]).to(u.R_sun)
             planet_list.append({
@@ -61,6 +70,19 @@ def render(main_panel, right_panel) -> None:
                 "R_planet": p["radius_ratio"] * 1.0 * u.R_sun,
                 "u1": 0.0,
                 "u2": 0.0,
+            })
+            
+            x, y, z = calculate_orbital_position(
+                time=time,
+                period=p["period_days"] * u.day,
+                semi_major_axis=sma,
+                eccentricity=p["eccentricity"] * u.dimensionless_unscaled,
+                inclination=p["inclination_degrees"] * u.deg,
+            )
+            orbits.append({
+                "x": x.to_value(u.R_sun),
+                "y": y.to_value(u.R_sun),
+                "z": z.to_value(u.R_sun),
             })
             
         if planet_list:
@@ -83,7 +105,11 @@ def render(main_panel, right_panel) -> None:
             observed_flux=observed_flux,
             residuals=observed_flux - theoretical_flux,
             noise_sigma=noise_sigma,
+            orbits=orbits,
         )
+        
+        st.subheader("Orbit View")
+        st.plotly_chart(make_multi_orbit_figure(simulation), width="stretch")
         
         st.subheader("Light Curve")
         st.plotly_chart(make_light_curve_figure(simulation), width="stretch")

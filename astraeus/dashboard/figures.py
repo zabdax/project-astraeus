@@ -13,6 +13,186 @@ if TYPE_CHECKING:
     from astraeus.dashboard.services.mcmc_retrieval import MCMCRetrievalResult
 
 
+def make_multi_orbit_figure(simulation) -> go.Figure:
+    """Build a 3D orbit view with the observer line of sight marked and animated planets."""
+    fig = go.Figure()
+    
+    PLANET_COLORS = [
+        {"main": "#10B981", "line": "#047857"}, # Green
+        {"main": "#3B82F6", "line": "#1D4ED8"}, # Blue
+        {"main": "#8B5CF6", "line": "#5B21B6"}, # Purple
+        {"main": "#EC4899", "line": "#BE185D"}, # Pink
+        {"main": "#F97316", "line": "#C2410C"}, # Orange
+        {"main": "#06B6D4", "line": "#0E7490"}, # Cyan
+    ]
+    
+    # Calculate axis limit across all orbits
+    axis_limit = 1.0
+    if hasattr(simulation, "orbits") and simulation.orbits:
+        max_x = max(float(np.max(np.abs(orb["x"]))) for orb in simulation.orbits)
+        max_y = max(float(np.max(np.abs(orb["y"]))) for orb in simulation.orbits)
+        max_z = max(float(np.max(np.abs(orb["z"]))) for orb in simulation.orbits)
+        axis_limit = 1.1 * max(max_x, max_y, max_z, 1.0)
+    
+    fig.add_trace(
+        go.Scatter3d(
+            x=[0.0],
+            y=[0.0],
+            z=[0.0],
+            mode="markers",
+            marker={
+                "size": 11,
+                "color": "#FBBF24",
+                "line": {"color": "#92400E", "width": 2},
+            },
+            name="Star",
+            hovertemplate="Star center<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter3d(
+            x=[0.0, 0.0],
+            y=[0.0, 0.0],
+            z=[-axis_limit, axis_limit],
+            mode="lines",
+            line={"color": "#EF4444", "dash": "dash", "width": 3},
+            name="Line of sight",
+            hoverinfo="skip",
+        )
+    )
+    
+    if not hasattr(simulation, "orbits") or not simulation.orbits:
+        fig.update_layout(
+            height=520, margin={"l": 0, "r": 0, "t": 32, "b": 0},
+            scene={
+                "xaxis": {"title": "x (R_sun)", "range": [-axis_limit, axis_limit]},
+                "yaxis": {"title": "y (R_sun)", "range": [-axis_limit, axis_limit]},
+                "zaxis": {"title": "z (R_sun)", "range": [-axis_limit, axis_limit]},
+                "aspectmode": "cube",
+            }
+        )
+        return fig
+
+    # Plot orbit paths
+    for idx, orb in enumerate(simulation.orbits):
+        x, y, z = orb["x"], orb["y"], orb["z"]
+        color = PLANET_COLORS[idx % len(PLANET_COLORS)]
+        
+        # Create a faded color sequence for the path so it still shows progression
+        # We can just use the planet's main color for simplicity, or vary opacity.
+        fig.add_trace(
+            go.Scatter3d(
+                x=x, y=y, z=z,
+                mode="lines",
+                line={
+                    "color": color["main"],
+                    "width": 2,
+                },
+                name=f"Planet {idx+1} path",
+                hoverinfo="skip",
+            )
+        )
+        
+    # Plot initial planet positions
+    planet_traces_start = len(fig.data)
+    for idx, orb in enumerate(simulation.orbits):
+        x, y, z = orb["x"], orb["y"], orb["z"]
+        color = PLANET_COLORS[idx % len(PLANET_COLORS)]
+        fig.add_trace(
+            go.Scatter3d(
+                x=[x[0]], y=[y[0]], z=[z[0]],
+                mode="markers",
+                marker={
+                    "size": 8,
+                    "color": color["main"],
+                    "line": {"color": color["line"], "width": 2},
+                },
+                name=f"Planet {idx+1}",
+                hovertemplate=(
+                    f"Planet {idx+1}<br>"
+                    f"x=%{{x:.3f}} R_sun<br>"
+                    f"y=%{{y:.3f}} R_sun<br>"
+                    f"z=%{{z:.3f}} R_sun<extra></extra>"
+                ),
+            )
+        )
+        
+    # Add animation frames
+    samples = len(simulation.orbits[0]["x"])
+    step_size = max(1, samples // 100)
+    frames = []
+    
+    for i in range(0, samples, step_size):
+        frame_data = []
+        for orb in simulation.orbits:
+            frame_data.append(go.Scatter3d(x=[orb["x"][i]], y=[orb["y"][i]], z=[orb["z"][i]]))
+        frames.append(
+            go.Frame(
+                data=frame_data,
+                traces=list(range(planet_traces_start, planet_traces_start + len(simulation.orbits))),
+                name=f"frame{i}"
+            )
+        )
+        
+    if (samples - 1) % step_size != 0:
+        i = samples - 1
+        frame_data = []
+        for orb in simulation.orbits:
+            frame_data.append(go.Scatter3d(x=[orb["x"][i]], y=[orb["y"][i]], z=[orb["z"][i]]))
+        frames.append(
+            go.Frame(
+                data=frame_data,
+                traces=list(range(planet_traces_start, planet_traces_start + len(simulation.orbits))),
+                name=f"frame{i}"
+            )
+        )
+        
+    fig.frames = frames
+
+    fig.update_layout(
+        height=520,
+        margin={"l": 0, "r": 0, "t": 32, "b": 0},
+        legend={"orientation": "h", "y": 1.02, "x": 0.0},
+        uirevision="constant",
+        updatemenus=[
+            {
+                "buttons": [
+                    {
+                        "args": [
+                            None,
+                            {
+                                "frame": {"duration": 40, "redraw": True},
+                                "fromcurrent": True,
+                                "transition": {"duration": 0},
+                                "mode": "immediate",
+                                "loop": True,
+                            },
+                        ],
+                        "label": "Play",
+                        "method": "animate",
+                    },
+                ],
+                "direction": "left",
+                "pad": {"r": 10, "t": 10},
+                "showactive": False,
+                "type": "buttons",
+                "x": 0.0,
+                "xanchor": "left",
+                "y": 1.15,
+                "yanchor": "top",
+            }
+        ],
+        scene={
+            "xaxis": {"title": "x (R_sun)", "range": [-axis_limit, axis_limit]},
+            "yaxis": {"title": "y (R_sun)", "range": [-axis_limit, axis_limit]},
+            "zaxis": {"title": "z (R_sun)", "range": [-axis_limit, axis_limit]},
+            "aspectmode": "cube",
+            "camera": {"eye": {"x": 1.4, "y": 1.45, "z": 0.95}},
+        },
+    )
+    return fig
+
+
 def make_orbit_figure(simulation: DashboardSimulation) -> go.Figure:
     """Build a 3D orbit view with the observer line of sight marked and an animated planet."""
 
