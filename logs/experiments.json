@@ -1,0 +1,17 @@
+[
+    {
+        "id": "e5a50776-3ffc-4b11-97d2-6a1a999868e9",
+        "timestamp": "2026-06-02T03:30:19.669516Z",
+        "dataset_hash": "886b24b26d1a0e80dfd589a21bb9017acd13d39db8c1a36988e39cd1d08e59d2",
+        "params": {
+            "planet_radius": 0.12345,
+            "inclination": 88.76543,
+            "period": 3.14159
+        },
+        "metadata": {
+            "dataset": "lightcurve_A.csv",
+            "points": 1000
+        },
+        "fig_paths": []
+    }
+]

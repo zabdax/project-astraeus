@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import os
-import tempfile
 
 import numpy as np
 
+from astraeus.data import DataAdapter
 from astraeus.data.loader import universal_load_lightcurve
 
 
@@ -32,20 +31,20 @@ def load_uploaded_light_curve(
     file_ext: str,
     column_map: dict[str, str] | None = None,
 ) -> LightCurveData:
-    """Persist an uploaded file temporarily and load it through the shared loader."""
+    """Load an uploaded file natively using the format-agnostic DataAdapter."""
+    adapter = DataAdapter(
+        data_bytes=uploaded_bytes,
+        filename_or_ext=file_ext,
+        column_map=column_map,
+    )
+    parsed = adapter.parse()
 
-    tmp_path = ""
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_ext}") as tmp:
-            tmp.write(uploaded_bytes)
-            tmp_path = tmp.name
+    time = parsed["time"]
+    flux = parsed["flux"]
 
-        time, flux, flux_err = universal_load_lightcurve(
-            file_ext,
-            tmp_path,
-            column_map=column_map or {},
-        )
-        return LightCurveData(time=time, flux=flux, flux_err=flux_err)
-    finally:
-        if tmp_path and os.path.exists(tmp_path):
-            os.remove(tmp_path)
+    # If flux_err is not present, default to zeros of the same shape
+    flux_err = parsed.get("flux_err")
+    if flux_err is None or len(flux_err) == 0:
+        flux_err = np.zeros_like(flux)
+
+    return LightCurveData(time=time, flux=flux, flux_err=flux_err)
