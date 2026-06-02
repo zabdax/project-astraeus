@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from astraeus.analysis.detection import detect_transit_candidate
+from astraeus.data import RemoteDiscoveryEngine
 
 def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
     """
@@ -276,7 +277,41 @@ def render(main_panel, right_panel) -> None:
                 st.info("FITS data format detected. Parsing orbital headers...")
         
         elif target:
+            # We want to clear plot data if a new target is searched (unless we just successfully queried it)
+            if 'last_target' not in st.session_state or st.session_state['last_target'] != target:
+                st.session_state['last_target'] = target
+                if 'detective_plot_data' in st.session_state:
+                    del st.session_state['detective_plot_data']
+                if 'detective_results' in st.session_state:
+                    del st.session_state['detective_results']
+            
             st.info(f"Target locked: **{target}** via routing path: **{route}**. Querying exoplanetary archive...")
+            
+            if st.button("🚀 Fetch & Detect", use_container_width=True):
+                with st.spinner(f"Querying {route} and running BLS Detection for {target}..."):
+                    mission = "Kepler"
+                    if "TESS" in route:
+                        mission = "TESS"
+                        
+                    res = RemoteDiscoveryEngine.discover_and_cache(target, mission=mission)
+                    if res.get("status") == "no_time_series":
+                        st.error(f"Metadata found, but no time-series data available for {target} on {mission}.")
+                        if res.get("metadata"):
+                            st.json(res["metadata"])
+                    elif res.get("status") == "success":
+                        st.success(f"Successfully loaded {len(res['time'])} points for {target}.")
+                        
+                        try:
+                            results = detect_transit_candidate(res['time'], res['flux'])
+                            periodogram_data = results.pop('periodogram')
+                            
+                            st.session_state['detective_results'] = results
+                            st.session_state['detective_results']['metadata'] = res['metadata']
+                            st.session_state['detective_plot_data'] = periodogram_data
+                        except Exception as e:
+                            st.error(f"BLS Execution failed: {e}")
+                    else:
+                        st.error(f"Failed to find target {target} in the archive.")
         
         # Display Plot if we have results in session state
         if 'detective_plot_data' in st.session_state:
