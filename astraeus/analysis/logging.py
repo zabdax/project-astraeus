@@ -62,3 +62,56 @@ def load_experiment_history() -> List[Dict[str, Any]]:
             return json.load(f)
     except (json.JSONDecodeError, IOError):
         return []
+
+class ExperimentLedger:
+    def __init__(self, ledger_path: str = "logs/experiments.json"):
+        self.ledger_path = ledger_path
+        os.makedirs(os.path.dirname(self.ledger_path), exist_ok=True)
+
+    def log_candidate(
+        self,
+        target_metadata: Dict[str, Any],
+        calculated_period: float,
+        signal_confidence: float,
+        tracking_statistics: Dict[str, Any],
+        data_source: str,
+        pipeline_timestamps: Dict[str, str] = None
+    ) -> None:
+        """
+        Automatically packages pipeline properties and securely appends them to 
+        the local tracking ledger for absolute reproducibility.
+        """
+        entry = {
+            "timestamp_logged": datetime.utcnow().isoformat() + "Z",
+            "target_metadata": target_metadata,
+            "calculated_period": calculated_period,
+            "signal_confidence": signal_confidence,
+            "tracking_statistics": tracking_statistics,
+            "data_source": data_source,
+            "pipeline_timestamps": pipeline_timestamps or {}
+        }
+
+        ledger_data = []
+        if os.path.exists(self.ledger_path):
+            try:
+                with open(self.ledger_path, 'r', encoding='utf-8') as f:
+                    content = f.read().strip()
+                    if content:
+                        ledger_data = json.loads(content)
+                        if not isinstance(ledger_data, list):
+                            ledger_data = [ledger_data]
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"[Warning] Could not parse existing ledger '{self.ledger_path}': {e}.")
+
+        ledger_data.append(entry)
+
+        temp_path = f"{self.ledger_path}.tmp"
+        try:
+            with open(temp_path, 'w', encoding='utf-8') as f:
+                json.dump(ledger_data, f, indent=4, ensure_ascii=False)
+            os.replace(temp_path, self.ledger_path)
+        except IOError as e:
+            print(f"[Error] Failed to append to experiment ledger: {e}")
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            raise

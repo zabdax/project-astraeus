@@ -1,5 +1,6 @@
 import numpy as np
 from astropy.timeseries import BoxLeastSquares
+from typing import Tuple
 
 def detect_transit_candidate(time, flux, threshold=5.0):
     """
@@ -46,3 +47,39 @@ def detect_transit_candidate(time, flux, threshold=5.0):
             'powers': res.power.tolist()
         }
     }
+
+def validate_bls_candidate(
+    transit_depth: float, 
+    out_of_transit_flux: np.ndarray, 
+    in_transit_count: int, 
+    snr_threshold: float = 5.0
+) -> Tuple[bool, float]:
+    """
+    Secondary mathematical validation pass for BLS candidates.
+    
+    Calculates the specific SNR based on transit depth, the standard deviation
+    of out-of-transit local noise arrays, and the square root of the number 
+    of in-transit data points.
+    
+    Args:
+        transit_depth: The calculated depth of the transit signal.
+        out_of_transit_flux: Array of local out-of-transit flux baseline values.
+        in_transit_count: The number of data coordinates lying within the transit.
+        snr_threshold: Conservative scientific floor limit for SNR (default: 5.0).
+        
+    Returns:
+        is_valid: Boolean indicating if the candidate cleared the SNR threshold.
+        snr: The calculated Signal-to-Noise Ratio as a float.
+    """
+    if len(out_of_transit_flux) == 0 or in_transit_count <= 0:
+        return False, 0.0
+        
+    local_noise_std = np.std(out_of_transit_flux)
+    
+    if local_noise_std == 0:
+        return False, 0.0
+        
+    calculated_snr = (transit_depth / local_noise_std) * np.sqrt(in_transit_count)
+    is_valid = calculated_snr > snr_threshold
+    
+    return is_valid, float(calculated_snr)
