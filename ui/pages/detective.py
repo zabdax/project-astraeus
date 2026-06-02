@@ -284,34 +284,81 @@ def render(main_panel, right_panel) -> None:
                     del st.session_state['detective_plot_data']
                 if 'detective_results' in st.session_state:
                     del st.session_state['detective_results']
+                if 'fetched_target_data' in st.session_state:
+                    del st.session_state['fetched_target_data']
             
-            st.info(f"Target locked: **{target}** via routing path: **{route}**. Querying exoplanetary archive...")
-            
-            if st.button("🚀 Fetch & Detect", use_container_width=True):
-                with st.spinner(f"Querying {route} and running BLS Detection for {target}..."):
-                    mission = "Kepler"
-                    if "TESS" in route:
-                        mission = "TESS"
+            if 'fetched_target_data' not in st.session_state:
+                if st.button("🚀 Fetch Target Metadata", use_container_width=True):
+                    # Minimal SVG Icons
+                    SVG_QUERY = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>"""
+                    SVG_SERVER = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>"""
+                    SVG_GEAR = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>"""
+                    SVG_CHECK = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>"""
+
+                    def render_svg(svg_string, text):
+                        st.markdown(f"<div style='display: flex; align-items: center; gap: 10px;'>{svg_string} <span>{text}</span></div>", unsafe_allow_html=True)
+
+                    import time
+                    with st.status("Querying NASA Exoplanet Archive...", expanded=True) as status:
+                        render_svg(SVG_QUERY, "Fetching archive data...")
+                        time.sleep(0.5)
                         
-                    res = RemoteDiscoveryEngine.discover_and_cache(target, mission=mission)
+                        status.update(label="Contacting Space Agency Servers (MAST)...", state="running")
+                        render_svg(SVG_SERVER, "Connecting to MAST...")
+                        time.sleep(0.5)
+                        
+                        status.update(label="Normalizing Telemetry Arrays...", state="running")
+                        render_svg(SVG_GEAR, "Processing telemetry...")
+                        
+                        mission = "Kepler"
+                        if "TESS" in route:
+                            mission = "TESS"
+                        res = RemoteDiscoveryEngine.discover_and_cache(target, mission=mission)
+                        
+                        status.update(label="Context Assembly Complete.", state="complete", expanded=False)
+                        render_svg(SVG_CHECK, "Assembly complete.")
+
                     if res.get("status") == "no_time_series":
                         st.error(f"Metadata found, but no time-series data available for {target} on {mission}.")
                         if res.get("metadata"):
                             st.json(res["metadata"])
                     elif res.get("status") == "success":
-                        st.success(f"Successfully loaded {len(res['time'])} points for {target}.")
-                        
+                        st.session_state['fetched_target_data'] = res
+                        st.rerun()
+                    else:
+                        st.error(f"Failed to find target {target} in the archive.")
+            
+            if 'fetched_target_data' in st.session_state:
+                res = st.session_state['fetched_target_data']
+                meta = res.get("metadata", {})
+                period = meta.get("pl_orbper", 0.0)
+                radius = meta.get("st_rad", 0.0)
+                depth = meta.get("pl_trandep", 0.0)
+                
+                with st.container(border=True):
+                    st.markdown("### Target Discovery Confirmation")
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        st.metric("System Designation", target)
+                    with col2:
+                        st.metric("Archival Orbital Period", f"{period:.4f}" if period else "N/A")
+                    with col3:
+                        st.metric("Stellar Radius (R☉)", f"{radius:.2f}" if radius else "N/A")
+                    with col4:
+                        st.metric("Transit Depth (ppm)", f"{depth}" if depth else "N/A")
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    if st.button("🚀 Run Anti-Aliased Planet Detection Pass", type="primary", use_container_width=True):
                         try:
                             results = detect_transit_candidate(res['time'], res['flux'])
                             periodogram_data = results.pop('periodogram')
                             
                             st.session_state['detective_results'] = results
-                            st.session_state['detective_results']['metadata'] = res['metadata']
+                            st.session_state['detective_results']['metadata'] = meta
                             st.session_state['detective_plot_data'] = periodogram_data
                         except Exception as e:
                             st.error(f"BLS Execution failed: {e}")
-                    else:
-                        st.error(f"Failed to find target {target} in the archive.")
         
         # Display Plot if we have results in session state
         if 'detective_plot_data' in st.session_state:
