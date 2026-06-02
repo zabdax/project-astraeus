@@ -338,19 +338,26 @@ def make_multi_orbit_animation_html(simulation) -> str:
   body{{margin:0;background:transparent;font-family:sans-serif;}}
   #plot{{width:100%;height:500px;}}
   #controls{{display:flex;gap:10px;padding:8px 4px;align-items:center;}}
-  button{{padding:6px 22px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;}}
+  button{{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:6px 20px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;}}
   button:active{{transform:scale(0.96);}}
+  button svg{{flex-shrink:0;}}
   #btn-play{{background:#10B981;color:#fff;}}
   #btn-play:disabled{{background:#6B7280;cursor:not-allowed;opacity:.55;}}
   #btn-stop{{background:#EF4444;color:#fff;}}
   #btn-stop:disabled{{background:#6B7280;cursor:not-allowed;opacity:.55;}}
-  #status{{font-size:12px;color:#9CA3AF;margin-left:4px;}}
+  #status{{font-size:12px;color:#9CA3AF;margin-left:4px;display:inline-flex;align-items:center;}}
 </style>
 </head>
 <body>
 <div id="controls">
-  <button id="btn-play">&#9654; Play</button>
-  <button id="btn-stop" disabled>&#9646;&#9646; Stop</button>
+  <button id="btn-play">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="6 4 20 12 6 20"></polygon></svg>
+    Play
+  </button>
+  <button id="btn-stop" disabled>
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
+    Stop
+  </button>
   <span id="status">Paused</span>
 </div>
 <div id="plot"></div>
