@@ -1,0 +1,11 @@
+[
+    {
+        "timestamp": "2026-06-02T07:36:09.112202Z",
+        "target_name": "wasp-12b",
+        "period": 1.0914173787566606,
+        "snr": 107.83845699283549,
+        "data_source": "TESS (via Lightkurve)",
+        "metadata": {},
+        "is_valid_candidate": true
+    }
+]
