@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from astraeus.analysis.detection import detect_transit_candidate
-from astraeus.data import RemoteDiscoveryEngine
+from astraeus.core.ingestion import RemoteDiscoveryEngine, DataAdapter
 
 def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
     """
@@ -197,14 +197,11 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
             label_visibility="collapsed"
         )
         if uploaded_file is not None:
-            if uploaded_file.name.endswith(".csv"):
-                try:
-                    df = pd.read_csv(uploaded_file)
-                    st.session_state.uploaded_file_data = df
-                except Exception as e:
-                    st.error(f"Error parsing CSV: {e}")
-            else:
-                st.session_state.uploaded_file_data = uploaded_file.getvalue()
+            try:
+                adapter = DataAdapter(uploaded_file.getvalue(), uploaded_file.name)
+                st.session_state.uploaded_file_data = adapter.parse()
+            except Exception as e:
+                st.error(f"Error parsing asset: {e}")
         else:
             st.session_state.uploaded_file_data = None
 
@@ -254,27 +251,29 @@ def render(main_panel, right_panel) -> None:
         
         # Display feedback or perform transit detection depending on data source
         if uploaded_data is not None:
-            if isinstance(uploaded_data, pd.DataFrame):
-                df = uploaded_data
-                if 'time' not in df.columns or 'flux' not in df.columns:
-                    st.error("Uploaded CSV must contain 'time' and 'flux' columns.")
-                else:
-                    st.success(f"Data loaded successfully: {len(df)} stellar points.")
-                    
-                    if st.button("🚀 Run BLS Detection", use_container_width=True):
-                        with st.spinner("Running Box Least Squares analysis..."):
-                            try:
-                                results = detect_transit_candidate(df['time'], df['flux'])
-                                # Extract periodogram details
-                                periodogram_data = results.pop('periodogram')
-                                
-                                # Cache results in session state to remain stable across interactions
-                                st.session_state['detective_results'] = results
-                                st.session_state['detective_plot_data'] = periodogram_data
-                            except Exception as e:
-                                st.error(f"BLS Execution failed: {e}")
+            if isinstance(uploaded_data, dict) and 'time' in uploaded_data and 'flux' in uploaded_data:
+                st.success(f"Data loaded successfully: {len(uploaded_data['time'])} stellar points.")
+                
+                if st.button("🚀 Run Anti-Aliased Planet Detection Pass", use_container_width=True):
+                    with st.spinner("Running Box Least Squares analysis..."):
+                        try:
+                            results = detect_transit_candidate(
+                                uploaded_data['time'], 
+                                uploaded_data['flux'],
+                                target_name="Uploaded Asset",
+                                data_source="Local Upload",
+                                metadata=uploaded_data.get('metadata', {})
+                            )
+                            # Extract periodogram details
+                            periodogram_data = results.pop('periodogram')
+                            
+                            # Cache results in session state to remain stable across interactions
+                            st.session_state['detective_results'] = results
+                            st.session_state['detective_plot_data'] = periodogram_data
+                        except Exception as e:
+                            st.error(f"BLS Execution failed: {e}")
             else:
-                st.info("FITS data format detected. Parsing orbital headers...")
+                st.info("Invalid parsed data format detected.")
         
         elif target:
             # We want to clear plot data if a new target is searched (unless we just successfully queried it)
@@ -313,7 +312,7 @@ def render(main_panel, right_panel) -> None:
                         mission = "Kepler"
                         if "TESS" in route:
                             mission = "TESS"
-                        res = RemoteDiscoveryEngine.discover_and_cache(target, mission=mission)
+                        res = RemoteDiscoveryEngine.fetch_data(target, mission=mission)
                         
                         status.update(label="Context Assembly Complete.", state="complete", expanded=False)
                         render_svg(SVG_CHECK, "Assembly complete.")
@@ -351,7 +350,13 @@ def render(main_panel, right_panel) -> None:
                     
                     if st.button("🚀 Run Anti-Aliased Planet Detection Pass", type="primary", use_container_width=True):
                         try:
-                            results = detect_transit_candidate(res['time'], res['flux'])
+                            results = detect_transit_candidate(
+                                res['time'], 
+                                res['flux'],
+                                target_name=target,
+                                data_source=route,
+                                metadata=meta
+                            )
                             periodogram_data = results.pop('periodogram')
                             
                             st.session_state['detective_results'] = results
