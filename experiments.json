@@ -7,5 +7,32 @@
         "data_source": "TESS (via Lightkurve)",
         "metadata": {},
         "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-07T17:11:34.840477Z",
+        "target_name": "wasp-12b",
+        "period": 1.0914230241297367,
+        "snr": 31.27550329022642,
+        "data_source": "TESS (via Lightkurve)",
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 15377.7921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 15377.7921,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": "1.091418901 d",
+                "pl_orbpererr1": "1.8e-08 d",
+                "st_rad": "1.69 solRad",
+                "st_raderr1": "0.019 solRad",
+                "st_lum": "0.59711",
+                "pl_trandep": "1.53777921 %",
+                "pl_ratror": "0.117"
+            }
+        },
+        "is_valid_candidate": true
     }
 ]
