@@ -91,18 +91,27 @@ class RemoteDiscoveryEngine:
     # ------------------------------------------------------------------
     # Archive query configuration
     # ------------------------------------------------------------------
-    #: Comprehensive confirmed-planet composite-parameter table.
+    #: Comprehensive confirmed-planet composite-parameter table (primary).
     _ARCHIVE_TABLE = "pscomppars"
 
-    #: All columns fetched in a single round-trip.  Includes every primary
-    #: field AND its error-column fallback, plus pl_ratror for the derived
-    #: transit-depth calculation.
+    #: Stable reference table used as the multi-table fallback when the
+    #: composite table returns NULL for orbital period.
+    _FALLBACK_TABLE = "ps"
+
+    #: All columns fetched in a single round-trip from pscomppars.  Includes
+    #: every primary field AND its error-column fallback, plus pl_ratror for
+    #: the derived transit-depth calculation, and st_lum as a tertiary
+    #: stellar-radius proxy.
     _ARCHIVE_SELECT = (
         "pl_name, "
         "pl_orbper, pl_orbpererr1, "
-        "st_rad, st_raderr1, "
+        "st_rad, st_raderr1, st_lum, "
         "pl_trandep, pl_ratror"
     )
+
+    #: Narrow column set fetched from the fallback ``ps`` table.  We only
+    #: need the orbital period and its positive error here.
+    _FALLBACK_SELECT = "pl_name, pl_orbper, pl_orbpererr1"
 
     # ------------------------------------------------------------------
     # Target-name normalisation
@@ -189,89 +198,253 @@ class RemoteDiscoveryEngine:
     # Field-level value resolver
     # ------------------------------------------------------------------
     @staticmethod
-    def _resolve_float(row, primary: str, fallback: str | None = None) -> float | None:
-        """Extract a float from *row*, trying *primary* then *fallback*.
+    def _resolve_float(row, primary: str, *fallbacks: str) -> float | None:
+        """Extract a float from *row*, trying *primary* then each *fallback* in order.
 
-        Returns ``None`` when both columns are masked or absent.
+        Accepts an arbitrary number of fallback column names so that multi-level
+        resolution chains (e.g. st_rad → st_raderr1 → st_lum) can be expressed
+        in a single call.
+
+        Returns ``None`` when every candidate column is masked or absent.
         """
-        for col in filter(None, [primary, fallback]):
+        for col in filter(None, [primary, *fallbacks]):
             try:
-                val = row[col]
-                if not np.ma.is_masked(val):
-                    return float(val)
-            except (KeyError, TypeError, ValueError):
+                if hasattr(row, 'get'):
+                    val = row.get(col)
+                else:
+                    val = row[col]
+
+                if val is None or np.ma.is_masked(val):
+                    continue
+
+                if hasattr(val, 'value'):
+                    val = val.value
+
+                if isinstance(val, str):
+                    val = val.strip()
+                    if " " in val:
+                        val = val.split()[0]
+                    val = val.replace('%', '')
+                    val = re.sub(r'[^\d\.\-eE]', '', val)
+
+                return float(val)
+            except Exception as e:
+                print(f"[ERROR] CRITICAL PARSING FAILURE for key '{col}': {e}")
                 continue
         return None
 
     # ------------------------------------------------------------------
-    # Public entry point
+    # Multi-table fallback: ps table orbital-period probe
     # ------------------------------------------------------------------
     @staticmethod
-    @st.cache_data(ttl=3600, show_spinner=False)
-    def fetch_data(target_name: str, mission: str = "Kepler") -> dict:
-        """Retrieve archive metadata and MAST photometry for *target_name*.
+    def _fetch_ps_orbital_period(safe_canonical: str) -> float | None:
+        """Fire a secondary query against the ``ps`` (confirmed-planets primary)
+        reference table to retrieve the official orbital period when
+        ``pscomppars`` returns NULL/masked.
+
+        The ``ps`` table aggregates one row per planet per reference paper;
+        we order by ``pl_orbper DESC`` so that the best-documented value
+        (largest non-null entry) floats to position 0.
 
         Parameters
         ----------
-        target_name:
-            Raw planet name (any capitalisation / spacing variant).
-        mission:
-            Lightkurve mission string (``'Kepler'``, ``'TESS'``, etc.).
+        safe_canonical:
+            Planet name already stripped and canonicalised.
 
         Returns
         -------
-        dict with keys:
-            ``status``      – ``'success'`` | ``'no_time_series'``
-            ``metadata``    – archive parameter dict (fields may be None)
-            ``time``        – 1-D float64 array  (success only)
-            ``flux``        – 1-D float64 array  (success only)
-            ``flux_err``    – 1-D float64 array  (success only)
+        float or None
+            Orbital period in days, or ``None`` if the fallback table also
+            lacks a valid measurement.
+        """
+        try:
+            res = NasaExoplanetArchive.query_criteria(
+                table=RemoteDiscoveryEngine._FALLBACK_TABLE,
+                select=RemoteDiscoveryEngine._FALLBACK_SELECT,
+                where=f"pl_name = '{safe_canonical}' AND pl_orbper IS NOT NULL",
+                order="pl_orbper DESC",
+            )
+            if len(res) > 0:
+                period = RemoteDiscoveryEngine._resolve_float(res[0], "pl_orbper", "pl_orbpererr1")
+                if period is not None:
+                    print(
+                        f"[RemoteDiscoveryEngine] ps-table fallback supplied "
+                        f"pl_orbper={period:.6f} d for '{safe_canonical}'.",
+                        file=sys.stderr,
+                    )
+                    return period
+            print(
+                f"[RemoteDiscoveryEngine] ps-table fallback also returned no "
+                f"valid orbital period for '{safe_canonical}'.",
+                file=sys.stderr,
+            )
+        except Exception as exc:
+            print(
+                f"[RemoteDiscoveryEngine] ps-table fallback query failed for "
+                f"'{safe_canonical}': {exc}",
+                file=sys.stderr,
+            )
+        return None
+
+    # ------------------------------------------------------------------
+    # Numeric sanitization layer
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _sanitize_meta(meta: dict) -> dict:
+        """Guarantee that every numeric key in the metadata dictionary is a
+        clean, strictly-typed float — never ``None``, ``NaN``, or a masked
+        scalar.  Downstream metric-card widgets receive safe defaults instead
+        of propagating ``NoneType`` errors.
+
+        Default baseline values
+        -----------------------
+        * ``orbital_period`` / ``pl_orbper``   → ``0.0``   (unknown period)
+        * ``transit_depth``  / ``pl_trandep``  → ``0.0``   (unknown depth)
+        * ``stellar_radius`` / ``st_rad``      → ``1.0``   (Solar baseline)
+        """
+        _FLOAT_DEFAULTS: dict[str, float] = {
+            "orbital_period": 0.0,
+            "pl_orbper":      0.0,
+            "transit_depth":  0.0,
+            "pl_trandep":     0.0,
+            "stellar_radius": 1.0,
+            "st_rad":         1.0,
+        }
+
+        for key, default in _FLOAT_DEFAULTS.items():
+            raw = meta.get(key)
+            # Treat None, masked scalars, and IEEE NaN as missing
+            if raw is None:
+                meta[key] = default
+                continue
+            try:
+                if np.ma.is_masked(raw):
+                    meta[key] = default
+                    continue
+                fval = float(raw)
+                meta[key] = default if (np.isnan(fval) or np.isinf(fval)) else fval
+            except (TypeError, ValueError):
+                meta[key] = default
+
+        return meta
+
+    # ------------------------------------------------------------------
+    # Public entry point (implementation — called by the cached wrapper below)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _fetch_data_impl(target_name: str, mission: str) -> dict:
+        """Inner (un-cached) implementation of fetch_data.
+
+        Separated from the public entry point so that ``@st.cache_data`` can be
+        applied at *module level* on the wrapper function ``fetch_data``, which
+        is the only reliable way to cache a callable that lives inside a class in
+        all supported Streamlit versions.
         """
         # ── 0. Normalise the target name before any network call ──────────
-        target_name = RemoteDiscoveryEngine._normalize_target_name(target_name)
+        canonical = RemoteDiscoveryEngine._normalize_target_name(target_name)
 
         # ── 1. Fetch metadata from NASA Exoplanet Archive (TAP) ───────────
         meta: dict = {}
+        archive_error: str | None = None
         try:
+            # ── Strip the canonical name immediately before embedding it in
+            # the TAP WHERE clause.  Trailing whitespace causes partial-row
+            # rejections in the NASA Archive matrix even after normalisation.
+            safe_canonical = canonical.strip()
+
             res = NasaExoplanetArchive.query_criteria(
                 table=RemoteDiscoveryEngine._ARCHIVE_TABLE,
                 select=RemoteDiscoveryEngine._ARCHIVE_SELECT,
-                where=f"pl_name = '{target_name}'",
+                where=f"pl_name = '{safe_canonical}'",
             )
+
+            print("--- NASA ARCHIVE DIAGNOSTIC AUDIT ---")
+            print(f"Payload Type: {type(res)}")
+            print(f"Available Columns: {list(res.colnames) if hasattr(res, 'colnames') else []}")
+            if len(res) > 0:
+                print(f"Raw Row 0 Content: {res[0]}")
 
             if len(res) > 0:
                 row = res[0]
 
-                # ── Orbital Period ─────────────────────────────────────────
-                # Primary  : pl_orbper
-                # Fallback : pl_orbpererr1 (non-null implies period was fit;
-                #            use only as a presence check, not a value)
-                pl_orbper = RemoteDiscoveryEngine._resolve_float(
-                    row, "pl_orbper", "pl_orbpererr1"
+                # ── Column-structure audit ─────────────────────────────────
+                # Print every column name returned in this row so that any
+                # alias mismatch is immediately visible in the terminal log.
+                try:
+                    _col_names = list(row.colnames)
+                except AttributeError:
+                    _col_names = list(row.dtype.names) if hasattr(row, 'dtype') else []
+                print(
+                    f"[RemoteDiscoveryEngine] Archive columns for '{safe_canonical}': "
+                    f"{_col_names}",
+                    file=sys.stderr,
                 )
-                # If fallback triggered we have the error, not the period –
-                # surface None so callers know the primary is missing.
+
+                # ── Orbital Period ─────────────────────────────────────────
+                # Resolution chain (most → least authoritative):
+                #   1. pl_orbper      — standard pscomppars column
+                #   2. pl_period      — legacy/alternate table alias
+                #   3. pl_orbpererr1  — positive fitting error; kept as a
+                #                      last-resort presence signal only
+                # If every alias is masked or absent, fire the multi-table
+                # fallback against the stable ``ps`` reference table before
+                # defaulting to 0.0.  This ensures reference-paper NULL gaps
+                # in pscomppars are healed automatically.
+                pl_orbper = RemoteDiscoveryEngine._resolve_float(
+                    row, "pl_orbper", "pl_period", "pl_orbpererr1"
+                )
                 if pl_orbper is None:
-                    try:
-                        _err_present = not np.ma.is_masked(row["pl_orbpererr1"])
-                    except (KeyError, TypeError):
-                        _err_present = False
-                    # Keep None: error col alone cannot substitute the period.
-                    _ = _err_present  # documented intention; value not used
+                    print(
+                        f"[RemoteDiscoveryEngine] pscomppars orbital period masked for "
+                        f"'{safe_canonical}'; escalating to ps-table fallback query.",
+                        file=sys.stderr,
+                    )
+                    # ── MULTI-TABLE INTERROGATION FALLBACK ─────────────────
+                    pl_orbper = RemoteDiscoveryEngine._fetch_ps_orbital_period(
+                        safe_canonical
+                    )
+                    if pl_orbper is None:
+                        print(
+                            f"[RemoteDiscoveryEngine] Both tables lack orbital period "
+                            f"for '{safe_canonical}'; flooring to 0.0.",
+                            file=sys.stderr,
+                        )
+                        pl_orbper = 0.0
 
                 # ── Stellar Radius ─────────────────────────────────────────
-                # Primary  : st_rad
-                # Fallback : st_raderr1  (same caveat as above)
+                # Primary   : st_rad   (solar radii, directly measured)
+                # We do NOT use st_raderr1 or st_raderr2 as substitutes.
                 st_rad = RemoteDiscoveryEngine._resolve_float(
-                    row, "st_rad", "st_raderr1"
+                    row, "st_rad"
                 )
+                if st_rad is not None:
+                    st_rad = abs(st_rad)
 
                 # ── Transit Depth ──────────────────────────────────────────
-                # Primary  : pl_trandep  (ppm)
-                # Derived  : (pl_ratror)^2 × 1_000_000  when primary absent
+                # Primary  : pl_trandep  (ppm, directly catalogued)
+                # Derived  : (pl_ratror)² × 1_000_000  when primary absent
+                
+                raw_trandep = None
+                try:
+                    raw_trandep = row.get("pl_trandep") if hasattr(row, 'get') else row["pl_trandep"]
+                except Exception:
+                    pass
+                is_percentage = False
+                if isinstance(raw_trandep, str):
+                    is_percentage = "%" in raw_trandep
+                elif hasattr(raw_trandep, 'unit'):
+                    is_percentage = "%" in str(raw_trandep.unit)
+
                 pl_trandep = RemoteDiscoveryEngine._resolve_float(
                     row, "pl_trandep"
                 )
+                
+                if pl_trandep is not None:
+                    if is_percentage:
+                        pl_trandep = pl_trandep * 10000.0
+                    elif pl_trandep < 1.0:
+                        pl_trandep = pl_trandep * 1_000_000
+
                 if pl_trandep is None:
                     pl_ratror = RemoteDiscoveryEngine._resolve_float(
                         row, "pl_ratror"
@@ -284,51 +457,137 @@ class RemoteDiscoveryEngine:
                             file=sys.stderr,
                         )
 
+                # ── Assemble raw metadata dict ─────────────────────────────
+                try:
+                    raw_row_dump = {col: str(row[col]) for col in row.colnames} if hasattr(row, 'colnames') else {}
+                except Exception:
+                    raw_row_dump = str(row)
+
                 meta = {
-                    "pl_name": str(row["pl_name"]),
-                    "pl_orbper": pl_orbper,
-                    "st_rad": st_rad,
-                    "pl_trandep": pl_trandep,
+                    "pl_name":        str(row["pl_name"]),
+                    # Keys used by detective.py active_metadata bindings:
+                    "orbital_period": pl_orbper,
+                    "stellar_radius": st_rad,
+                    "transit_depth":  pl_trandep,
+                    # Raw archive names retained for downstream use:
+                    "pl_orbper":      pl_orbper,
+                    "st_rad":         st_rad,
+                    "pl_trandep":     pl_trandep,
+                    "raw_row_dump":   raw_row_dump,
                 }
 
+                # ── NUMERIC SANITIZATION LAYER ─────────────────────────────
+                # Hard-floor any residual None / NaN / masked values so that
+                # st.session_state.active_metadata is always strictly typed.
+                meta = RemoteDiscoveryEngine._sanitize_meta(meta)
+            else:
+                print(
+                    f"[RemoteDiscoveryEngine] No archive rows for '{safe_canonical}'.",
+                    file=sys.stderr,
+                )
+
         except Exception as exc:
+            archive_error = str(exc)
             print(
-                f"[RemoteDiscoveryEngine] Archive query failed: {exc}",
+                f"[RemoteDiscoveryEngine] Archive query failed for '{canonical}': {exc}",
                 file=sys.stderr,
             )
+            # safe_canonical may not exist if the exception fired before assignment
+            safe_canonical = canonical.strip()
 
         # ── 2. Fetch photometric time-series from MAST via Lightkurve ─────
-        search_result = lk.search_lightcurve(target_name, mission=mission)
-        if len(search_result) == 0:
-            return {"status": "no_time_series", "metadata": meta}
-
-        # Capped at first 3 sectors/quarters for speed
-        lc_collection = search_result[:3].download_all()
-        if not lc_collection:
-            return {"status": "no_time_series", "metadata": meta}
-
-        stitched = lc_collection.stitch()
+        mast_error: str | None = None
         try:
-            flattened = stitched.flatten()
-        except Exception:
-            flattened = stitched.normalize()
+            search_result = lk.search_lightcurve(canonical, mission=mission)
+            if len(search_result) == 0:
+                return {
+                    "status": "no_time_series",
+                    "metadata": meta,
+                    "archive_error": archive_error,
+                }
 
-        flattened = flattened.remove_nans()
+            # Capped at first 2 sectors/quarters for download speed and to
+            # prevent application timeout disconnects.
+            lc_collection = search_result[:2].download_all()
+            if not lc_collection:
+                return {
+                    "status": "no_time_series",
+                    "metadata": meta,
+                    "archive_error": archive_error,
+                }
 
-        t = np.asarray(flattened.time.value, dtype=np.float64)
-        f = np.asarray(flattened.flux.value, dtype=np.float64)
-        e = np.asarray(flattened.flux_err.value, dtype=np.float64)
+            stitched = lc_collection.stitch()
+            try:
+                flattened = stitched.flatten()
+            except Exception:
+                flattened = stitched.normalize()
 
-        valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
-        t, f, e = t[valid], f[valid], e[valid]
+            flattened = flattened.remove_nans()
 
-        sort_idx = np.argsort(t)
-        t, f, e = t[sort_idx], f[sort_idx], e[sort_idx]
+            t = np.asarray(flattened.time.value, dtype=np.float64)
+            f = np.asarray(flattened.flux.value, dtype=np.float64)
+            e = np.asarray(flattened.flux_err.value, dtype=np.float64)
 
-        return {
-            "status": "success",
-            "metadata": meta,
-            "time": t,
-            "flux": f,
-            "flux_err": e,
-        }
+            valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
+            t, f, e = t[valid], f[valid], e[valid]
+
+            sort_idx = np.argsort(t)
+            t, f, e = t[sort_idx], f[sort_idx], e[sort_idx]
+
+            return {
+                "status":        "success",
+                "metadata":      meta,
+                "time":          t,
+                "flux":          f,
+                "flux_err":      e,
+                "archive_error": archive_error,
+            }
+
+        except Exception as exc:
+            mast_error = str(exc)
+            print(
+                f"[RemoteDiscoveryEngine] MAST download failed for '{canonical}': {exc}",
+                file=sys.stderr,
+            )
+            return {
+                "status":      "error",
+                "metadata":    meta,
+                "archive_error": archive_error,
+                "mast_error":  mast_error,
+            }
+
+
+# ---------------------------------------------------------------------------
+# Module-level cached wrapper
+# ---------------------------------------------------------------------------
+# @st.cache_data MUST be applied at module level to work reliably across all
+# Streamlit versions.  Applying it as a decorator on a @staticmethod inside a
+# class body causes cache misses and silent re-execution on every rerun.
+@st.cache_data(ttl=3600, show_spinner=False)
+def _cached_fetch_data(target_name: str, mission: str = "Kepler") -> dict:
+    """Cached entry point — delegates to ``RemoteDiscoveryEngine._fetch_data_impl``.
+
+    Parameters
+    ----------
+    target_name:
+        Raw planet name (any capitalisation / spacing variant).
+    mission:
+        Lightkurve mission string (``'Kepler'``, ``'TESS'``, etc.).
+
+    Returns
+    -------
+    dict with keys:
+        ``status``        – ``'success'`` | ``'no_time_series'`` | ``'error'``
+        ``metadata``      – archive parameter dict (may be empty)
+        ``archive_error`` – str or None
+        ``mast_error``    – str or None  (only on ``'error'`` status)
+        ``time``          – 1-D float64 array  (success only)
+        ``flux``          – 1-D float64 array  (success only)
+        ``flux_err``      – 1-D float64 array  (success only)
+    """
+    return RemoteDiscoveryEngine._fetch_data_impl(target_name, mission)
+
+
+# Attach as a class attribute so callers using RemoteDiscoveryEngine.fetch_data
+# continue to work without any import-site changes.
+RemoteDiscoveryEngine.fetch_data = staticmethod(_cached_fetch_data)

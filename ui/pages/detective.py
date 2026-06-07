@@ -318,55 +318,121 @@ def render(main_panel, right_panel) -> None:
                         st.markdown(f"<div style='display: flex; align-items: center; gap: 10px;'>{svg_string} <span>{text}</span></div>", unsafe_allow_html=True)
 
                     import time
-                    with st.status("Querying NASA Exoplanet Archive...", expanded=True) as status:
-                        render_svg(SVG_QUERY, "Fetching archive data...")
-                        time.sleep(0.5)
-                        
-                        status.update(label="Contacting Space Agency Servers (MAST)...", state="running")
-                        render_svg(SVG_SERVER, "Connecting to MAST...")
-                        time.sleep(0.5)
-                        
-                        status.update(label="Normalizing Telemetry Arrays...", state="running")
-                        render_svg(SVG_GEAR, "Processing telemetry...")
-                        
-                        mission = "Kepler"
-                        if "TESS" in route:
-                            mission = "TESS"
-                        res = RemoteDiscoveryEngine.fetch_data(target, mission=mission)
-                        
-                        status.update(label="Context Assembly Complete.", state="complete", expanded=False)
-                        render_svg(SVG_CHECK, "Assembly complete.")
+                    import traceback
 
-                    if res.get("status") == "no_time_series":
-                        st.error(f"Metadata found, but no time-series data available for {target} on {mission}.")
-                        if res.get("metadata"):
-                            st.json(res["metadata"])
-                    elif res.get("status") == "success":
-                        st.session_state['fetched_target_data'] = res
-                        st.rerun()
-                    else:
-                        st.error(f"Failed to find target {target} in the archive.")
+                    mission = "Kepler"
+                    if "TESS" in route:
+                        mission = "TESS"
+
+                    try:
+                        with st.status("Querying NASA Exoplanet Archive...", expanded=True) as status:
+                            render_svg(SVG_QUERY, "Fetching archive data...")
+                            time.sleep(0.5)
+
+                            status.update(label="Contacting Space Agency Servers (MAST)...", state="running")
+                            render_svg(SVG_SERVER, "Connecting to MAST...")
+                            time.sleep(0.5)
+
+                            status.update(label="Normalizing Telemetry Arrays...", state="running")
+                            render_svg(SVG_GEAR, "Processing telemetry...")
+
+                            res = RemoteDiscoveryEngine.fetch_data(target, mission=mission)
+
+                            status.update(label="Context Assembly Complete.", state="complete", expanded=False)
+                            render_svg(SVG_CHECK, "Assembly complete.")
+
+                        # ── Surface any partial archive-layer error even on MAST success ──
+                        arch_err = res.get("archive_error")
+                        if arch_err:
+                            st.toast(
+                                f"⚠️ Archive warning for '{target}': {arch_err}",
+                                icon="⚠️",
+                            )
+
+                        fetch_status = res.get("status")
+
+                        if fetch_status == "no_time_series":
+                            st.error(
+                                f"Metadata found, but no time-series data available "
+                                f"for **{target}** on mission **{mission}**."
+                            )
+                            if res.get("metadata"):
+                                st.json(res["metadata"])
+
+                        elif fetch_status == "error":
+                            # Both archive and MAST failed — show full backend trace
+                            mast_err = res.get("mast_error", "Unknown MAST error")
+                            st.error(
+                                f"🛰️ **MAST download failed** for `{target}`:\n\n"
+                                f"```\n{mast_err}\n```"
+                            )
+                            if arch_err:
+                                st.error(
+                                    f"📡 **Archive query also failed**:\n\n"
+                                    f"```\n{arch_err}\n```"
+                                )
+
+                        elif fetch_status == "success":
+                            # ── Write canonical metadata into active_metadata ──────────
+                            st.session_state["active_metadata"] = res["metadata"]
+                            st.session_state['fetched_target_data'] = res
+                            st.rerun()
+
+                        else:
+                            st.error(
+                                f"Unexpected engine status `{fetch_status!r}` "
+                                f"for target `{target}`. Check backend logs."
+                            )
+
+                    except Exception:
+                        # Catch any unhandled Python exception and show full traceback
+                        tb = traceback.format_exc()
+                        st.error(
+                            f"🔴 **Unhandled exception** during fetch for `{target}`:\n\n"
+                            f"```\n{tb}\n```"
+                        )
             
             if 'fetched_target_data' in st.session_state:
                 res = st.session_state['fetched_target_data']
-                meta = res.get("metadata", {})
-                period = meta.get("pl_orbper", 0.0)
-                radius = meta.get("st_rad", 0.0)
-                depth = meta.get("pl_trandep", 0.0)
+                # ── Ensure active_metadata is always in sync ──────────────────────────
+                # (guards against sessions started before this refactor that
+                # stored fetched_target_data but never wrote active_metadata)
+                if "active_metadata" not in st.session_state:
+                    st.session_state["active_metadata"] = res.get("metadata", {})
+
+                meta = st.session_state["active_metadata"]
+
+                # ── Pull display values from canonical active_metadata keys ───
+                period = meta.get("orbital_period")
+                radius = meta.get("stellar_radius")
+                depth  = meta.get("transit_depth")
                 
                 with st.container(border=True):
                     st.markdown("### Target Discovery Confirmation")
                     col1, col2, col3, col4 = st.columns(4)
                     with col1:
-                        st.metric("System Designation", target)
+                        st.metric("System Designation", meta.get("pl_name", target))
                     with col2:
-                        st.metric("Archival Orbital Period", f"{period:.4f}" if period else "N/A")
+                        st.metric(
+                            "Archival Orbital Period",
+                            f"{period:.4f} d" if period is not None else "N/A",
+                        )
                     with col3:
-                        st.metric("Stellar Radius (R☉)", f"{radius:.2f}" if radius else "N/A")
+                        st.metric(
+                            "Stellar Radius (R☉)",
+                            f"{radius:.4f}" if radius is not None else "N/A",
+                        )
                     with col4:
-                        st.metric("Transit Depth (ppm)", f"{depth}" if depth else "N/A")
+                        st.metric(
+                            "Transit Depth (ppm)",
+                            f"{depth:.2f}" if depth is not None else "N/A",
+                        )
                     
                     st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    if "raw_row_dump" in meta:
+                        with st.expander("🛠️ Inspect Raw NASA API Response Payload", expanded=False):
+                            st.json(meta["raw_row_dump"])
                     
                     if st.button("🚀 Run Anti-Aliased Planet Detection Pass", type="primary", use_container_width=True):
                         try:
