@@ -22,9 +22,14 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     """
     time = np.asarray(time)
     flux = np.asarray(flux)
+    
+    if len(time) > 5000:
+        factor = len(time) // 5000 + 1
+        time = time[::factor]
+        flux = flux[::factor]
 
     model = BoxLeastSquares(time, flux)
-    res = model.autopower(np.linspace(0.01, 0.2, 20), frequency_factor=20.0)
+    res = model.autopower(np.linspace(0.01, 0.2, 10), frequency_factor=5.0)
     best_idx = np.argmax(res.power)
     best_period = res.period[best_idx]
     best_power = res.power[best_idx]

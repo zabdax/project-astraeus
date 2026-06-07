@@ -26,33 +26,44 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
     if "uploaded_file_data" not in st.session_state:
         st.session_state.uploaded_file_data = None
 
+    has_target = bool(st.session_state.get('search_target', '').strip())
+    opacity_rule = ".stApp div[data-testid='stFileUploader'] { opacity: 0.3 !important; }" if has_target else ""
+
     # Inject Premium Dark-SaaS CSS Overrides & Structural Alignments
     st.markdown(
-        """
+        f"""
         <style>
         /* Unify top-bar widget height, clear gaps, and style layout */
-        div[data-testid="column"] {
+        div[data-testid="column"] {{
             display: flex;
             flex-direction: column;
             justify-content: center;
             padding: 0px 6px !important;
-        }
+        }}
 
         /* 1. Reset file uploader margins and spacing */
-        div[data-testid="stFileUploader"] {
-            margin: 0 !important;
+        div[data-testid="stFileUploader"] {{
+            margin: 0 auto !important;
             padding: 0 !important;
-            width: 100% !important;
-        }
+            width: 80% !important;
+            transition: opacity 0.3s ease-in-out !important;
+        }}
+
+        /* Focus-Dimming Effect */
+        .stApp:has(div[data-testid="stTextInput"] input:focus) div[data-testid="stFileUploader"] {{
+            opacity: 0.3 !important;
+        }}
+        
+        {opacity_rule}
 
         /* 2. Hide all default inner text, buttons, and subtext to prevent squeeze-wrapping */
         div[data-testid="stFileUploader"] section[data-testid="stFileUploadDropzone"] > button,
-        div[data-testid="stFileUploader"] section[data-testid="stFileUploadDropzone"] > div {
+        div[data-testid="stFileUploader"] section[data-testid="stFileUploadDropzone"] > div {{
             display: none !important;
-        }
+        }}
 
         /* 3. Style the dropzone itself as a compact clickable button */
-        div[data-testid="stFileUploader"] section[data-testid="stFileUploadDropzone"] {
+        div[data-testid="stFileUploader"] section[data-testid="stFileUploadDropzone"] {{
             padding: 0px 12px !important;
             min-height: 42px !important;
             height: 42px !important;
@@ -65,16 +76,16 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
             cursor: pointer !important;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
             overflow: hidden !important;
-        }
+        }}
 
-        div[data-testid="stFileUploader"] section[data-testid="stFileUploadDropzone"]:hover {
+        div[data-testid="stFileUploader"] section[data-testid="stFileUploadDropzone"]:hover {{
             border-color: #A78BFA !important;
             background-color: rgba(167, 139, 250, 0.08) !important;
             box-shadow: 0 0 10px rgba(167, 139, 250, 0.15) !important;
-        }
+        }}
 
         /* 4. Inject a clean, compact label in place of the hidden default text */
-        div[data-testid="stFileUploader"] section[data-testid="stFileUploadDropzone"]::before {
+        div[data-testid="stFileUploader"] section[data-testid="stFileUploadDropzone"]::before {{
             content: "📂 Ingest Asset" !important;
             font-family: 'Fira Code', 'Courier New', monospace !important;
             font-size: 13px !important;
@@ -83,10 +94,10 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
             display: block !important;
             text-align: center !important;
             white-space: nowrap !important;
-        }
+        }}
 
         /* 5. Style the file details widget (shows file name and delete button) when a file is active */
-        div[data-testid="stFileUploader"] > section + div {
+        div[data-testid="stFileUploader"] > section + div {{
             margin-top: 6px !important;
             padding: 4px 8px !important;
             background: #0B0E17 !important;
@@ -95,10 +106,10 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
             font-family: 'Fira Code', monospace !important;
             font-size: 11px !important;
             color: #A78BFA !important;
-        }
+        }}
 
         /* Modern Dark-SaaS Inputs (Text & Select) */
-        div[data-testid="stTextInput"] input {
+        div[data-testid="stTextInput"] input {{
             background-color: #1E293B !important;
             border: 1px solid #334155 !important;
             border-radius: 8px !important;
@@ -108,14 +119,14 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
             font-size: 13px !important;
             padding-left: 12px !important;
             transition: all 0.25s ease-in-out !important;
-        }
+        }}
 
-        div[data-testid="stTextInput"] input:focus {
+        div[data-testid="stTextInput"] input:focus {{
             border-color: #A78BFA !important;
             box-shadow: 0 0 10px rgba(167, 139, 250, 0.2) !important;
-        }
+        }}
 
-        div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div {
+        div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div {{
             background-color: #1E293B !important;
             border: 1px solid #334155 !important;
             border-radius: 8px !important;
@@ -124,11 +135,11 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
             font-family: 'Fira Code', 'Courier New', monospace !important;
             font-size: 13px !important;
             transition: all 0.25s ease-in-out !important;
-        }
+        }}
 
-        div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div:hover {
+        div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div:hover {{
             border-color: #A78BFA !important;
-        }
+        }}
         </style>
         """,
         unsafe_allow_html=True
@@ -186,26 +197,9 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
     )
 
     # Strict Horizontal Layout using st.columns with the optimized split ratio
-    col_uploader, col_input, col_selector = st.columns([0.15, 0.55, 0.30], gap="small")
+    col_input, col_selector = st.columns([0.75, 0.25], gap="small")
 
-    # Column 1 (Exact Left): Compact local file uploader allowing FITS/CSV assets
-    with col_uploader:
-        uploaded_file = st.file_uploader(
-            "Upload Asset",
-            type=["csv", "fits"],
-            key="raw_upload_widget",
-            label_visibility="collapsed"
-        )
-        if uploaded_file is not None:
-            try:
-                adapter = DataAdapter(uploaded_file.getvalue(), uploaded_file.name)
-                st.session_state.uploaded_file_data = adapter.parse()
-            except Exception as e:
-                st.error(f"Error parsing asset: {e}")
-        else:
-            st.session_state.uploaded_file_data = None
-
-    # Column 2 (Center Main): Dominant text input field with caching
+    # Top Layer: Dominant text input field with caching
     with col_input:
         search_target = st.text_input(
             "Target Search",
@@ -215,7 +209,7 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
             label_visibility="collapsed"
         )
 
-    # Column 3 (Right Selection): Selectbox tracking data routes
+    # Top Layer: Selectbox tracking data routes
     with col_selector:
         routes = [
             "NASA Exoplanet Archive",
@@ -233,14 +227,40 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
             label_visibility="collapsed"
         )
 
+    # Middle Layer: OR Separator
+    st.markdown(
+        "<div style='text-align: center; margin: 16px 0;'><span style='color: #64748B; font-family: monospace; font-size: 12px; display: inline-flex; align-items: center; width: 100%; justify-content: center;'><hr style='width: 30%; border-color: rgba(51, 65, 85, 0.5); margin-right: 12px;'/>&mdash; OR &mdash;<hr style='width: 30%; border-color: rgba(51, 65, 85, 0.5); margin-left: 12px;'/></span></div>",
+        unsafe_allow_html=True
+    )
+
+    # Bottom Layer: File Uploader
+    uploaded_file = st.file_uploader(
+        "Upload Asset",
+        type=["csv", "fits"],
+        key="raw_upload_widget",
+        label_visibility="collapsed"
+    )
+    
+    if uploaded_file is not None:
+        try:
+            adapter = DataAdapter(uploaded_file.getvalue(), uploaded_file.name)
+            st.session_state.uploaded_file_data = adapter.parse()
+        except Exception as e:
+            st.error(f"Error parsing asset: {e}")
+    else:
+        st.session_state.uploaded_file_data = None
+
     return st.session_state.uploaded_file_data, search_target, data_route
 
 def render(main_panel, right_panel) -> None:
     """Render the Detective module."""
     with main_panel:
         st.markdown(
-            "<h2 style='margin-bottom: 2px; color: #A78BFA;'>🕵️ Exoplanet Detective</h2>"
-            "<p style='color: #64748B; font-size: 0.9rem; margin-bottom: 20px;'>"
+            "<div style='display: flex; align-items: center; gap: 12px; margin-bottom: 2px;'>"
+            "<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='#06b6d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='10'></circle><circle cx='12' cy='12' r='2'></circle><line x1='12' y1='2' x2='12' y2='4'></line><line x1='12' y1='20' x2='12' y2='22'></line><line x1='20' y1='12' x2='22' y2='12'></line><line x1='2' y1='12' x2='4' y2='12'></line></svg>"
+            "<h2 style='margin: 0; color: #A78BFA;'>Exoplanet Detective</h2>"
+            "</div>"
+            "<p style='color: #64748B; font-size: 0.9rem; margin-bottom: 20px; margin-top: 6px;'>"
             "Analyze and detect candidate exoplanetary transits using the Box Least Squares (BLS) periodogram method."
             "</p>",
             unsafe_allow_html=True
