@@ -3,7 +3,7 @@ from astropy.timeseries import BoxLeastSquares
 from typing import Tuple
 import json
 import os
-from datetime import datetime
+import datetime
 
 def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=5.0):
     """
@@ -13,17 +13,12 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     flux = np.asarray(flux)
     
     # Sub-second Computational Efficiency: Multi-Phase Uniform Data Binning
-    if len(time) > 3000:
-        bins = np.linspace(time.min(), time.max(), 1001)
-        bin_indices = np.digitize(time, bins)
-        time_binned, flux_binned = [], []
-        for i in range(1, 1001):
-            mask = bin_indices == i
-            if np.any(mask):
-                time_binned.append(np.median(time[mask]))
-                flux_binned.append(np.median(flux[mask]))
-        time = np.array(time_binned)
-        flux = np.array(flux_binned)
+    if len(time) > 1000:
+        n_bins = 1000
+        points_per_bin = len(time) // n_bins
+        truncate_idx = points_per_bin * n_bins
+        time = time[:truncate_idx].reshape(n_bins, points_per_bin).mean(axis=1)
+        flux = flux[:truncate_idx].reshape(n_bins, points_per_bin).mean(axis=1)
 
     model = BoxLeastSquares(time, flux)
     
@@ -31,7 +26,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     durations = np.array([0.01, 0.03, 0.05, 0.07, 0.1])
     
     # Vectorized Frequency Gridding
-    periods = model.autoperiod(durations, minimum_period=0.5, maximum_period=20.0, frequency_factor=3.0)
+    periods = model.autoperiod(durations, minimum_period=0.5, maximum_period=20.0, frequency_factor=50.0)
     res = model.power(periods, durations)
     
     best_idx = np.argmax(res.power)
@@ -69,12 +64,12 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         node_snr, node_depth = compute_snr_depth(node_period, transit_time, duration)
         
         if harmonic == 2.0:
-            if node_depth >= best_depth * 0.95 and node_snr > best_snr * 1.05:
+            if node_depth >= best_depth * 0.85 and node_snr > best_snr * 0.85:
                 best_period = node_period
                 best_snr = node_snr
                 best_depth = node_depth
         elif harmonic == 0.5:
-            if node_depth >= best_depth * 0.95 and node_snr > best_snr * 0.95:
+            if node_depth >= best_depth * 0.85 and node_snr > best_snr * 0.85:
                 best_period = node_period
                 best_snr = node_snr
                 best_depth = node_depth
@@ -87,6 +82,10 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         'is_candidate': is_valid,
         'period_days': float(best_period),
         'period': float(best_period),
+        'orbital_period': float(best_period),
+        'transit_depth': float(best_depth),
+        'stellar_radius': 1.0,
+        'vetting_status': 'candidate' if is_valid else 'rejected',
         'confidence_score': confidence_score,
         'snr': float(best_snr),
         'depth': float(best_depth),
@@ -100,7 +99,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     
     # Reproducible Ledger
     log_entry = {
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "target_name": target_name,
         "period": float(best_period),
         "snr": float(best_snr),

@@ -34,5 +34,221 @@
             }
         },
         "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:41:12.420019Z",
+        "target_name": "Unknown",
+        "period": 3.2314564887451254,
+        "snr": 5.08679675930519,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:41:15.392229Z",
+        "target_name": "Unknown",
+        "period": 0.9978480561748323,
+        "snr": 680.8762065583248,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:41:15.542199Z",
+        "target_name": "Unknown",
+        "period": 2.3430178069353325,
+        "snr": 5.077321926590817,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:42:08.140872Z",
+        "target_name": "Unknown",
+        "period": 12.737733005899557,
+        "snr": 5.635104185859762,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:42:11.053808Z",
+        "target_name": "Unknown",
+        "period": 1.9957042956309432,
+        "snr": 106.57763880490018,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:42:11.254488Z",
+        "target_name": "Unknown",
+        "period": 0.5,
+        "snr": 5.478969091846294,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:42:58.426949Z",
+        "target_name": "Unknown",
+        "period": 1.1821056659072453,
+        "snr": 4.721243216008056,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": false
+    },
+    {
+        "timestamp": "2026-06-09T05:43:09.154346Z",
+        "target_name": "Unknown",
+        "period": 1.9957042956309432,
+        "snr": 106.25642772166056,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:43:09.827159Z",
+        "target_name": "Unknown",
+        "period": 0.5696058327637274,
+        "snr": 6.146579452761697,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:44:45.177772Z",
+        "target_name": "Unknown",
+        "period": 3.7336617644755403,
+        "snr": 5.447932306313125,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:44:50.206302Z",
+        "target_name": "Unknown",
+        "period": 1.9957042956309432,
+        "snr": 106.46351330079666,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:44:50.466477Z",
+        "target_name": "Unknown",
+        "period": 0.5584096493187403,
+        "snr": 4.531931604632147,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": false
+    },
+    {
+        "timestamp": "2026-06-09T05:48:45.442261+00:00",
+        "target_name": "Unknown",
+        "period": 7.801386791016378,
+        "snr": 5.515532115415583,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:48:53.107455+00:00",
+        "target_name": "Unknown",
+        "period": 1.9956967514607977,
+        "snr": 89.92851224736208,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:48:53.603131+00:00",
+        "target_name": "Unknown",
+        "period": 2.790178571428573,
+        "snr": 4.8026988893741835,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": false
+    },
+    {
+        "timestamp": "2026-06-09T05:49:33.946491+00:00",
+        "target_name": "Unknown",
+        "period": 1.9877480351998678,
+        "snr": 6.220683532823648,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:49:39.863848+00:00",
+        "target_name": "Unknown",
+        "period": 1.9956967514607977,
+        "snr": 90.20102881083565,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:49:40.151698+00:00",
+        "target_name": "Unknown",
+        "period": 1.7433751743375179,
+        "snr": 4.077185502730529,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": false
+    },
+    {
+        "timestamp": "2026-06-09T05:55:29.767394+00:00",
+        "target_name": "Unknown",
+        "period": 1.0968287488584272,
+        "snr": 5.236728474970957,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:55:30.025371+00:00",
+        "target_name": "Unknown",
+        "period": 1.9961956575281798,
+        "snr": 90.2648631461136,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T05:55:30.069029+00:00",
+        "target_name": "Unknown",
+        "period": 1.7543859649122806,
+        "snr": 3.9515587061687776,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": false
+    },
+    {
+        "timestamp": "2026-06-09T05:56:43.049392Z",
+        "target_name": "wasp-12b",
+        "period": 0.6562666758517373,
+        "snr": 4.349506758302805,
+        "data_source": "TESS (via Lightkurve)",
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 15377.7921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 15377.7921,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": "1.091418901 d",
+                "pl_orbpererr1": "1.8e-08 d",
+                "st_rad": "1.69 solRad",
+                "st_raderr1": "0.019 solRad",
+                "st_lum": "0.59711",
+                "pl_trandep": "1.53777921 %",
+                "pl_ratror": "0.117"
+            }
+        },
+        "is_valid_candidate": false
     }
 ]
