@@ -12,6 +12,27 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     time = np.asarray(time)
     flux = np.asarray(flux)
     
+    # 1. COMPUTE LOMB-SCARGLE STELLAR ROTATION ESTIMATION
+    from astropy.timeseries import LombScargle
+    from scipy.ndimage import median_filter
+    
+    frequency, power = LombScargle(time, flux).autopower(minimum_frequency=0.1, maximum_frequency=10.0)
+    stellar_rotation_period_days = float(1.0 / frequency[np.argmax(power)])
+    
+    # 2. DYNAMICALLY SCALE THE DETRENDING WINDOW
+    window_length_days = min(0.5, stellar_rotation_period_days * 0.5)
+    dt = float(np.median(np.diff(time)))
+    
+    if dt > 0:
+        window_length_points = int(window_length_days / dt)
+        if window_length_points % 2 == 0:
+            window_length_points += 1
+        window_length_points = max(3, window_length_points)
+        
+        trend = median_filter(flux, size=window_length_points)
+        trend[trend == 0] = 1.0  # Avoid division by zero
+        flux = flux / trend
+
     # Sub-second Computational Efficiency: Multi-Phase Uniform Data Binning
     if len(time) > 1000:
         n_bins = 1000
@@ -83,6 +104,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         'period_days': float(best_period),
         'period': float(best_period),
         'orbital_period': float(best_period),
+        'stellar_rotation_period_days': stellar_rotation_period_days,
         'transit_depth': float(best_depth),
         'stellar_radius': 1.0,
         'vetting_status': 'candidate' if is_valid else 'rejected',
@@ -102,6 +124,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "target_name": target_name,
         "period": float(best_period),
+        "stellar_rotation_period_days": stellar_rotation_period_days,
         "snr": float(best_snr),
         "data_source": data_source,
         "metadata": metadata or {},
