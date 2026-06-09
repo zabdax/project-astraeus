@@ -60,7 +60,8 @@ def test_mathematical_aliasing_stress_test():
     mask = sec_in_transit & ~in_transit
     flux_arr[mask] -= sec_depth
 
-    result = detect_transit_candidate(time_arr, flux_arr)
+    results = detect_transit_candidate(time_arr, flux_arr)
+    result = results[0].get('candidate_1', {}) if results else {}
 
     # We expect the Harmonic Correction Logic to identify the 2.0 day period, 
     # overriding any potential sub-harmonic peak at 1.0 or 0.5 days.
@@ -79,9 +80,13 @@ def test_state_binding_safety_verification():
     time_arr = np.linspace(0, 5, n_points)
     flux_arr = np.random.normal(1.0, 0.001, n_points)
 
-    result = detect_transit_candidate(time_arr, flux_arr)
+    results = detect_transit_candidate(time_arr, flux_arr)
+    result = results[0].get('candidate_1', {}) if results else {}
 
-    required_keys = ['orbital_period', 'transit_depth', 'stellar_radius', 'vetting_status']
+    required_keys = [
+        'orbital_period', 'transit_depth', 'stellar_radius', 'vetting_status',
+        'planet_radius_earth', 'equilibrium_temp_k', 'jwst_tsm_score'
+    ]
     for key in required_keys:
         assert key in result, f"State Binding Failed: Missing structurally required key '{key}'"
         val = result[key]

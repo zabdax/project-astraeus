@@ -297,5 +297,105 @@
         "data_source": "Unknown",
         "metadata": {},
         "is_valid_candidate": false
+    },
+    {
+        "timestamp": "2026-06-09T06:55:36.245964+00:00",
+        "target_name": "Unknown",
+        "period": 0.5651090262454566,
+        "stellar_rotation_period_days": 0.1288659793814433,
+        "snr": 4.719822935291867,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": false
+    },
+    {
+        "timestamp": "2026-06-09T06:55:36.348736+00:00",
+        "target_name": "Unknown",
+        "period": 1.9961956575281798,
+        "stellar_rotation_period_days": 1.0,
+        "snr": 90.66734091585258,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T06:55:36.444917+00:00",
+        "target_name": "Unknown",
+        "period": 1.9982844377415312,
+        "stellar_rotation_period_days": 1.0,
+        "snr": 144.94719814795508,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T06:55:36.549677+00:00",
+        "target_name": "Unknown",
+        "period": 1.0204684037682525,
+        "stellar_rotation_period_days": 1.0,
+        "snr": 7.182799171689351,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T06:55:36.577577+00:00",
+        "target_name": "Unknown",
+        "period": 0.8620689655172413,
+        "stellar_rotation_period_days": 0.12987012987012986,
+        "snr": 3.834893654724037,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": false
+    },
+    {
+        "timestamp": "2026-06-09T06:57:44.722233+00:00",
+        "target_name": "Unknown",
+        "period": 1.3510789092702635,
+        "stellar_rotation_period_days": 0.2145922746781116,
+        "snr": 5.635546474018338,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T06:57:44.836688+00:00",
+        "target_name": "Unknown",
+        "period": 1.9961956575281798,
+        "stellar_rotation_period_days": 1.0,
+        "snr": 90.61559877014993,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T06:57:44.928419+00:00",
+        "target_name": "Unknown",
+        "period": 1.9982844377415312,
+        "stellar_rotation_period_days": 1.0,
+        "snr": 155.09645111558288,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T06:57:45.029152+00:00",
+        "target_name": "Unknown",
+        "period": 0.9939353120381654,
+        "stellar_rotation_period_days": 1.0,
+        "snr": 7.303548058466927,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T06:57:45.056100+00:00",
+        "target_name": "Unknown",
+        "period": 1.3157894736842106,
+        "stellar_rotation_period_days": 0.1858736059479554,
+        "snr": 4.097041680851972,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": false
     }
 ]

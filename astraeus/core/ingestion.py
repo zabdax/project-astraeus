@@ -106,6 +106,7 @@ class RemoteDiscoveryEngine:
         "pl_name, "
         "pl_orbper, pl_orbpererr1, "
         "st_rad, st_raderr1, st_lum, "
+        "st_teff, st_mass, sy_jmag, "
         "pl_trandep, pl_ratror"
     )
 
@@ -309,6 +310,9 @@ class RemoteDiscoveryEngine:
             "pl_trandep":     0.0,
             "stellar_radius": 1.0,
             "st_rad":         1.0,
+            "st_teff":        5778.0,
+            "st_mass":        1.0,
+            "sy_jmag":        10.0,
         }
 
         for key, default in _FLOAT_DEFAULTS.items():
@@ -420,6 +424,23 @@ class RemoteDiscoveryEngine:
                 if st_rad is not None:
                     st_rad = abs(st_rad)
 
+                # ── Stellar Effective Temperature ──────────────────────────
+                st_teff = RemoteDiscoveryEngine._resolve_float(
+                    row, "st_teff"
+                )
+
+                # ── Stellar Mass ───────────────────────────────────────────
+                st_mass = RemoteDiscoveryEngine._resolve_float(
+                    row, "st_mass"
+                )
+                if st_mass is not None:
+                    st_mass = abs(st_mass)
+
+                # ── J-Band Magnitude ───────────────────────────────────────
+                sy_jmag = RemoteDiscoveryEngine._resolve_float(
+                    row, "sy_jmag"
+                )
+
                 # ── Transit Depth ──────────────────────────────────────────
                 # Primary  : pl_trandep  (ppm, directly catalogued)
                 # Derived  : (pl_ratror)² × 1_000_000  when primary absent
@@ -473,6 +494,10 @@ class RemoteDiscoveryEngine:
                     "pl_orbper":      pl_orbper,
                     "st_rad":         st_rad,
                     "pl_trandep":     pl_trandep,
+                    # Stellar parameters for physical characterization:
+                    "st_teff":        st_teff,
+                    "st_mass":        st_mass,
+                    "sy_jmag":        sy_jmag,
                     "raw_row_dump":   raw_row_dump,
                 }
 

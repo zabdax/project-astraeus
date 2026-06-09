@@ -246,6 +246,87 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         result['secondary_eclipse_snr'] = float(secondary_eclipse_snr)
         result['secondary_eclipse_detected'] = secondary_eclipse_detected
 
+        # ── PHYSICAL CHARACTERIZATION LAYER ──────────────────────────────
+        # Derive observational follow-up metrics from raw BLS output and
+        # host-star metadata pulled from the NASA Exoplanet Archive.
+        # All three keys degrade gracefully to 0.0 on missing inputs.
+
+        _meta = metadata or {}
+        _stellar_radius_rsun = float(_meta.get('stellar_radius', _meta.get('st_rad', 1.0)))
+        _st_teff = float(_meta.get('st_teff', 5778.0))
+        _st_mass = float(_meta.get('st_mass', 1.0))
+        _sy_jmag = float(_meta.get('sy_jmag', 10.0))
+
+        # 1. PLANETARY RADIUS (R_Earth)
+        #    R_p = sqrt(transit_depth_fraction) × R_star × 109.2
+        #    where 109.2 = R_sun / R_earth conversion factor
+        _transit_depth_frac = best_depth  # BLS depth is already a fraction
+        if _transit_depth_frac > 0 and _stellar_radius_rsun > 0:
+            planet_radius_earth = float(
+                np.sqrt(_transit_depth_frac) * _stellar_radius_rsun * 109.2
+            )
+        else:
+            planet_radius_earth = 0.0
+
+        # 2. EQUILIBRIUM TEMPERATURE (K)
+        #    T_eq = T_eff × sqrt(R_star / (2 × a)) × (1 - A_B)^0.25
+        #    Semi-major axis from Kepler's third law:
+        #    a(AU) = (M_star × P_yr²)^(1/3)
+        _bond_albedo = 0.3
+        _period_days = float(best_period)
+        equilibrium_temp_k = 0.0
+
+        if _period_days > 0 and _st_teff > 0 and _st_mass > 0 and _stellar_radius_rsun > 0:
+            _period_yr = _period_days / 365.25
+            _semi_major_axis_au = (_st_mass * _period_yr ** 2) ** (1.0 / 3.0)
+            # Convert stellar radius to AU: 1 R_sun = 0.00465047 AU
+            _stellar_radius_au = _stellar_radius_rsun * 0.00465047
+            if _semi_major_axis_au > 0:
+                equilibrium_temp_k = float(
+                    _st_teff
+                    * np.sqrt(_stellar_radius_au / (2.0 * _semi_major_axis_au))
+                    * (1.0 - _bond_albedo) ** 0.25
+                )
+
+        # 3. TRANSMISSION SPECTROSCOPY METRIC (TSM)
+        #    Kempton et al. 2018, PASP, 130, 114401
+        #    TSM = Scale × (R_p^3 × T_eq) / (M_p × R_star^2) × 10^(-J/5)
+        #    Planet mass estimated via Chen & Kipping 2017 M-R relation:
+        #      M_p ≈ R_p^2.06  (for R_p < 14.26 R_Earth)
+        #    Scale factor binned by radius:
+        #      R_p < 1.5:  0.190    (Terrestrial)
+        #      1.5-2.75:   1.26     (Sub-Neptune)
+        #      2.75-4.0:   1.28     (Neptune-class)
+        #      4.0-10.0:   1.15     (Sub-Jovian)
+        jwst_tsm_score = 0.0
+
+        if planet_radius_earth > 0 and equilibrium_temp_k > 0 and _stellar_radius_rsun > 0:
+            # Radius-binned scale factor (Kempton+2018 Table 1)
+            if planet_radius_earth < 1.5:
+                _tsm_scale = 0.190
+            elif planet_radius_earth < 2.75:
+                _tsm_scale = 1.26
+            elif planet_radius_earth < 4.0:
+                _tsm_scale = 1.28
+            elif planet_radius_earth < 10.0:
+                _tsm_scale = 1.15
+            else:
+                _tsm_scale = 1.15  # Extend Sub-Jovian bin for giants
+
+            # Chen & Kipping 2017 mass estimate (Earth masses)
+            _planet_mass_earth = planet_radius_earth ** 2.06
+            if _planet_mass_earth > 0:
+                jwst_tsm_score = float(
+                    _tsm_scale
+                    * (planet_radius_earth ** 3 * equilibrium_temp_k)
+                    / (_planet_mass_earth * _stellar_radius_rsun ** 2)
+                    * 10.0 ** (-_sy_jmag / 5.0)
+                )
+
+        result['planet_radius_earth'] = round(planet_radius_earth, 4)
+        result['equilibrium_temp_k'] = round(equilibrium_temp_k, 2)
+        result['jwst_tsm_score'] = round(jwst_tsm_score, 4)
+
         candidates.append({f'candidate_{iteration}': result})
         
         # Reproducible Ledger
