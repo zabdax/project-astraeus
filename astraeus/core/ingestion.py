@@ -1,5 +1,7 @@
 import io
+import os
 import re
+import shutil
 import sys
 import numpy as np
 import pandas as pd
@@ -79,6 +81,12 @@ class DataAdapter:
         e = e[sort_idx]
         
         return {'time': t, 'flux': f, 'flux_err': e}
+
+
+# ---------------------------------------------------------------------------
+# Lightkurve local cache path (platform-agnostic)
+# ---------------------------------------------------------------------------
+_LIGHTKURVE_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".lightkurve", "cache")
 
 
 class RemoteDiscoveryEngine:
@@ -333,6 +341,48 @@ class RemoteDiscoveryEngine:
         return meta
 
     # ------------------------------------------------------------------
+    # FITS corruption cache wiper
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _wipe_lightkurve_cache() -> None:
+        """Remove the entire Lightkurve download cache from disk.
+
+        This is invoked automatically when a FITS truncation or corruption
+        error is detected during ``download_all()`` or ``stitch()``, allowing
+        the pipeline to retry from a clean slate against the live MAST servers.
+        """
+        cache_dir = _LIGHTKURVE_CACHE_DIR
+        if os.path.exists(cache_dir):
+            try:
+                shutil.rmtree(cache_dir)
+                print(
+                    f"[RemoteDiscoveryEngine] CACHE WIPER: Removed corrupted "
+                    f"cache directory '{cache_dir}'.",
+                    file=sys.stderr,
+                )
+            except Exception as rm_err:
+                print(
+                    f"[RemoteDiscoveryEngine] CACHE WIPER: Failed to remove "
+                    f"'{cache_dir}': {rm_err}",
+                    file=sys.stderr,
+                )
+        else:
+            print(
+                f"[RemoteDiscoveryEngine] CACHE WIPER: Cache directory "
+                f"'{cache_dir}' does not exist; nothing to remove.",
+                file=sys.stderr,
+            )
+
+    @staticmethod
+    def _is_fits_corruption(exc: Exception) -> bool:
+        """Return True if *exc* looks like a FITS file truncation or
+        corruption failure that can be healed by clearing the local cache."""
+        msg = str(exc).lower()
+        return any(kw in msg for kw in ("truncated", "corrupt", "not a fits",
+                                         "end-of-file", "header missing",
+                                         "block does not begin"))
+
+    # ------------------------------------------------------------------
     # Public entry point (implementation — called by the cached wrapper below)
     # ------------------------------------------------------------------
     @staticmethod
@@ -581,126 +631,155 @@ class RemoteDiscoveryEngine:
                 _TESS_BTJD_OFFSET   = 2457000.0
                 _UNIFIED_EPOCH      = _KEPLER_BKJD_OFFSET  # anchor to Kepler epoch
 
-                lc_collection = search_result[:4].download_all()
-                if not lc_collection:
+                # ── Inner helper: download + unify (callable for retry) ──
+                def _combined_download_and_unify():
+                    lc_collection = search_result[:4].download_all()
+                    if not lc_collection:
+                        return None
+
+                    # ── Phase 1: Classify, normalise, flatten per-fragment
+                    kepler_fragments = []
+                    tess_fragments   = []
+
+                    for lc in lc_collection:
+                        time_fmt = getattr(lc.time, 'format', '').lower()
+                        lc_norm = lc.normalize()
+                        try:
+                            lc_flat = lc_norm.flatten()
+                        except Exception:
+                            lc_flat = lc_norm
+
+                        if time_fmt == 'btjd':
+                            tess_fragments.append(lc_flat)
+                        else:
+                            kepler_fragments.append(lc_flat)
+
+                    print(
+                        f"[RemoteDiscoveryEngine] Combined baseline: "
+                        f"{len(kepler_fragments)} Kepler/K2 + "
+                        f"{len(tess_fragments)} TESS fragments",
+                        file=sys.stderr,
+                    )
+
+                    # ── Phase 2: Explicit unified time-frame conversion ───
+                    unified_t = []
+                    unified_f = []
+                    unified_e = []
+
+                    for lc in kepler_fragments:
+                        offset = _KEPLER_BKJD_OFFSET - _UNIFIED_EPOCH
+                        unified_t.append(
+                            np.asarray(lc.time.value, dtype=np.float64) + offset
+                        )
+                        unified_f.append(
+                            np.asarray(lc.flux.value, dtype=np.float64)
+                        )
+                        unified_e.append(
+                            np.asarray(lc.flux_err.value, dtype=np.float64)
+                        )
+
+                    for lc in tess_fragments:
+                        offset = _TESS_BTJD_OFFSET - _UNIFIED_EPOCH
+                        unified_t.append(
+                            np.asarray(lc.time.value, dtype=np.float64) + offset
+                        )
+                        unified_f.append(
+                            np.asarray(lc.flux.value, dtype=np.float64)
+                        )
+                        unified_e.append(
+                            np.asarray(lc.flux_err.value, dtype=np.float64)
+                        )
+
+                    # ── Phase 3: Cross-mission variance floor matching ────
+                    n_kep = len(kepler_fragments)
+                    if kepler_fragments and tess_fragments:
+                        kep_scatter = np.nanmedian(
+                            [np.nanstd(arr) for arr in unified_f[:n_kep]]
+                        )
+                        tess_scatter = np.nanmedian(
+                            [np.nanstd(arr) for arr in unified_f[n_kep:]]
+                        )
+                        if kep_scatter > 0 and tess_scatter > 0:
+                            ratio = kep_scatter / tess_scatter
+                            if ratio > 2.0:
+                                scale = tess_scatter / kep_scatter
+                                for i in range(n_kep):
+                                    med = np.nanmedian(unified_f[i])
+                                    unified_f[i] = med + (unified_f[i] - med) * scale
+                                    unified_e[i] = unified_e[i] * scale
+                                print(
+                                    f"[RemoteDiscoveryEngine] Variance floor: "
+                                    f"Kepler scaled ×{scale:.4f}",
+                                    file=sys.stderr,
+                                )
+                            elif ratio < 0.5:
+                                scale = kep_scatter / tess_scatter
+                                for i in range(n_kep, len(unified_f)):
+                                    med = np.nanmedian(unified_f[i])
+                                    unified_f[i] = med + (unified_f[i] - med) * scale
+                                    unified_e[i] = unified_e[i] * scale
+                                print(
+                                    f"[RemoteDiscoveryEngine] Variance floor: "
+                                    f"TESS scaled ×{scale:.4f}",
+                                    file=sys.stderr,
+                                )
+
+                    # ── Phase 4: Concatenate & chronological sort ─────────
+                    t_out = np.concatenate(unified_t)
+                    f_out = np.concatenate(unified_f)
+                    e_out = np.concatenate(unified_e)
+
+                    valid = np.isfinite(t_out) & np.isfinite(f_out) & np.isfinite(e_out)
+                    t_out, f_out, e_out = t_out[valid], f_out[valid], e_out[valid]
+
+                    idx = np.argsort(t_out)
+                    t_out, f_out, e_out = t_out[idx], f_out[idx], e_out[idx]
+
+                    return {
+                        "kepler_segments": len(kepler_fragments),
+                        "tess_segments":   len(tess_fragments),
+                        "time": t_out,
+                        "flux": f_out,
+                        "flux_err": e_out,
+                    }
+
+                # ── Attempt download with FITS corruption auto-recovery ──
+                combined_result = None
+                try:
+                    combined_result = _combined_download_and_unify()
+                except (OSError, ValueError, Exception) as fits_err:
+                    if RemoteDiscoveryEngine._is_fits_corruption(fits_err):
+                        print(
+                            f"[RemoteDiscoveryEngine] FITS CORRUPTION DETECTED "
+                            f"in combined download: {fits_err}",
+                            file=sys.stderr,
+                        )
+                        RemoteDiscoveryEngine._wipe_lightkurve_cache()
+                        print(
+                            "[RemoteDiscoveryEngine] Retrying combined download "
+                            "from live MAST servers...",
+                            file=sys.stderr,
+                        )
+                        combined_result = _combined_download_and_unify()
+                    else:
+                        raise  # Non-corruption error — propagate normally
+
+                if combined_result is None:
                     return {
                         "status": "no_time_series",
                         "metadata": meta,
                         "archive_error": archive_error,
                     }
 
-                # ── Phase 1: Classify, normalise, flatten per-fragment ────
-                kepler_fragments = []
-                tess_fragments   = []
-
-                for lc in lc_collection:
-                    # Detect mission from Lightkurve time-format tag
-                    # ('bkjd' = Kepler/K2, 'btjd' = TESS)
-                    time_fmt = getattr(lc.time, 'format', '').lower()
-                    lc_norm = lc.normalize()
-                    try:
-                        lc_flat = lc_norm.flatten()
-                    except Exception:
-                        lc_flat = lc_norm
-
-                    if time_fmt == 'btjd':
-                        tess_fragments.append(lc_flat)
-                    else:
-                        kepler_fragments.append(lc_flat)
-
-                print(
-                    f"[RemoteDiscoveryEngine] Combined baseline: "
-                    f"{len(kepler_fragments)} Kepler/K2 + "
-                    f"{len(tess_fragments)} TESS fragments",
-                    file=sys.stderr,
-                )
-
-                # ── Phase 2: Explicit unified time-frame conversion ───────
-                # t_unified = t_raw + (mission_offset − unified_epoch)
-                unified_t = []
-                unified_f = []
-                unified_e = []
-
-                for lc in kepler_fragments:
-                    offset = _KEPLER_BKJD_OFFSET - _UNIFIED_EPOCH  # 0.0
-                    unified_t.append(
-                        np.asarray(lc.time.value, dtype=np.float64) + offset
-                    )
-                    unified_f.append(
-                        np.asarray(lc.flux.value, dtype=np.float64)
-                    )
-                    unified_e.append(
-                        np.asarray(lc.flux_err.value, dtype=np.float64)
-                    )
-
-                for lc in tess_fragments:
-                    offset = _TESS_BTJD_OFFSET - _UNIFIED_EPOCH  # +2167.0
-                    unified_t.append(
-                        np.asarray(lc.time.value, dtype=np.float64) + offset
-                    )
-                    unified_f.append(
-                        np.asarray(lc.flux.value, dtype=np.float64)
-                    )
-                    unified_e.append(
-                        np.asarray(lc.flux_err.value, dtype=np.float64)
-                    )
-
-                # ── Phase 3: Cross-mission variance floor matching ────────
-                # Different spacecraft mirrors capture varying flux levels.
-                # If one mission has >2× the high-frequency scatter of the
-                # other, compress its residuals so shallow transit signals
-                # from the quieter instrument are not overwhelmed.
-                n_kep = len(kepler_fragments)
-                if kepler_fragments and tess_fragments:
-                    kep_scatter = np.nanmedian(
-                        [np.nanstd(arr) for arr in unified_f[:n_kep]]
-                    )
-                    tess_scatter = np.nanmedian(
-                        [np.nanstd(arr) for arr in unified_f[n_kep:]]
-                    )
-                    if kep_scatter > 0 and tess_scatter > 0:
-                        ratio = kep_scatter / tess_scatter
-                        if ratio > 2.0:
-                            # Kepler noisier → compress toward TESS floor
-                            scale = tess_scatter / kep_scatter
-                            for i in range(n_kep):
-                                med = np.nanmedian(unified_f[i])
-                                unified_f[i] = med + (unified_f[i] - med) * scale
-                                unified_e[i] = unified_e[i] * scale
-                            print(
-                                f"[RemoteDiscoveryEngine] Variance floor: "
-                                f"Kepler scaled ×{scale:.4f}",
-                                file=sys.stderr,
-                            )
-                        elif ratio < 0.5:
-                            # TESS noisier → compress toward Kepler floor
-                            scale = kep_scatter / tess_scatter
-                            for i in range(n_kep, len(unified_f)):
-                                med = np.nanmedian(unified_f[i])
-                                unified_f[i] = med + (unified_f[i] - med) * scale
-                                unified_e[i] = unified_e[i] * scale
-                            print(
-                                f"[RemoteDiscoveryEngine] Variance floor: "
-                                f"TESS scaled ×{scale:.4f}",
-                                file=sys.stderr,
-                            )
-
-                # ── Phase 4: Concatenate & enforce chronological order ────
-                t = np.concatenate(unified_t)
-                f = np.concatenate(unified_f)
-                e = np.concatenate(unified_e)
-
-                valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
-                t, f, e = t[valid], f[valid], e[valid]
-
-                idx = np.argsort(t)
-                t, f, e = t[idx], f[idx], e[idx]
+                t = combined_result["time"]
+                f = combined_result["flux"]
+                e = combined_result["flux_err"]
 
                 # ── Embed provenance telemetry in metadata ────────────────
                 meta["time_baseline"]   = "unified_bkjd"
                 meta["unified_epoch"]   = _UNIFIED_EPOCH
-                meta["kepler_segments"] = len(kepler_fragments)
-                meta["tess_segments"]   = len(tess_fragments)
+                meta["kepler_segments"] = combined_result["kepler_segments"]
+                meta["tess_segments"]   = combined_result["tess_segments"]
 
                 return {
                     "status":        "success",
@@ -711,40 +790,66 @@ class RemoteDiscoveryEngine:
                     "archive_error": archive_error,
                 }
             else:
-                # Capped at first 2 sectors/quarters for download speed and to
-                # prevent application timeout disconnects.
-                lc_collection = search_result[:2].download_all()
-                if not lc_collection:
+                # ── Inner helper: download + stitch (callable for retry) ──
+                def _single_download_and_stitch():
+                    # Capped at first 2 sectors/quarters for download speed
+                    # and to prevent application timeout disconnects.
+                    _lc_col = search_result[:2].download_all()
+                    if not _lc_col:
+                        return None
+
+                    _stitched = _lc_col.stitch()
+                    try:
+                        _flat = _stitched.flatten()
+                    except Exception:
+                        _flat = _stitched.normalize()
+
+                    _flat = _flat.remove_nans()
+
+                    _t = np.asarray(_flat.time.value, dtype=np.float64)
+                    _f = np.asarray(_flat.flux.value, dtype=np.float64)
+                    _e = np.asarray(_flat.flux_err.value, dtype=np.float64)
+
+                    _valid = np.isfinite(_t) & np.isfinite(_f) & np.isfinite(_e)
+                    _t, _f, _e = _t[_valid], _f[_valid], _e[_valid]
+
+                    _sort = np.argsort(_t)
+                    return {"time": _t[_sort], "flux": _f[_sort], "flux_err": _e[_sort]}
+
+                # ── Attempt download with FITS corruption auto-recovery ──
+                single_result = None
+                try:
+                    single_result = _single_download_and_stitch()
+                except (OSError, ValueError, Exception) as fits_err:
+                    if RemoteDiscoveryEngine._is_fits_corruption(fits_err):
+                        print(
+                            f"[RemoteDiscoveryEngine] FITS CORRUPTION DETECTED "
+                            f"in single-mission download: {fits_err}",
+                            file=sys.stderr,
+                        )
+                        RemoteDiscoveryEngine._wipe_lightkurve_cache()
+                        print(
+                            "[RemoteDiscoveryEngine] Retrying single-mission "
+                            "download from live MAST servers...",
+                            file=sys.stderr,
+                        )
+                        single_result = _single_download_and_stitch()
+                    else:
+                        raise  # Non-corruption error — propagate normally
+
+                if single_result is None:
                     return {
                         "status": "no_time_series",
                         "metadata": meta,
                         "archive_error": archive_error,
                     }
 
-            stitched = lc_collection.stitch()
-            try:
-                flattened = stitched.flatten()
-            except Exception:
-                flattened = stitched.normalize()
-
-            flattened = flattened.remove_nans()
-
-            t = np.asarray(flattened.time.value, dtype=np.float64)
-            f = np.asarray(flattened.flux.value, dtype=np.float64)
-            e = np.asarray(flattened.flux_err.value, dtype=np.float64)
-
-            valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
-            t, f, e = t[valid], f[valid], e[valid]
-
-            sort_idx = np.argsort(t)
-            t, f, e = t[sort_idx], f[sort_idx], e[sort_idx]
-
             return {
                 "status":        "success",
                 "metadata":      meta,
-                "time":          t,
-                "flux":          f,
-                "flux_err":      e,
+                "time":          single_result["time"],
+                "flux":          single_result["flux"],
+                "flux_err":      single_result["flux_err"],
                 "archive_error": archive_error,
             }
 
