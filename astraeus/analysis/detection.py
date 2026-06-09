@@ -160,7 +160,92 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
                 'powers': res.power.tolist()
             }
         }
-        
+
+        # ── GEOMETRIC VALIDATION FILTER 1: V-SHAPE METRIC ────────────────
+        # Phase-fold the light curve at the best-fit period and isolate the
+        # core transit window.  Fit a high-order polynomial to quantify the
+        # curvature: a truly box-shaped transit (planet) will have a flat
+        # bottom, while a V-shaped profile (grazing binary) will not.
+        phase_full = (current_time - transit_time + 0.5 * best_period) % best_period - 0.5 * best_period
+        in_transit_mask = np.abs(phase_full) < 0.5 * duration
+        in_transit_phase = phase_full[in_transit_mask]
+        in_transit_flux_vals = current_flux[in_transit_mask]
+
+        v_shape_metric = 0.0
+        flat_bottom_fraction = 0.0
+
+        if len(in_transit_phase) >= 8:
+            # Sort by phase for a clean polynomial fit
+            sort_idx = np.argsort(in_transit_phase)
+            ph_sorted = in_transit_phase[sort_idx]
+            fl_sorted = in_transit_flux_vals[sort_idx]
+
+            # 6th-order polynomial captures ingress/egress curvature
+            poly_coeffs = np.polyfit(ph_sorted, fl_sorted, min(6, len(ph_sorted) - 1))
+            poly_fn = np.poly1d(poly_coeffs)
+            fitted = poly_fn(ph_sorted)
+
+            # Second derivative measures concavity across the transit floor
+            second_deriv = np.gradient(np.gradient(fitted, ph_sorted), ph_sorted)
+            max_abs_curv = float(np.max(np.abs(second_deriv))) if len(second_deriv) > 0 else 0.0
+
+            # Flat-bottom fraction: ratio of points within 10% of minimum
+            # depth vs. total in-transit points (T23/T14 proxy)
+            depth_threshold = np.min(fl_sorted) + 0.10 * np.abs(best_depth)
+            n_flat = int(np.sum(fl_sorted <= depth_threshold))
+            flat_bottom_fraction = float(n_flat / len(fl_sorted))
+
+            # Normalize curvature against transit depth to get a 0-1 metric
+            if best_depth > 0:
+                v_shape_metric = float(np.clip(
+                    max_abs_curv * (duration ** 2) / best_depth, 0.0, 1.0
+                ))
+            else:
+                v_shape_metric = 0.0
+
+            # Flag: steep V-shape (high curvature AND negligible flat bottom)
+            if v_shape_metric > 0.8 or flat_bottom_fraction < 0.05:
+                result['vetting_status'] = "V-Shaped False Positive Risk (Potential Grazing Binary)"
+
+        result['v_shape_metric'] = float(v_shape_metric)
+        result['flat_bottom_fraction'] = float(flat_bottom_fraction)
+
+        # ── GEOMETRIC VALIDATION FILTER 2: SECONDARY ECLIPSE SEARCH ──────
+        # Scan the phase-folded curve around phase 0.5 (anti-transit) for a
+        # shallow secondary dip.  A detectable eclipse at this phase is the
+        # hallmark of a self-luminous eclipsing binary system.
+        phase_secondary = (current_time - transit_time) / best_period
+        phase_secondary = phase_secondary - np.floor(phase_secondary)  # 0..1
+
+        sec_window_mask = np.abs(phase_secondary - 0.5) < 0.05
+        sec_baseline_mask = (np.abs(phase_secondary - 0.5) >= 0.05) & (np.abs(phase_secondary - 0.5) < 0.15)
+
+        secondary_eclipse_depth = 0.0
+        secondary_eclipse_snr = 0.0
+        secondary_eclipse_detected = False
+
+        sec_flux = current_flux[sec_window_mask]
+        sec_baseline_flux = current_flux[sec_baseline_mask]
+
+        if len(sec_flux) >= 3 and len(sec_baseline_flux) >= 3:
+            sec_median = float(np.median(sec_flux))
+            baseline_median = float(np.median(sec_baseline_flux))
+            secondary_eclipse_depth = float(baseline_median - sec_median)
+            baseline_std = float(np.std(sec_baseline_flux))
+
+            if baseline_std > 0 and secondary_eclipse_depth > 0:
+                secondary_eclipse_snr = float(
+                    (secondary_eclipse_depth / baseline_std) * np.sqrt(len(sec_flux))
+                )
+
+            if secondary_eclipse_snr > 3.0:
+                secondary_eclipse_detected = True
+                result['vetting_status'] = "Eclipsing Binary Detected (Secondary Eclipse at Phase 0.5)"
+
+        result['secondary_eclipse_depth'] = float(secondary_eclipse_depth)
+        result['secondary_eclipse_snr'] = float(secondary_eclipse_snr)
+        result['secondary_eclipse_detected'] = secondary_eclipse_detected
+
         candidates.append({f'candidate_{iteration}': result})
         
         # Reproducible Ledger

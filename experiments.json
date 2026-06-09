@@ -277,5 +277,25 @@
             }
         },
         "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T06:50:37.153983+00:00",
+        "target_name": "TestTarget",
+        "period": 3.4957284139869693,
+        "stellar_rotation_period_days": 3.409090909090909,
+        "snr": 28.1860763352594,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T06:50:37.354310+00:00",
+        "target_name": "TestTarget",
+        "period": 0.8984894313486966,
+        "stellar_rotation_period_days": 3.409090909090909,
+        "snr": 4.271817486787646,
+        "data_source": "Unknown",
+        "metadata": {},
+        "is_valid_candidate": false
     }
 ]
