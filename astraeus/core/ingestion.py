@@ -416,13 +416,42 @@ class RemoteDiscoveryEngine:
                         pl_orbper = 0.0
 
                 # ── Stellar Radius ─────────────────────────────────────────
-                # Primary   : st_rad   (solar radii, directly measured)
-                # We do NOT use st_raderr1 or st_raderr2 as substitutes.
+                # Resolution chain (primary → luminosity-derived fallback):
+                #   1. st_rad   — direct measurement (solar radii)
+                #   2. Derived  — sqrt(10^st_lum) × (5778/T_eff)² when
+                #                 both st_lum and st_teff are available
+                # This prevents the downstream 1.0 R☉ default from
+                # corrupting planetary radius calculations for targets
+                # with known stellar parameters (e.g. 1.69 R☉).
                 st_rad = RemoteDiscoveryEngine._resolve_float(
                     row, "st_rad"
                 )
                 if st_rad is not None:
                     st_rad = abs(st_rad)
+                else:
+                    # ── Tertiary derivation from luminosity + Teff ─────
+                    _st_lum_log = RemoteDiscoveryEngine._resolve_float(row, "st_lum")
+                    _st_teff_fb = RemoteDiscoveryEngine._resolve_float(row, "st_teff")
+                    if (_st_lum_log is not None
+                            and _st_teff_fb is not None
+                            and _st_teff_fb > 0):
+                        _L_solar = 10.0 ** _st_lum_log
+                        st_rad = abs(
+                            np.sqrt(_L_solar) * (5778.0 / _st_teff_fb) ** 2
+                        )
+                        print(
+                            f"[RemoteDiscoveryEngine] st_rad derived from "
+                            f"st_lum={_st_lum_log:.4f}, "
+                            f"st_teff={_st_teff_fb:.0f} → {st_rad:.4f} R☉",
+                            file=sys.stderr,
+                        )
+                print(
+                    f"[RemoteDiscoveryEngine] STELLAR RADIUS RESOLUTION: "
+                    f"st_rad="
+                    f"{'ARCHIVE ' + f'{st_rad:.4f}' if st_rad is not None else 'UNRESOLVED → default 1.0'}"
+                    f" R☉ for '{safe_canonical}'",
+                    file=sys.stderr,
+                )
 
                 # ── Stellar Effective Temperature ──────────────────────────
                 st_teff = RemoteDiscoveryEngine._resolve_float(
@@ -536,18 +565,151 @@ class RemoteDiscoveryEngine:
                 }
 
             if mission == "Combined Baseline (Kepler + TESS)":
-                # Cap to 2 sectors to avoid hanging, still yielding >10,000 observations
-                lc_collection = search_result[:2].download_all()
+                # ══════════════════════════════════════════════════════════
+                # MULTI-MISSION TIME-COORDINATE UNIFICATION ENGINE
+                # ══════════════════════════════════════════════════════════
+                # Kepler timestamps are BKJD (BJD − 2454833.0); TESS
+                # timestamps are BTJD (BJD − 2457000.0).  Naïvely stitching
+                # these baselines creates a phantom ~2167-day gap that
+                # induces harmonic period doubling and severe transit-depth
+                # degradation in downstream BLS periodograms.
+                #
+                # Solution: convert every fragment to a unified BJD-relative
+                # coordinate frame, match variance floors, then concatenate.
+                # ──────────────────────────────────────────────────────────
+                _KEPLER_BKJD_OFFSET = 2454833.0
+                _TESS_BTJD_OFFSET   = 2457000.0
+                _UNIFIED_EPOCH      = _KEPLER_BKJD_OFFSET  # anchor to Kepler epoch
+
+                lc_collection = search_result[:4].download_all()
                 if not lc_collection:
                     return {
                         "status": "no_time_series",
                         "metadata": meta,
                         "archive_error": archive_error,
                     }
-                normalized_lcs = []
+
+                # ── Phase 1: Classify, normalise, flatten per-fragment ────
+                kepler_fragments = []
+                tess_fragments   = []
+
                 for lc in lc_collection:
-                    normalized_lcs.append(lc.normalize())
-                lc_collection = lk.LightCurveCollection(normalized_lcs)
+                    # Detect mission from Lightkurve time-format tag
+                    # ('bkjd' = Kepler/K2, 'btjd' = TESS)
+                    time_fmt = getattr(lc.time, 'format', '').lower()
+                    lc_norm = lc.normalize()
+                    try:
+                        lc_flat = lc_norm.flatten()
+                    except Exception:
+                        lc_flat = lc_norm
+
+                    if time_fmt == 'btjd':
+                        tess_fragments.append(lc_flat)
+                    else:
+                        kepler_fragments.append(lc_flat)
+
+                print(
+                    f"[RemoteDiscoveryEngine] Combined baseline: "
+                    f"{len(kepler_fragments)} Kepler/K2 + "
+                    f"{len(tess_fragments)} TESS fragments",
+                    file=sys.stderr,
+                )
+
+                # ── Phase 2: Explicit unified time-frame conversion ───────
+                # t_unified = t_raw + (mission_offset − unified_epoch)
+                unified_t = []
+                unified_f = []
+                unified_e = []
+
+                for lc in kepler_fragments:
+                    offset = _KEPLER_BKJD_OFFSET - _UNIFIED_EPOCH  # 0.0
+                    unified_t.append(
+                        np.asarray(lc.time.value, dtype=np.float64) + offset
+                    )
+                    unified_f.append(
+                        np.asarray(lc.flux.value, dtype=np.float64)
+                    )
+                    unified_e.append(
+                        np.asarray(lc.flux_err.value, dtype=np.float64)
+                    )
+
+                for lc in tess_fragments:
+                    offset = _TESS_BTJD_OFFSET - _UNIFIED_EPOCH  # +2167.0
+                    unified_t.append(
+                        np.asarray(lc.time.value, dtype=np.float64) + offset
+                    )
+                    unified_f.append(
+                        np.asarray(lc.flux.value, dtype=np.float64)
+                    )
+                    unified_e.append(
+                        np.asarray(lc.flux_err.value, dtype=np.float64)
+                    )
+
+                # ── Phase 3: Cross-mission variance floor matching ────────
+                # Different spacecraft mirrors capture varying flux levels.
+                # If one mission has >2× the high-frequency scatter of the
+                # other, compress its residuals so shallow transit signals
+                # from the quieter instrument are not overwhelmed.
+                n_kep = len(kepler_fragments)
+                if kepler_fragments and tess_fragments:
+                    kep_scatter = np.nanmedian(
+                        [np.nanstd(arr) for arr in unified_f[:n_kep]]
+                    )
+                    tess_scatter = np.nanmedian(
+                        [np.nanstd(arr) for arr in unified_f[n_kep:]]
+                    )
+                    if kep_scatter > 0 and tess_scatter > 0:
+                        ratio = kep_scatter / tess_scatter
+                        if ratio > 2.0:
+                            # Kepler noisier → compress toward TESS floor
+                            scale = tess_scatter / kep_scatter
+                            for i in range(n_kep):
+                                med = np.nanmedian(unified_f[i])
+                                unified_f[i] = med + (unified_f[i] - med) * scale
+                                unified_e[i] = unified_e[i] * scale
+                            print(
+                                f"[RemoteDiscoveryEngine] Variance floor: "
+                                f"Kepler scaled ×{scale:.4f}",
+                                file=sys.stderr,
+                            )
+                        elif ratio < 0.5:
+                            # TESS noisier → compress toward Kepler floor
+                            scale = kep_scatter / tess_scatter
+                            for i in range(n_kep, len(unified_f)):
+                                med = np.nanmedian(unified_f[i])
+                                unified_f[i] = med + (unified_f[i] - med) * scale
+                                unified_e[i] = unified_e[i] * scale
+                            print(
+                                f"[RemoteDiscoveryEngine] Variance floor: "
+                                f"TESS scaled ×{scale:.4f}",
+                                file=sys.stderr,
+                            )
+
+                # ── Phase 4: Concatenate & enforce chronological order ────
+                t = np.concatenate(unified_t)
+                f = np.concatenate(unified_f)
+                e = np.concatenate(unified_e)
+
+                valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
+                t, f, e = t[valid], f[valid], e[valid]
+
+                idx = np.argsort(t)
+                t, f, e = t[idx], f[idx], e[idx]
+
+                # ── Embed provenance telemetry in metadata ────────────────
+                meta["time_baseline"]   = "unified_bkjd"
+                meta["unified_epoch"]   = _UNIFIED_EPOCH
+                meta["kepler_segments"] = len(kepler_fragments)
+                meta["tess_segments"]   = len(tess_fragments)
+
+                return {
+                    "status":        "success",
+                    "metadata":      meta,
+                    "time":          t,
+                    "flux":          f,
+                    "flux_err":      e,
+                    "archive_error": archive_error,
+                }
             else:
                 # Capped at first 2 sectors/quarters for download speed and to
                 # prevent application timeout disconnects.
