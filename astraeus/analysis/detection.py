@@ -327,6 +327,56 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         result['equilibrium_temp_k'] = round(equilibrium_temp_k, 2)
         result['jwst_tsm_score'] = round(jwst_tsm_score, 4)
 
+        # ── TRANSIT TIMING VARIATION (TTV) O-C RESIDUAL ENGINE ───────────
+        ttv_data = []
+        try:
+            if best_period > 0 and duration > 0:
+                t_arr = active_time
+                f_arr = active_flux
+                
+                # Align T0 to the first transit in the dataset
+                T0 = transit_time - np.floor((transit_time - np.min(t_arr)) / best_period) * best_period
+                max_epoch = int(np.ceil((np.max(t_arr) - T0) / best_period))
+                
+                for epoch in range(0, max_epoch + 1):
+                    try:
+                        t_calc = T0 + (epoch * best_period)
+                        
+                        # Slice the dataset timeline for this transit window
+                        window_mask = (t_arr >= t_calc - 0.5 * duration) & (t_arr <= t_calc + 0.5 * duration)
+                        t_window = t_arr[window_mask]
+                        f_window = f_arr[window_mask]
+                        
+                        if len(t_window) == 0:
+                            continue  # Data gap, gracefully skip
+                            
+                        # Find the local center-of-mass centroid over the lowest 10% of dip points
+                        n_lowest = max(1, int(0.10 * len(t_window)))
+                        lowest_idx = np.argsort(f_window)[:n_lowest]
+                        
+                        t_lowest = t_window[lowest_idx]
+                        f_lowest = f_window[lowest_idx]
+                        
+                        depths = np.max(f_window) - f_lowest
+                        if np.sum(depths) > 0:
+                            t_obs = float(np.average(t_lowest, weights=depths))
+                        else:
+                            t_obs = float(np.mean(t_lowest))
+                            
+                        # Calculate temporal drift deviation in minutes
+                        ttv_residual_min = (t_obs - t_calc) * 1440.0
+                        
+                        ttv_data.append({
+                            'epoch': epoch,
+                            'ttv_residual_min': float(ttv_residual_min)
+                        })
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+            
+        result['ttv_data'] = ttv_data
+
         candidates.append({f'candidate_{iteration}': result})
         
         # Reproducible Ledger
