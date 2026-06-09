@@ -8,60 +8,79 @@ from datetime import datetime
 def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=5.0):
     """
     Detects a transit candidate in a light curve using the Box Least Squares (BLS) method.
-
-    Parameters:
-    - time (array-like): Time array (e.g., in days).
-    - flux (array-like): Flux array (normalized).
-    - target_name (str): Target designation.
-    - data_source (str): Data source used.
-    - metadata (dict): Metadata traits.
-    - snr_threshold (float): Minimum SNR score to be considered a valid candidate.
-
-    Returns:
-    - dict: A dictionary containing the candidate metrics and a confidence_score.
     """
     time = np.asarray(time)
     flux = np.asarray(flux)
     
-    if len(time) > 5000:
-        factor = len(time) // 5000 + 1
-        time = time[::factor]
-        flux = flux[::factor]
+    # Sub-second Computational Efficiency: Multi-Phase Uniform Data Binning
+    if len(time) > 3000:
+        bins = np.linspace(time.min(), time.max(), 1001)
+        bin_indices = np.digitize(time, bins)
+        time_binned, flux_binned = [], []
+        for i in range(1, 1001):
+            mask = bin_indices == i
+            if np.any(mask):
+                time_binned.append(np.median(time[mask]))
+                flux_binned.append(np.median(flux[mask]))
+        time = np.array(time_binned)
+        flux = np.array(flux_binned)
 
     model = BoxLeastSquares(time, flux)
-    res = model.autopower(np.linspace(0.01, 0.2, 10), frequency_factor=5.0)
+    
+    # Restrict Sweep Windows
+    durations = np.array([0.01, 0.03, 0.05, 0.07, 0.1])
+    
+    # Vectorized Frequency Gridding
+    periods = model.autoperiod(durations, minimum_period=0.5, maximum_period=20.0, frequency_factor=3.0)
+    res = model.power(periods, durations)
+    
     best_idx = np.argmax(res.power)
     best_period = res.period[best_idx]
     best_power = res.power[best_idx]
     best_depth = float(res.depth[best_idx])
-    
-    # Check for P/2 harmonic (anti-aliasing)
-    idx_half = np.argmin(np.abs(res.period - (best_period / 2.0)))
-    if res.power[idx_half] > (0.9 * best_power):
-        best_period /= 2.0
-        
-    confidence_score = float(best_power / np.median(res.power))
-    
-    # Secondary mathematical validation pass: Calculate SNR
-    # Find points in transit
     transit_time = res.transit_time[best_idx]
     duration = res.duration[best_idx]
     
-    # Phase fold
-    phase = (time - transit_time + 0.5 * best_period) % best_period - 0.5 * best_period
-    in_transit = np.abs(phase) < 0.5 * duration
-    out_of_transit = ~in_transit
-    
-    out_of_transit_flux = flux[out_of_transit]
-    in_transit_count = np.sum(in_transit)
-    
-    calculated_snr = 0.0
-    if len(out_of_transit_flux) > 0 and in_transit_count > 0:
-        local_noise_std = np.std(out_of_transit_flux)
-        if local_noise_std > 0:
-            calculated_snr = (best_depth / local_noise_std) * np.sqrt(in_transit_count)
+    def compute_snr_depth(p, t0, dur):
+        phase = (time - t0 + 0.5 * p) % p - 0.5 * p
+        in_transit = np.abs(phase) < 0.5 * dur
+        out_of_transit = ~in_transit
+        out_flux = flux[out_of_transit]
+        in_flux = flux[in_transit]
+        in_count = len(in_flux)
+        
+        depth = 0.0
+        if in_count > 0 and len(out_flux) > 0:
+            depth = np.median(out_flux) - np.median(in_flux)
             
-    is_valid = calculated_snr > snr_threshold
+        snr = 0.0
+        if len(out_flux) > 0 and in_count > 0:
+            local_noise_std = np.std(out_flux)
+            if local_noise_std > 0:
+                snr = (depth / local_noise_std) * np.sqrt(in_count)
+        return snr, depth
+
+    best_snr, computed_best_depth = compute_snr_depth(best_period, transit_time, duration)
+    best_depth = computed_best_depth if computed_best_depth > 0 else best_depth
+    
+    # Advanced Anti-Aliasing Physics Pass
+    for harmonic in [0.5, 2.0]:
+        node_period = harmonic * best_period
+        node_snr, node_depth = compute_snr_depth(node_period, transit_time, duration)
+        
+        if harmonic == 2.0:
+            if node_depth >= best_depth * 0.95 and node_snr > best_snr * 1.05:
+                best_period = node_period
+                best_snr = node_snr
+                best_depth = node_depth
+        elif harmonic == 0.5:
+            if node_depth >= best_depth * 0.95 and node_snr > best_snr * 0.95:
+                best_period = node_period
+                best_snr = node_snr
+                best_depth = node_depth
+
+    confidence_score = float(best_power / np.median(res.power))
+    is_valid = best_snr > snr_threshold
     
     result = {
         'candidate_found': is_valid,
@@ -69,8 +88,8 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         'period_days': float(best_period),
         'period': float(best_period),
         'confidence_score': confidence_score,
-        'snr': float(calculated_snr),
-        'depth': best_depth,
+        'snr': float(best_snr),
+        'depth': float(best_depth),
         'duration': float(duration),
         't0': float(transit_time),
         'periodogram': {
@@ -84,7 +103,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "target_name": target_name,
         "period": float(best_period),
-        "snr": float(calculated_snr),
+        "snr": float(best_snr),
         "data_source": data_source,
         "metadata": metadata or {},
         "is_valid_candidate": bool(is_valid)

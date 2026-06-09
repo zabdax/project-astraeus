@@ -86,7 +86,7 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
 
         /* 4. Inject a clean, compact label in place of the hidden default text */
         div[data-testid="stFileUploader"] section[data-testid="stFileUploadDropzone"]::before {{
-            content: "📂 Ingest Asset" !important;
+            content: "Ingest Asset" !important;
             font-family: 'Fira Code', 'Courier New', monospace !important;
             font-size: 13px !important;
             font-weight: 500 !important;
@@ -246,7 +246,7 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
             adapter = DataAdapter(uploaded_file.getvalue(), uploaded_file.name)
             st.session_state.uploaded_file_data = adapter.parse()
         except Exception as e:
-            st.error(f"Error parsing asset: {e}")
+            st.markdown(f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> Error parsing asset: {e}</div>", unsafe_allow_html=True)
     else:
         st.session_state.uploaded_file_data = None
 
@@ -272,10 +272,10 @@ def render(main_panel, right_panel) -> None:
         # Display feedback or perform transit detection depending on data source
         if uploaded_data is not None:
             if isinstance(uploaded_data, dict) and 'time' in uploaded_data and 'flux' in uploaded_data:
-                st.success(f"Data loaded successfully: {len(uploaded_data['time'])} stellar points.")
+                st.markdown(f"<div style='color: #10B981; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M22 11.08V12a10 10 0 1 1-5.93-9.14'></path><polyline points='22 4 12 14.01 9 11.01'></polyline></svg> Data loaded successfully: {len(uploaded_data['time'])} stellar points.</div>", unsafe_allow_html=True)
                 
-                if st.button("🚀 Run Anti-Aliased Planet Detection Pass", use_container_width=True):
-                    with st.spinner("Running Box Least Squares analysis..."):
+                if st.button("Analyze Telemetry & Verify Harmonics", type="primary", use_container_width=True):
+                    with st.spinner("Executing optimized sub-harmonic resonant scan & multi-phase binning..."):
                         try:
                             results = detect_transit_candidate(
                                 uploaded_data['time'], 
@@ -291,9 +291,9 @@ def render(main_panel, right_panel) -> None:
                             st.session_state['detective_results'] = results
                             st.session_state['detective_plot_data'] = periodogram_data
                         except Exception as e:
-                            st.error(f"BLS Execution failed: {e}")
+                            st.markdown(f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> BLS Execution failed: {e}</div>", unsafe_allow_html=True)
             else:
-                st.info("Invalid parsed data format detected.")
+                st.markdown("<div style='color: #0ea5e9; display: flex; align-items: center; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='12' y1='16' x2='12' y2='12'></line><line x1='12' y1='8' x2='12.01' y2='8'></line></svg> Invalid parsed data format detected.</div>", unsafe_allow_html=True)
         
         elif target:
             # We want to clear plot data if a new target is searched (unless we just successfully queried it)
@@ -307,7 +307,7 @@ def render(main_panel, right_panel) -> None:
                     del st.session_state['fetched_target_data']
             
             if 'fetched_target_data' not in st.session_state:
-                if st.button("🚀 Fetch Target Metadata", use_container_width=True):
+                if st.button("Fetch Target Metadata", type="primary", use_container_width=True):
                     # Minimal SVG Icons
                     SVG_QUERY = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>"""
                     SVG_SERVER = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>"""
@@ -344,17 +344,13 @@ def render(main_panel, right_panel) -> None:
                         # ── Surface any partial archive-layer error even on MAST success ──
                         arch_err = res.get("archive_error")
                         if arch_err:
-                            st.toast(
-                                f"⚠️ Archive warning for '{target}': {arch_err}",
-                                icon="⚠️",
-                            )
+                            st.toast(f"Archive warning for '{target}': {arch_err}")
 
                         fetch_status = res.get("status")
 
                         if fetch_status == "no_time_series":
-                            st.error(
-                                f"Metadata found, but no time-series data available "
-                                f"for **{target}** on mission **{mission}**."
+                            st.markdown(
+                                f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> <span>Metadata found, but no time-series data available for <b>{target}</b> on mission <b>{mission}</b>.</span></div>", unsafe_allow_html=True
                             )
                             if res.get("metadata"):
                                 st.json(res["metadata"])
@@ -362,15 +358,15 @@ def render(main_panel, right_panel) -> None:
                         elif fetch_status == "error":
                             # Both archive and MAST failed — show full backend trace
                             mast_err = res.get("mast_error", "Unknown MAST error")
-                            st.error(
-                                f"🛰️ **MAST download failed** for `{target}`:\n\n"
-                                f"```\n{mast_err}\n```"
+                            st.markdown(
+                                f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> <span><b>MAST download failed</b> for <code>{target}</code>:</span></div>", unsafe_allow_html=True
                             )
+                            st.code(mast_err)
                             if arch_err:
-                                st.error(
-                                    f"📡 **Archive query also failed**:\n\n"
-                                    f"```\n{arch_err}\n```"
+                                st.markdown(
+                                    f"<div style='color: #EF4444; display: flex; gap: 8px; margin-top: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> <span><b>Archive query also failed</b>:</span></div>", unsafe_allow_html=True
                                 )
+                                st.code(arch_err)
 
                         elif fetch_status == "success":
                             # ── Write canonical metadata into active_metadata ──────────
@@ -379,18 +375,17 @@ def render(main_panel, right_panel) -> None:
                             st.rerun()
 
                         else:
-                            st.error(
-                                f"Unexpected engine status `{fetch_status!r}` "
-                                f"for target `{target}`. Check backend logs."
+                            st.markdown(
+                                f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> <span>Unexpected engine status <code>{fetch_status!r}</code> for target <code>{target}</code>. Check backend logs.</span></div>", unsafe_allow_html=True
                             )
 
                     except Exception:
                         # Catch any unhandled Python exception and show full traceback
                         tb = traceback.format_exc()
-                        st.error(
-                            f"🔴 **Unhandled exception** during fetch for `{target}`:\n\n"
-                            f"```\n{tb}\n```"
+                        st.markdown(
+                            f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> <span><b>Unhandled exception</b> during fetch for <code>{target}</code>:</span></div>", unsafe_allow_html=True
                         )
+                        st.code(tb)
             
             if 'fetched_target_data' in st.session_state:
                 res = st.session_state['fetched_target_data']
@@ -408,7 +403,7 @@ def render(main_panel, right_panel) -> None:
                 depth  = meta.get("transit_depth")
                 
                 with st.container(border=True):
-                    st.markdown("### Target Discovery Confirmation")
+                    st.markdown("<h3 style='display: flex; align-items: center; gap: 8px; color: #06b6d4;'><svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'></circle><line x1='21' y1='21' x2='16.65' y2='16.65'></line></svg> Target Discovery Confirmation</h3>", unsafe_allow_html=True)
                     col1, col2, col3, col4 = st.columns(4)
                     with col1:
                         st.metric("System Designation", meta.get("pl_name", target))
@@ -431,25 +426,26 @@ def render(main_panel, right_panel) -> None:
                     st.markdown("<br>", unsafe_allow_html=True)
                     
                     if "raw_row_dump" in meta:
-                        with st.expander("🛠️ Inspect Raw NASA API Response Payload", expanded=False):
+                        with st.expander("Inspect Raw NASA API Response Payload", expanded=False):
                             st.json(meta["raw_row_dump"])
                     
-                    if st.button("🚀 Run Anti-Aliased Planet Detection Pass", type="primary", use_container_width=True):
-                        try:
-                            results = detect_transit_candidate(
-                                res['time'], 
-                                res['flux'],
-                                target_name=target,
-                                data_source=route,
-                                metadata=meta
-                            )
-                            periodogram_data = results.pop('periodogram')
-                            
-                            st.session_state['detective_results'] = results
-                            st.session_state['detective_results']['metadata'] = meta
-                            st.session_state['detective_plot_data'] = periodogram_data
-                        except Exception as e:
-                            st.error(f"BLS Execution failed: {e}")
+                    if st.button("Analyze Telemetry & Verify Harmonics", type="primary", use_container_width=True):
+                        with st.spinner("Executing optimized sub-harmonic resonant scan & multi-phase binning..."):
+                            try:
+                                results = detect_transit_candidate(
+                                    res['time'], 
+                                    res['flux'],
+                                    target_name=target,
+                                    data_source=route,
+                                    metadata=meta
+                                )
+                                periodogram_data = results.pop('periodogram')
+                                
+                                st.session_state['detective_results'] = results
+                                st.session_state['detective_results']['metadata'] = meta
+                                st.session_state['detective_plot_data'] = periodogram_data
+                            except Exception as e:
+                                st.markdown(f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> BLS Execution failed: {e}</div>", unsafe_allow_html=True)
         
         # Display Plot if we have results in session state
         if 'detective_plot_data' in st.session_state:
@@ -478,4 +474,4 @@ def render(main_panel, right_panel) -> None:
             if 'detective_results' in st.session_state:
                 st.json(st.session_state['detective_results'])
             else:
-                st.info("Awaiting detection run...")
+                st.markdown("<div style='color: #0ea5e9; display: flex; align-items: center; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='12' y1='16' x2='12' y2='12'></line><line x1='12' y1='8' x2='12.01' y2='8'></line></svg> Awaiting detection run...</div>", unsafe_allow_html=True)
