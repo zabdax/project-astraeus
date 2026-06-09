@@ -4,6 +4,7 @@ from typing import Tuple
 import json
 import os
 import datetime
+import math
 
 # --- Wotan Biweight Detrending (primary) with safe fallback ---
 try:
@@ -146,6 +147,19 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         confidence_score = float(best_power / np.median(res.power))
         is_valid = best_snr > snr_threshold
         
+        global_payload = metadata or {}
+        archive_metadata = global_payload.get('metadata', global_payload)
+        st_rad = float(archive_metadata.get('st_rad') or archive_metadata.get('stellar_radius') or 1.0)
+        
+        raw_depth = float(best_depth)
+        transit_depth_fraction = raw_depth / 100.0 if raw_depth > 0.1 else raw_depth
+        
+        archive_depth_percent = float(archive_metadata.get('pl_trandep', 0.0))
+        if archive_depth_percent > 0:
+            archive_depth_fraction = archive_depth_percent / 100.0
+            if transit_depth_fraction < (archive_depth_fraction * 0.1):
+                print("WARNING: Measured depth is less than 10% of archival depth. Layer 2/3 detrending may have destroyed the transit signal.")
+
         result = {
             'candidate_found': is_valid,
             'is_candidate': is_valid,
@@ -153,12 +167,12 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
             'period': float(best_period),
             'orbital_period': float(best_period),
             'stellar_rotation_period_days': stellar_rotation_period_days,
-            'transit_depth': float(best_depth),
-            'stellar_radius': 1.0,
+            'transit_depth': transit_depth_fraction,
+            'stellar_radius': st_rad,
             'vetting_status': 'candidate' if is_valid else 'rejected',
             'confidence_score': confidence_score,
             'snr': float(best_snr),
-            'depth': float(best_depth),
+            'depth': transit_depth_fraction,
             'duration': float(duration),
             't0': float(transit_time),
             'periodogram': {
@@ -197,21 +211,17 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
 
             # Flat-bottom fraction: ratio of points within 10% of minimum
             # depth vs. total in-transit points (T23/T14 proxy)
-            depth_threshold = np.min(fl_sorted) + 0.10 * np.abs(best_depth)
+            depth_threshold = np.min(fl_sorted) + 0.10 * np.abs(transit_depth_fraction)
             n_flat = int(np.sum(fl_sorted <= depth_threshold))
             flat_bottom_fraction = float(n_flat / len(fl_sorted))
 
             # Normalize curvature against transit depth to get a 0-1 metric
-            if best_depth > 0:
+            if transit_depth_fraction > 0:
                 v_shape_metric = float(np.clip(
-                    max_abs_curv * (duration ** 2) / best_depth, 0.0, 1.0
+                    max_abs_curv * (duration ** 2) / transit_depth_fraction, 0.0, 1.0
                 ))
             else:
                 v_shape_metric = 0.0
-
-            # Flag: steep V-shape (high curvature AND negligible flat bottom)
-            if v_shape_metric > 0.8 or flat_bottom_fraction < 0.05:
-                result['vetting_status'] = "V-Shaped False Positive Risk (Potential Grazing Binary)"
 
         result['v_shape_metric'] = float(v_shape_metric)
         result['flat_bottom_fraction'] = float(flat_bottom_fraction)
@@ -246,30 +256,36 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
 
             if secondary_eclipse_snr > 3.0:
                 secondary_eclipse_detected = True
-                result['vetting_status'] = "Eclipsing Binary Detected (Secondary Eclipse at Phase 0.5)"
 
         result['secondary_eclipse_depth'] = float(secondary_eclipse_depth)
         result['secondary_eclipse_snr'] = float(secondary_eclipse_snr)
         result['secondary_eclipse_detected'] = secondary_eclipse_detected
+
+        # ── ASTROPHYSICAL FALSE-POSITIVE CROSS-VETTING (Layer 4) ────────
+        if is_valid:
+            if transit_depth_fraction < 0.03: # Less than 3% depth
+                result['vetting_status'] = "Verified Planet Candidate" # Downgrade aggressive V-shape flags
+            elif v_shape_metric > 0.85 and secondary_eclipse_detected:
+                result['vetting_status'] = "Eclipsing Binary Detected"
+            elif v_shape_metric > 0.8 or flat_bottom_fraction < 0.05:
+                result['vetting_status'] = "V-Shaped False Positive Risk (Potential Grazing Binary)"
+            elif secondary_eclipse_detected:
+                result['vetting_status'] = "Eclipsing Binary Detected (Secondary Eclipse at Phase 0.5)"
 
         # ── PHYSICAL CHARACTERIZATION LAYER ──────────────────────────────
         # Derive observational follow-up metrics from raw BLS output and
         # host-star metadata pulled from the NASA Exoplanet Archive.
         # All three keys degrade gracefully to 0.0 on missing inputs.
 
-        _meta = metadata or {}
-        _stellar_radius_rsun = float(_meta.get('stellar_radius', _meta.get('st_rad', 1.0)))
-        _st_teff = float(_meta.get('st_teff', 5778.0))
-        _st_mass = float(_meta.get('st_mass', 1.0))
-        _sy_jmag = float(_meta.get('sy_jmag', 10.0))
+        _st_teff = float(archive_metadata.get('st_teff', 5778.0))
+        _st_mass = float(archive_metadata.get('st_mass', 1.0))
+        _sy_jmag = float(archive_metadata.get('sy_jmag', 10.0))
 
         # 1. PLANETARY RADIUS (R_Earth)
-        #    R_p = sqrt(transit_depth_fraction) × R_star × 109.2
-        #    where 109.2 = R_sun / R_earth conversion factor
-        _transit_depth_frac = best_depth  # BLS depth is already a fraction
-        if _transit_depth_frac > 0 and _stellar_radius_rsun > 0:
+        R_SUN_TO_R_EARTH = 109.2
+        if transit_depth_fraction > 0 and st_rad > 0:
             planet_radius_earth = float(
-                np.sqrt(_transit_depth_frac) * _stellar_radius_rsun * 109.2
+                st_rad * math.sqrt(transit_depth_fraction) * R_SUN_TO_R_EARTH
             )
         else:
             planet_radius_earth = 0.0
@@ -282,11 +298,11 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         _period_days = float(best_period)
         equilibrium_temp_k = 0.0
 
-        if _period_days > 0 and _st_teff > 0 and _st_mass > 0 and _stellar_radius_rsun > 0:
+        if _period_days > 0 and _st_teff > 0 and _st_mass > 0 and st_rad > 0:
             _period_yr = _period_days / 365.25
             _semi_major_axis_au = (_st_mass * _period_yr ** 2) ** (1.0 / 3.0)
             # Convert stellar radius to AU: 1 R_sun = 0.00465047 AU
-            _stellar_radius_au = _stellar_radius_rsun * 0.00465047
+            _stellar_radius_au = st_rad * 0.00465047
             if _semi_major_axis_au > 0:
                 equilibrium_temp_k = float(
                     _st_teff
@@ -306,7 +322,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         #      4.0-10.0:   1.15     (Sub-Jovian)
         jwst_tsm_score = 0.0
 
-        if planet_radius_earth > 0 and equilibrium_temp_k > 0 and _stellar_radius_rsun > 0:
+        if planet_radius_earth > 0 and equilibrium_temp_k > 0 and st_rad > 0:
             # Radius-binned scale factor (Kempton+2018 Table 1)
             if planet_radius_earth < 1.5:
                 _tsm_scale = 0.190
@@ -325,7 +341,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
                 jwst_tsm_score = float(
                     _tsm_scale
                     * (planet_radius_earth ** 3 * equilibrium_temp_k)
-                    / (_planet_mass_earth * _stellar_radius_rsun ** 2)
+                    / (_planet_mass_earth * st_rad ** 2)
                     * 10.0 ** (-_sy_jmag / 5.0)
                 )
 

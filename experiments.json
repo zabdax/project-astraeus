@@ -699,5 +699,175 @@
             }
         },
         "is_valid_candidate": false
+    },
+    {
+        "timestamp": "2026-06-09T12:34:00.031552+00:00",
+        "target_name": "wasp-12b",
+        "period": 1.0910585821370575,
+        "stellar_rotation_period_days": 0.21829683381984452,
+        "snr": 8.468312942357583,
+        "data_source": "TESS (via Lightkurve)",
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 1.53777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 1.53777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T12:34:00.357354+00:00",
+        "target_name": "wasp-12b",
+        "period": 1.1620171711458986,
+        "stellar_rotation_period_days": 0.21829683381984452,
+        "snr": 4.830738058293661,
+        "data_source": "TESS (via Lightkurve)",
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 1.53777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 1.53777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "is_valid_candidate": false
+    },
+    {
+        "timestamp": "2026-06-09T12:46:37.513304+00:00",
+        "target_name": "wasp-12b",
+        "period": 1.0914152432273718,
+        "stellar_rotation_period_days": 0.15591638312239162,
+        "snr": 14.445698107685244,
+        "data_source": "TESS (via Lightkurve)",
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 1.53777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 1.53777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T12:47:16.939052+00:00",
+        "target_name": "wasp-12b",
+        "period": 1.0914301981896228,
+        "stellar_rotation_period_days": 0.15591638312239162,
+        "snr": 7.9003520866648405,
+        "data_source": "TESS (via Lightkurve)",
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 1.53777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 1.53777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T12:47:55.425241+00:00",
+        "target_name": "wasp-12b",
+        "period": 1.0914256234696282,
+        "stellar_rotation_period_days": 0.15591638312239162,
+        "snr": 5.084130040064854,
+        "data_source": "TESS (via Lightkurve)",
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 1.53777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 1.53777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "is_valid_candidate": true
     }
 ]

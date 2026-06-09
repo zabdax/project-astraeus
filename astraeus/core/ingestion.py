@@ -609,6 +609,14 @@ class RemoteDiscoveryEngine:
             safe_canonical = canonical.strip()
 
         # ── 2. Fetch photometric time-series from MAST via Lightkurve ─────
+        if mission == "NASA Exoplanet Archive":
+            print(f"[RemoteDiscoveryEngine] '{mission}' selected: Skipping MAST download, returning metadata only.", file=sys.stderr)
+            return {
+                "status": "no_time_series",
+                "metadata": meta,
+                "archive_error": archive_error,
+            }
+
         mast_error: str | None = None
         try:
             def download_pure_tess_pipeline(t_name):
@@ -953,14 +961,21 @@ class RemoteDiscoveryEngine:
 
             # Immediate UI Mode Selection
             mode = mission
-            if mode == "TESS" or mode == "TESS Only":
+            if mode == "TESS" or mode == "TESS Only" or mode == "TESS (via Lightkurve)":
                 # Route to a completely isolated, clean, legacy download function
                 return download_pure_tess_pipeline(target_name)
             elif mode == "Combined Baseline (Kepler + TESS)":
                 # Route to the experimental multi-mission stitching block
                 return download_combined_fusion_pipeline(target_name)
-            else:
+            elif mode == "Kepler" or mode == "Kepler Only" or mode == "Kepler (via Lightkurve)":
                 return download_pure_kepler_pipeline(target_name)
+            else:
+                print(f"[RemoteDiscoveryEngine] Unrecognized or metadata-only mode '{mode}': Returning metadata only.", file=sys.stderr)
+                return {
+                    "status": "no_time_series",
+                    "metadata": meta,
+                    "archive_error": archive_error,
+                }
 
         except Exception as exc:
             mast_error = str(exc)

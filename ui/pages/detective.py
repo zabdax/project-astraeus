@@ -377,7 +377,7 @@ def render(main_panel, right_panel) -> None:
                     with col3:
                         st.metric("Stellar Radius (R☉)", f"{radius:.4f}" if radius is not None else "N/A")
                     with col4:
-                        st.metric("Transit Depth (ppm)", f"{depth:.2f}" if depth is not None else "N/A")
+                        st.metric("Transit Depth (ppm)", f"{depth * 1000000:.2f}" if depth is not None else "N/A")
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     
