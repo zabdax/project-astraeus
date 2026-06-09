@@ -3,12 +3,15 @@ import os
 import re
 import shutil
 import sys
+import threading
 import numpy as np
 import pandas as pd
 from astropy.io import fits
+fits.conf.use_memmap = False
 import lightkurve as lk
-from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
 import streamlit as st
+import socket
+socket.setdefaulttimeout(30.0)
 
 class DataAdapter:
     """
@@ -267,15 +270,29 @@ class RemoteDiscoveryEngine:
             lacks a valid measurement.
         """
         try:
-            res = NasaExoplanetArchive.query_criteria(
-                table=RemoteDiscoveryEngine._FALLBACK_TABLE,
-                select=RemoteDiscoveryEngine._FALLBACK_SELECT,
-                where=f"pl_name = '{safe_canonical}' AND pl_orbper IS NOT NULL",
-                order="pl_orbper DESC",
-            )
-            if len(res) > 0:
-                period = RemoteDiscoveryEngine._resolve_float(res[0], "pl_orbper", "pl_orbpererr1")
+            import requests
+            url = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
+            query = f"select pl_name, pl_orbper, pl_orbpererr1 from ps where pl_name='{safe_canonical}' and pl_orbper is not null order by pl_orbper desc"
+            params = {"query": query, "format": "json"}
+
+            try:
+                resp = requests.get(url, params=params, timeout=3.0)
+                resp.raise_for_status()
+                data = resp.json()
+            except Exception as e:
+                print(
+                    f"[RemoteDiscoveryEngine] ps-table fallback query timed out for '{safe_canonical}': {e}",
+                    file=sys.stderr,
+                )
+                return None
+
+            if data and len(data) > 0:
+                row = data[0]
+                period = row.get('pl_orbper')
+                if period is None:
+                    period = row.get('pl_orbpererr1')
                 if period is not None:
+                    period = float(period)
                     print(
                         f"[RemoteDiscoveryEngine] ps-table fallback supplied "
                         f"pl_orbper={period:.6f} d for '{safe_canonical}'.",
@@ -373,6 +390,55 @@ class RemoteDiscoveryEngine:
                 file=sys.stderr,
             )
 
+    # ------------------------------------------------------------------
+    # Thread-guarded callable timeout (prevents SSL-read deadlocks)
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _call_with_timeout(fn, args=(), kwargs=None, timeout: float = 15.0,
+                           label: str = "operation"):
+        """Run *fn(*args, **kwargs)* inside a daemon thread with a hard
+        *timeout* ceiling.
+
+        Returns the callable's result on success, or ``None`` if the thread
+        is still alive after *timeout* seconds.  Exceptions raised inside
+        the worker are re-raised in the calling thread.
+        """
+        if kwargs is None:
+            kwargs = {}
+        result_box: list = []
+        error_box: list = []
+
+        def _worker():
+            try:
+                result_box.append(fn(*args, **kwargs))
+            except Exception as exc:
+                error_box.append(exc)
+
+        t = threading.Thread(target=_worker, daemon=True)
+        t.start()
+        t.join(timeout=timeout)
+
+        if t.is_alive():
+            print(
+                f"[RemoteDiscoveryEngine] TIMEOUT: {label} "
+                f"exceeded {timeout:.0f}s — skipping.",
+                file=sys.stderr,
+            )
+            return None
+
+        if error_box:
+            raise error_box[0]
+
+        return result_box[0] if result_box else None
+
+    @staticmethod
+    def _download_with_timeout(row, timeout: float = 12.0):
+        """Convenience wrapper: download a single Lightkurve search row
+        with a per-sector timeout guard."""
+        return RemoteDiscoveryEngine._call_with_timeout(
+            row.download, timeout=timeout, label="row.download()"
+        )
+
     @staticmethod
     def _is_fits_corruption(exc: Exception) -> bool:
         """Return True if *exc* looks like a FITS file truncation or
@@ -406,57 +472,48 @@ class RemoteDiscoveryEngine:
             # rejections in the NASA Archive matrix even after normalisation.
             safe_canonical = canonical.strip()
 
-            res = NasaExoplanetArchive.query_criteria(
-                table=RemoteDiscoveryEngine._ARCHIVE_TABLE,
-                select=RemoteDiscoveryEngine._ARCHIVE_SELECT,
-                where=f"pl_name = '{safe_canonical}'",
-            )
+            import requests
+            import time
+            url = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
+            query = f"select pl_name, pl_orbper, pl_orbpererr1, st_rad, st_raderr1, st_lum, st_teff, st_mass, sy_jmag, pl_trandep, pl_ratror from pscomppars where pl_name='{safe_canonical}'"
+            params = {"query": query, "format": "json"}
+
+            data = []
+            for attempt in range(3):
+                try:
+                    resp = requests.get(url, params=params, timeout=15.0)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    break
+                except Exception as e:
+                    if attempt == 2:
+                        print(f"[RemoteDiscoveryEngine] Archive query failed or timed out after 3 attempts: {e}", file=sys.stderr)
+                    else:
+                        time.sleep(2.0)
 
             print("--- NASA ARCHIVE DIAGNOSTIC AUDIT ---")
-            print(f"Payload Type: {type(res)}")
-            print(f"Available Columns: {list(res.colnames) if hasattr(res, 'colnames') else []}")
-            if len(res) > 0:
-                print(f"Raw Row 0 Content: {res[0]}")
+            print(f"Payload Type: {type(data)}")
 
-            if len(res) > 0:
-                row = res[0]
-
-                # ── Column-structure audit ─────────────────────────────────
-                # Print every column name returned in this row so that any
-                # alias mismatch is immediately visible in the terminal log.
-                try:
-                    _col_names = list(row.colnames)
-                except AttributeError:
-                    _col_names = list(row.dtype.names) if hasattr(row, 'dtype') else []
-                print(
-                    f"[RemoteDiscoveryEngine] Archive columns for '{safe_canonical}': "
-                    f"{_col_names}",
-                    file=sys.stderr,
-                )
+            if data and len(data) > 0:
+                row = data[0]
+                print(f"Raw Row 0 Content: {row}")
 
                 # ── Orbital Period ─────────────────────────────────────────
-                # Resolution chain (most → least authoritative):
-                #   1. pl_orbper      — standard pscomppars column
-                #   2. pl_period      — legacy/alternate table alias
-                #   3. pl_orbpererr1  — positive fitting error; kept as a
-                #                      last-resort presence signal only
-                # If every alias is masked or absent, fire the multi-table
-                # fallback against the stable ``ps`` reference table before
-                # defaulting to 0.0.  This ensures reference-paper NULL gaps
-                # in pscomppars are healed automatically.
-                pl_orbper = RemoteDiscoveryEngine._resolve_float(
-                    row, "pl_orbper", "pl_period", "pl_orbpererr1"
-                )
+                pl_orbper = row.get('pl_orbper')
                 if pl_orbper is None:
+                    pl_orbper = row.get('pl_period')
+                if pl_orbper is None:
+                    pl_orbper = row.get('pl_orbpererr1')
+
+                if pl_orbper is not None:
+                    pl_orbper = float(pl_orbper)
+                else:
                     print(
                         f"[RemoteDiscoveryEngine] pscomppars orbital period masked for "
                         f"'{safe_canonical}'; escalating to ps-table fallback query.",
                         file=sys.stderr,
                     )
-                    # ── MULTI-TABLE INTERROGATION FALLBACK ─────────────────
-                    pl_orbper = RemoteDiscoveryEngine._fetch_ps_orbital_period(
-                        safe_canonical
-                    )
+                    pl_orbper = RemoteDiscoveryEngine._fetch_ps_orbital_period(safe_canonical)
                     if pl_orbper is None:
                         print(
                             f"[RemoteDiscoveryEngine] Both tables lack orbital period "
@@ -466,35 +523,23 @@ class RemoteDiscoveryEngine:
                         pl_orbper = 0.0
 
                 # ── Stellar Radius ─────────────────────────────────────────
-                # Resolution chain (primary → luminosity-derived fallback):
-                #   1. st_rad   — direct measurement (solar radii)
-                #   2. Derived  — sqrt(10^st_lum) × (5778/T_eff)² when
-                #                 both st_lum and st_teff are available
-                # This prevents the downstream 1.0 R☉ default from
-                # corrupting planetary radius calculations for targets
-                # with known stellar parameters (e.g. 1.69 R☉).
-                st_rad = RemoteDiscoveryEngine._resolve_float(
-                    row, "st_rad"
-                )
+                st_rad = row.get('st_rad')
                 if st_rad is not None:
-                    st_rad = abs(st_rad)
+                    st_rad = abs(float(st_rad))
                 else:
-                    # ── Tertiary derivation from luminosity + Teff ─────
-                    _st_lum_log = RemoteDiscoveryEngine._resolve_float(row, "st_lum")
-                    _st_teff_fb = RemoteDiscoveryEngine._resolve_float(row, "st_teff")
-                    if (_st_lum_log is not None
-                            and _st_teff_fb is not None
-                            and _st_teff_fb > 0):
-                        _L_solar = 10.0 ** _st_lum_log
-                        st_rad = abs(
-                            np.sqrt(_L_solar) * (5778.0 / _st_teff_fb) ** 2
-                        )
+                    st_lum = row.get('st_lum')
+                    st_teff = row.get('st_teff')
+                    if st_lum is not None and st_teff is not None and float(st_teff) > 0:
+                        st_lum = float(st_lum)
+                        st_teff = float(st_teff)
+                        st_rad = abs(np.sqrt(10.0 ** st_lum) * (5778.0 / st_teff) ** 2)
                         print(
                             f"[RemoteDiscoveryEngine] st_rad derived from "
-                            f"st_lum={_st_lum_log:.4f}, "
-                            f"st_teff={_st_teff_fb:.0f} → {st_rad:.4f} R☉",
+                            f"st_lum={st_lum:.4f}, "
+                            f"st_teff={st_teff:.0f} → {st_rad:.4f} R☉",
                             file=sys.stderr,
                         )
+
                 print(
                     f"[RemoteDiscoveryEngine] STELLAR RADIUS RESOLUTION: "
                     f"st_rad="
@@ -504,52 +549,24 @@ class RemoteDiscoveryEngine:
                 )
 
                 # ── Stellar Effective Temperature ──────────────────────────
-                st_teff = RemoteDiscoveryEngine._resolve_float(
-                    row, "st_teff"
-                )
+                st_teff = float(row.get('st_teff')) if row.get('st_teff') is not None else 5778.0
 
                 # ── Stellar Mass ───────────────────────────────────────────
-                st_mass = RemoteDiscoveryEngine._resolve_float(
-                    row, "st_mass"
-                )
-                if st_mass is not None:
-                    st_mass = abs(st_mass)
+                st_mass = float(row.get('st_mass')) if row.get('st_mass') is not None else 1.0
 
                 # ── J-Band Magnitude ───────────────────────────────────────
-                sy_jmag = RemoteDiscoveryEngine._resolve_float(
-                    row, "sy_jmag"
-                )
+                sy_jmag = float(row.get('sy_jmag')) if row.get('sy_jmag') is not None else 10.0
 
                 # ── Transit Depth ──────────────────────────────────────────
-                # Primary  : pl_trandep  (ppm, directly catalogued)
-                # Derived  : (pl_ratror)² × 1_000_000  when primary absent
-                
-                raw_trandep = None
-                try:
-                    raw_trandep = row.get("pl_trandep") if hasattr(row, 'get') else row["pl_trandep"]
-                except Exception:
-                    pass
-                is_percentage = False
-                if isinstance(raw_trandep, str):
-                    is_percentage = "%" in raw_trandep
-                elif hasattr(raw_trandep, 'unit'):
-                    is_percentage = "%" in str(raw_trandep.unit)
-
-                pl_trandep = RemoteDiscoveryEngine._resolve_float(
-                    row, "pl_trandep"
-                )
-                
+                pl_trandep = row.get('pl_trandep')
                 if pl_trandep is not None:
-                    if is_percentage:
-                        pl_trandep = pl_trandep * 10000.0
-                    elif pl_trandep < 1.0:
+                    pl_trandep = float(pl_trandep)
+                    if pl_trandep < 1.0:
                         pl_trandep = pl_trandep * 1_000_000
-
-                if pl_trandep is None:
-                    pl_ratror = RemoteDiscoveryEngine._resolve_float(
-                        row, "pl_ratror"
-                    )
+                else:
+                    pl_ratror = row.get('pl_ratror')
                     if pl_ratror is not None:
+                        pl_ratror = float(pl_ratror)
                         pl_trandep = (pl_ratror ** 2) * 1_000_000
                         print(
                             f"[RemoteDiscoveryEngine] pl_trandep derived from "
@@ -557,32 +574,24 @@ class RemoteDiscoveryEngine:
                             file=sys.stderr,
                         )
 
-                # ── Assemble raw metadata dict ─────────────────────────────
-                try:
-                    raw_row_dump = {col: str(row[col]) for col in row.colnames} if hasattr(row, 'colnames') else {}
-                except Exception:
-                    raw_row_dump = str(row)
-
                 meta = {
-                    "pl_name":        str(row["pl_name"]),
+                    "pl_name":        safe_canonical,
                     # Keys used by detective.py active_metadata bindings:
                     "orbital_period": pl_orbper,
-                    "stellar_radius": st_rad,
-                    "transit_depth":  pl_trandep,
+                    "stellar_radius": st_rad if st_rad is not None else 1.0,
+                    "transit_depth":  pl_trandep if pl_trandep is not None else 0.0,
                     # Raw archive names retained for downstream use:
                     "pl_orbper":      pl_orbper,
-                    "st_rad":         st_rad,
-                    "pl_trandep":     pl_trandep,
+                    "st_rad":         st_rad if st_rad is not None else 1.0,
+                    "pl_trandep":     pl_trandep if pl_trandep is not None else 0.0,
                     # Stellar parameters for physical characterization:
                     "st_teff":        st_teff,
                     "st_mass":        st_mass,
                     "sy_jmag":        sy_jmag,
-                    "raw_row_dump":   raw_row_dump,
+                    "raw_row_dump":   row,
                 }
 
                 # ── NUMERIC SANITIZATION LAYER ─────────────────────────────
-                # Hard-floor any residual None / NaN / masked values so that
-                # st.session_state.active_metadata is always strictly typed.
                 meta = RemoteDiscoveryEngine._sanitize_meta(meta)
             else:
                 print(
@@ -602,42 +611,218 @@ class RemoteDiscoveryEngine:
         # ── 2. Fetch photometric time-series from MAST via Lightkurve ─────
         mast_error: str | None = None
         try:
-            if mission == "Combined Baseline (Kepler + TESS)":
-                search_result = lk.search_lightcurve(canonical, mission=("Kepler", "K2", "TESS"))
-            else:
-                search_result = lk.search_lightcurve(canonical, mission=mission)
-
-            if len(search_result) == 0:
+            def download_pure_tess_pipeline(t_name):
+                print("[PIPELINE] Entering Pure TESS Download Track...", file=sys.stderr)
+                # Use a sharp target name format — guarded against MAST search hangs
+                search = RemoteDiscoveryEngine._call_with_timeout(
+                    lk.search_lightcurve, args=(t_name,),
+                    kwargs={"author": "SPOC"}, timeout=15.0,
+                    label="search_lightcurve(TESS/SPOC)"
+                )
+                if search is None:
+                    print("[PIPELINE] TESS search timed out — aborting.", file=sys.stderr)
+                    return {"status": "no_time_series", "metadata": meta, "archive_error": archive_error}
+                
+                if len(search) == 0:
+                    return {"status": "no_time_series", "metadata": meta, "archive_error": archive_error}
+                
+                lc_list = []
+                for row in search:
+                    for attempt in range(3):
+                        try:
+                            lc = RemoteDiscoveryEngine._download_with_timeout(row, timeout=15.0)
+                            if lc is not None:
+                                lc_list.append(lc)
+                            break
+                        except Exception as e:
+                            if RemoteDiscoveryEngine._is_fits_corruption(e):
+                                RemoteDiscoveryEngine._wipe_lightkurve_cache()
+                            if attempt == 2:
+                                print(f"Skipping a problematic sector due to network cut: {e}", file=sys.stderr)
+                
+                if not lc_list:
+                    return {"status": "no_time_series", "metadata": meta, "archive_error": archive_error}
+                
+                lc_collection = lk.LightCurveCollection(lc_list)
+                
+                print("[PIPELINE] TESS Download Complete. Processing data arrays...", file=sys.stderr)
+                stitched = lc_collection.stitch()
+                try:
+                    flat = stitched.flatten()
+                except Exception:
+                    flat = stitched.normalize()
+                flat = flat.remove_nans()
+                
+                t = np.asarray(flat.time.value, dtype=np.float64)
+                f = np.asarray(flat.flux.value, dtype=np.float64)
+                e = np.asarray(flat.flux_err.value, dtype=np.float64)
+                
+                valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
+                t, f, e = t[valid], f[valid], e[valid]
+                sort_idx = np.argsort(t)
+                
                 return {
-                    "status": "no_time_series",
+                    "status": "success",
                     "metadata": meta,
+                    "time": t[sort_idx],
+                    "flux": f[sort_idx],
+                    "flux_err": e[sort_idx],
                     "archive_error": archive_error,
                 }
 
-            if mission == "Combined Baseline (Kepler + TESS)":
-                # ══════════════════════════════════════════════════════════
+            def download_pure_kepler_pipeline(t_name):
+                print("[PIPELINE] Entering Pure Kepler Download Track...", file=sys.stderr)
+                # Use a sharp target name format — guarded against MAST search hangs
+                search = RemoteDiscoveryEngine._call_with_timeout(
+                    lk.search_lightcurve, args=(t_name,),
+                    kwargs={"author": "Kepler"}, timeout=15.0,
+                    label="search_lightcurve(Kepler)"
+                )
+                if search is None:
+                    print("[PIPELINE] Kepler search timed out — aborting.", file=sys.stderr)
+                    return {"status": "no_time_series", "metadata": meta, "archive_error": archive_error}
+                
+                if len(search) == 0:
+                    return {"status": "no_time_series", "metadata": meta, "archive_error": archive_error}
+                
+                lc_list = []
+                for row in search:
+                    for attempt in range(3):
+                        try:
+                            lc = RemoteDiscoveryEngine._download_with_timeout(row, timeout=15.0)
+                            if lc is not None:
+                                lc_list.append(lc)
+                            break
+                        except Exception as e:
+                            if RemoteDiscoveryEngine._is_fits_corruption(e):
+                                RemoteDiscoveryEngine._wipe_lightkurve_cache()
+                            if attempt == 2:
+                                print(f"Skipping a problematic sector due to network cut: {e}", file=sys.stderr)
+                
+                if not lc_list:
+                    return {"status": "no_time_series", "metadata": meta, "archive_error": archive_error}
+                
+                lc_collection = lk.LightCurveCollection(lc_list)
+                
+                print("[PIPELINE] Kepler Download Complete. Processing data arrays...", file=sys.stderr)
+                stitched = lc_collection.stitch()
+                try:
+                    flat = stitched.flatten()
+                except Exception:
+                    flat = stitched.normalize()
+                flat = flat.remove_nans()
+                
+                t = np.asarray(flat.time.value, dtype=np.float64)
+                f = np.asarray(flat.flux.value, dtype=np.float64)
+                e = np.asarray(flat.flux_err.value, dtype=np.float64)
+                
+                valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
+                t, f, e = t[valid], f[valid], e[valid]
+                sort_idx = np.argsort(t)
+                
+                return {
+                    "status": "success",
+                    "metadata": meta,
+                    "time": t[sort_idx],
+                    "flux": f[sort_idx],
+                    "flux_err": e[sort_idx],
+                    "archive_error": archive_error,
+                }
+
+            def download_combined_fusion_pipeline(t_name):
+                print("[PIPELINE] Entering Combined Fusion Download Track...", file=sys.stderr)
+                # DYNAMIC NAME-TO-COORDINATE RESOLUTION
+                from astropy.coordinates import SkyCoord
+                import astropy.units as u
+                import requests
+                import time
+
+                print(f"[RemoteDiscoveryEngine] Resolving coordinates dynamically for '{safe_canonical}'", file=sys.stderr)
+
+                query = f"SELECT ra, dec FROM pscomppars WHERE pl_name = '{safe_canonical}'"
+                url = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
+                params = {"query": query, "format": "json"}
+
+                target_coords = t_name
+                for attempt in range(3):
+                    try:
+                        resp = requests.get(url, params=params, timeout=15.0)
+                        resp.raise_for_status()
+                        data = resp.json()
+                        if data and len(data) > 0:
+                            ra_val = float(data[0]['ra'])
+                            dec_val = float(data[0]['dec'])
+                            target_coords = SkyCoord(ra=ra_val*u.deg, dec=dec_val*u.deg, frame='icrs')
+                            print(f"[RemoteDiscoveryEngine] Using SkyCoord(RA={ra_val}, Dec={dec_val})", file=sys.stderr)
+                        break
+                    except Exception as e:
+                        if attempt == 2:
+                            print(f"[RemoteDiscoveryEngine] Coordinate query failed after 3 attempts: {e}. Falling back to string.", file=sys.stderr)
+                        else:
+                            time.sleep(2.0)
+
+                search_tess = RemoteDiscoveryEngine._call_with_timeout(
+                    lk.search_lightcurve, args=(target_coords,),
+                    kwargs={"author": "SPOC"}, timeout=15.0,
+                    label="search_lightcurve(combined/TESS)"
+                )
+                if search_tess is None:
+                    search_tess = lk.SearchResult([])
+                search_kepler = RemoteDiscoveryEngine._call_with_timeout(
+                    lk.search_lightcurve, args=(target_coords,),
+                    kwargs={"author": "Kepler"}, timeout=15.0,
+                    label="search_lightcurve(combined/Kepler)"
+                )
+                if search_kepler is None:
+                    search_kepler = lk.SearchResult([])
+                total_results = len(search_tess) + len(search_kepler)
+
+                if total_results == 0:
+                    return {
+                        "status": "no_time_series",
+                        "metadata": meta,
+                        "archive_error": archive_error,
+                    }
+
                 # MULTI-MISSION TIME-COORDINATE UNIFICATION ENGINE
-                # ══════════════════════════════════════════════════════════
-                # Kepler timestamps are BKJD (BJD − 2454833.0); TESS
-                # timestamps are BTJD (BJD − 2457000.0).  Naïvely stitching
-                # these baselines creates a phantom ~2167-day gap that
-                # induces harmonic period doubling and severe transit-depth
-                # degradation in downstream BLS periodograms.
-                #
-                # Solution: convert every fragment to a unified BJD-relative
-                # coordinate frame, match variance floors, then concatenate.
-                # ──────────────────────────────────────────────────────────
                 _KEPLER_BKJD_OFFSET = 2454833.0
                 _TESS_BTJD_OFFSET   = 2457000.0
-                _UNIFIED_EPOCH      = _KEPLER_BKJD_OFFSET  # anchor to Kepler epoch
+                _UNIFIED_EPOCH      = _KEPLER_BKJD_OFFSET
 
-                # ── Inner helper: download + unify (callable for retry) ──
                 def _combined_download_and_unify():
-                    lc_collection = search_result[:4].download_all()
-                    if not lc_collection:
+                    lc_list = []
+                    
+                    for row in search_tess:
+                        for attempt in range(3):
+                            try:
+                                lc = RemoteDiscoveryEngine._download_with_timeout(row, timeout=15.0)
+                                if lc is not None:
+                                    lc_list.append(lc)
+                                break
+                            except Exception as e:
+                                if RemoteDiscoveryEngine._is_fits_corruption(e):
+                                    RemoteDiscoveryEngine._wipe_lightkurve_cache()
+                                if attempt == 2:
+                                    print(f"Skipping a problematic sector due to network cut: {e}")
+
+                    for row in search_kepler:
+                        for attempt in range(3):
+                            try:
+                                lc = RemoteDiscoveryEngine._download_with_timeout(row, timeout=15.0)
+                                if lc is not None:
+                                    lc_list.append(lc)
+                                break
+                            except Exception as e:
+                                if RemoteDiscoveryEngine._is_fits_corruption(e):
+                                    RemoteDiscoveryEngine._wipe_lightkurve_cache()
+                                if attempt == 2:
+                                    print(f"Skipping a problematic sector due to network cut: {e}")
+
+                    if not lc_list:
                         return None
 
-                    # ── Phase 1: Classify, normalise, flatten per-fragment
+                    lc_collection = lk.LightCurveCollection(lc_list)
+
                     kepler_fragments = []
                     tess_fragments   = []
 
@@ -661,7 +846,6 @@ class RemoteDiscoveryEngine:
                         file=sys.stderr,
                     )
 
-                    # ── Phase 2: Explicit unified time-frame conversion ───
                     unified_t = []
                     unified_f = []
                     unified_e = []
@@ -690,7 +874,6 @@ class RemoteDiscoveryEngine:
                             np.asarray(lc.flux_err.value, dtype=np.float64)
                         )
 
-                    # ── Phase 3: Cross-mission variance floor matching ────
                     n_kep = len(kepler_fragments)
                     if kepler_fragments and tess_fragments:
                         kep_scatter = np.nanmedian(
@@ -707,24 +890,13 @@ class RemoteDiscoveryEngine:
                                     med = np.nanmedian(unified_f[i])
                                     unified_f[i] = med + (unified_f[i] - med) * scale
                                     unified_e[i] = unified_e[i] * scale
-                                print(
-                                    f"[RemoteDiscoveryEngine] Variance floor: "
-                                    f"Kepler scaled ×{scale:.4f}",
-                                    file=sys.stderr,
-                                )
                             elif ratio < 0.5:
                                 scale = kep_scatter / tess_scatter
                                 for i in range(n_kep, len(unified_f)):
                                     med = np.nanmedian(unified_f[i])
                                     unified_f[i] = med + (unified_f[i] - med) * scale
                                     unified_e[i] = unified_e[i] * scale
-                                print(
-                                    f"[RemoteDiscoveryEngine] Variance floor: "
-                                    f"TESS scaled ×{scale:.4f}",
-                                    file=sys.stderr,
-                                )
 
-                    # ── Phase 4: Concatenate & chronological sort ─────────
                     t_out = np.concatenate(unified_t)
                     f_out = np.concatenate(unified_f)
                     e_out = np.concatenate(unified_e)
@@ -743,7 +915,6 @@ class RemoteDiscoveryEngine:
                         "flux_err": e_out,
                     }
 
-                # ── Attempt download with FITS corruption auto-recovery ──
                 combined_result = None
                 try:
                     combined_result = _combined_download_and_unify()
@@ -755,14 +926,9 @@ class RemoteDiscoveryEngine:
                             file=sys.stderr,
                         )
                         RemoteDiscoveryEngine._wipe_lightkurve_cache()
-                        print(
-                            "[RemoteDiscoveryEngine] Retrying combined download "
-                            "from live MAST servers...",
-                            file=sys.stderr,
-                        )
                         combined_result = _combined_download_and_unify()
                     else:
-                        raise  # Non-corruption error — propagate normally
+                        raise
 
                 if combined_result is None:
                     return {
@@ -771,11 +937,6 @@ class RemoteDiscoveryEngine:
                         "archive_error": archive_error,
                     }
 
-                t = combined_result["time"]
-                f = combined_result["flux"]
-                e = combined_result["flux_err"]
-
-                # ── Embed provenance telemetry in metadata ────────────────
                 meta["time_baseline"]   = "unified_bkjd"
                 meta["unified_epoch"]   = _UNIFIED_EPOCH
                 meta["kepler_segments"] = combined_result["kepler_segments"]
@@ -784,74 +945,22 @@ class RemoteDiscoveryEngine:
                 return {
                     "status":        "success",
                     "metadata":      meta,
-                    "time":          t,
-                    "flux":          f,
-                    "flux_err":      e,
+                    "time":          combined_result["time"],
+                    "flux":          combined_result["flux"],
+                    "flux_err":      combined_result["flux_err"],
                     "archive_error": archive_error,
                 }
+
+            # Immediate UI Mode Selection
+            mode = mission
+            if mode == "TESS" or mode == "TESS Only":
+                # Route to a completely isolated, clean, legacy download function
+                return download_pure_tess_pipeline(target_name)
+            elif mode == "Combined Baseline (Kepler + TESS)":
+                # Route to the experimental multi-mission stitching block
+                return download_combined_fusion_pipeline(target_name)
             else:
-                # ── Inner helper: download + stitch (callable for retry) ──
-                def _single_download_and_stitch():
-                    # Capped at first 2 sectors/quarters for download speed
-                    # and to prevent application timeout disconnects.
-                    _lc_col = search_result[:2].download_all()
-                    if not _lc_col:
-                        return None
-
-                    _stitched = _lc_col.stitch()
-                    try:
-                        _flat = _stitched.flatten()
-                    except Exception:
-                        _flat = _stitched.normalize()
-
-                    _flat = _flat.remove_nans()
-
-                    _t = np.asarray(_flat.time.value, dtype=np.float64)
-                    _f = np.asarray(_flat.flux.value, dtype=np.float64)
-                    _e = np.asarray(_flat.flux_err.value, dtype=np.float64)
-
-                    _valid = np.isfinite(_t) & np.isfinite(_f) & np.isfinite(_e)
-                    _t, _f, _e = _t[_valid], _f[_valid], _e[_valid]
-
-                    _sort = np.argsort(_t)
-                    return {"time": _t[_sort], "flux": _f[_sort], "flux_err": _e[_sort]}
-
-                # ── Attempt download with FITS corruption auto-recovery ──
-                single_result = None
-                try:
-                    single_result = _single_download_and_stitch()
-                except (OSError, ValueError, Exception) as fits_err:
-                    if RemoteDiscoveryEngine._is_fits_corruption(fits_err):
-                        print(
-                            f"[RemoteDiscoveryEngine] FITS CORRUPTION DETECTED "
-                            f"in single-mission download: {fits_err}",
-                            file=sys.stderr,
-                        )
-                        RemoteDiscoveryEngine._wipe_lightkurve_cache()
-                        print(
-                            "[RemoteDiscoveryEngine] Retrying single-mission "
-                            "download from live MAST servers...",
-                            file=sys.stderr,
-                        )
-                        single_result = _single_download_and_stitch()
-                    else:
-                        raise  # Non-corruption error — propagate normally
-
-                if single_result is None:
-                    return {
-                        "status": "no_time_series",
-                        "metadata": meta,
-                        "archive_error": archive_error,
-                    }
-
-            return {
-                "status":        "success",
-                "metadata":      meta,
-                "time":          single_result["time"],
-                "flux":          single_result["flux"],
-                "flux_err":      single_result["flux_err"],
-                "archive_error": archive_error,
-            }
+                return download_pure_kepler_pipeline(target_name)
 
         except Exception as exc:
             mast_error = str(exc)
