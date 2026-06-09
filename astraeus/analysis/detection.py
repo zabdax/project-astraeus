@@ -33,122 +33,147 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         trend[trend == 0] = 1.0  # Avoid division by zero
         flux = flux / trend
 
-    # Sub-second Computational Efficiency: Multi-Phase Uniform Data Binning
-    if len(time) > 1000:
-        n_bins = 1000
-        points_per_bin = len(time) // n_bins
-        truncate_idx = points_per_bin * n_bins
-        time = time[:truncate_idx].reshape(n_bins, points_per_bin).mean(axis=1)
-        flux = flux[:truncate_idx].reshape(n_bins, points_per_bin).mean(axis=1)
+    active_time = time.copy()
+    active_flux = flux.copy()
+    
+    candidates = []
 
-    model = BoxLeastSquares(time, flux)
-    
-    # Restrict Sweep Windows
-    durations = np.array([0.01, 0.03, 0.05, 0.07, 0.1])
-    
-    # Vectorized Frequency Gridding
-    periods = model.autoperiod(durations, minimum_period=0.5, maximum_period=20.0, frequency_factor=50.0)
-    res = model.power(periods, durations)
-    
-    best_idx = np.argmax(res.power)
-    best_period = res.period[best_idx]
-    best_power = res.power[best_idx]
-    best_depth = float(res.depth[best_idx])
-    transit_time = res.transit_time[best_idx]
-    duration = res.duration[best_idx]
-    
-    def compute_snr_depth(p, t0, dur):
-        phase = (time - t0 + 0.5 * p) % p - 0.5 * p
-        in_transit = np.abs(phase) < 0.5 * dur
-        out_of_transit = ~in_transit
-        out_flux = flux[out_of_transit]
-        in_flux = flux[in_transit]
-        in_count = len(in_flux)
+    for iteration in range(1, 4):
+        if len(active_time) < 10:
+            break
+
+        current_time = active_time.copy()
+        current_flux = active_flux.copy()
+
+        # Sub-second Computational Efficiency: Multi-Phase Uniform Data Binning
+        if len(current_time) > 1000:
+            n_bins = 1000
+            points_per_bin = len(current_time) // n_bins
+            truncate_idx = points_per_bin * n_bins
+            current_time = current_time[:truncate_idx].reshape(n_bins, points_per_bin).mean(axis=1)
+            current_flux = current_flux[:truncate_idx].reshape(n_bins, points_per_bin).mean(axis=1)
+
+        model = BoxLeastSquares(current_time, current_flux)
         
-        depth = 0.0
-        if in_count > 0 and len(out_flux) > 0:
-            depth = np.median(out_flux) - np.median(in_flux)
+        # Restrict Sweep Windows
+        durations = np.array([0.01, 0.03, 0.05, 0.07, 0.1])
+        
+        # Vectorized Frequency Gridding
+        periods = model.autoperiod(durations, minimum_period=0.5, maximum_period=20.0, frequency_factor=50.0)
+        res = model.power(periods, durations)
+        
+        best_idx = np.argmax(res.power)
+        best_period = res.period[best_idx]
+        best_power = res.power[best_idx]
+        best_depth = float(res.depth[best_idx])
+        transit_time = res.transit_time[best_idx]
+        duration = res.duration[best_idx]
+        
+        def compute_snr_depth(p, t0, dur):
+            phase = (current_time - t0 + 0.5 * p) % p - 0.5 * p
+            in_transit = np.abs(phase) < 0.5 * dur
+            out_of_transit = ~in_transit
+            out_flux = current_flux[out_of_transit]
+            in_flux = current_flux[in_transit]
+            in_count = len(in_flux)
             
-        snr = 0.0
-        if len(out_flux) > 0 and in_count > 0:
-            local_noise_std = np.std(out_flux)
-            if local_noise_std > 0:
-                snr = (depth / local_noise_std) * np.sqrt(in_count)
-        return snr, depth
+            depth = 0.0
+            if in_count > 0 and len(out_flux) > 0:
+                depth = np.median(out_flux) - np.median(in_flux)
+                
+            snr = 0.0
+            if len(out_flux) > 0 and in_count > 0:
+                local_noise_std = np.std(out_flux)
+                if local_noise_std > 0:
+                    snr = (depth / local_noise_std) * np.sqrt(in_count)
+            return snr, depth
 
-    best_snr, computed_best_depth = compute_snr_depth(best_period, transit_time, duration)
-    best_depth = computed_best_depth if computed_best_depth > 0 else best_depth
-    
-    # Advanced Anti-Aliasing Physics Pass
-    for harmonic in [0.5, 2.0]:
-        node_period = harmonic * best_period
-        node_snr, node_depth = compute_snr_depth(node_period, transit_time, duration)
+        best_snr, computed_best_depth = compute_snr_depth(best_period, transit_time, duration)
+        best_depth = computed_best_depth if computed_best_depth > 0 else best_depth
         
-        if harmonic == 2.0:
-            if node_depth >= best_depth * 0.85 and node_snr > best_snr * 0.85:
-                best_period = node_period
-                best_snr = node_snr
-                best_depth = node_depth
-        elif harmonic == 0.5:
-            if node_depth >= best_depth * 0.85 and node_snr > best_snr * 0.85:
-                best_period = node_period
-                best_snr = node_snr
-                best_depth = node_depth
+        # Advanced Anti-Aliasing Physics Pass
+        for harmonic in [0.5, 2.0]:
+            node_period = harmonic * best_period
+            node_snr, node_depth = compute_snr_depth(node_period, transit_time, duration)
+            
+            if harmonic == 2.0:
+                if node_depth >= best_depth * 0.85 and node_snr > best_snr * 0.85:
+                    best_period = node_period
+                    best_snr = node_snr
+                    best_depth = node_depth
+            elif harmonic == 0.5:
+                if node_depth >= best_depth * 0.85 and node_snr > best_snr * 0.85:
+                    best_period = node_period
+                    best_snr = node_snr
+                    best_depth = node_depth
 
-    confidence_score = float(best_power / np.median(res.power))
-    is_valid = best_snr > snr_threshold
-    
-    result = {
-        'candidate_found': is_valid,
-        'is_candidate': is_valid,
-        'period_days': float(best_period),
-        'period': float(best_period),
-        'orbital_period': float(best_period),
-        'stellar_rotation_period_days': stellar_rotation_period_days,
-        'transit_depth': float(best_depth),
-        'stellar_radius': 1.0,
-        'vetting_status': 'candidate' if is_valid else 'rejected',
-        'confidence_score': confidence_score,
-        'snr': float(best_snr),
-        'depth': float(best_depth),
-        'duration': float(duration),
-        't0': float(transit_time),
-        'periodogram': {
-            'periods': res.period.tolist(),
-            'powers': res.power.tolist()
+        confidence_score = float(best_power / np.median(res.power))
+        is_valid = best_snr > snr_threshold
+        
+        result = {
+            'candidate_found': is_valid,
+            'is_candidate': is_valid,
+            'period_days': float(best_period),
+            'period': float(best_period),
+            'orbital_period': float(best_period),
+            'stellar_rotation_period_days': stellar_rotation_period_days,
+            'transit_depth': float(best_depth),
+            'stellar_radius': 1.0,
+            'vetting_status': 'candidate' if is_valid else 'rejected',
+            'confidence_score': confidence_score,
+            'snr': float(best_snr),
+            'depth': float(best_depth),
+            'duration': float(duration),
+            't0': float(transit_time),
+            'periodogram': {
+                'periods': res.period.tolist(),
+                'powers': res.power.tolist()
+            }
         }
-    }
-    
-    # Reproducible Ledger
-    log_entry = {
-        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "target_name": target_name,
-        "period": float(best_period),
-        "stellar_rotation_period_days": stellar_rotation_period_days,
-        "snr": float(best_snr),
-        "data_source": data_source,
-        "metadata": metadata or {},
-        "is_valid_candidate": bool(is_valid)
-    }
-    
-    experiments_file = "experiments.json"
-    experiments = []
-    if os.path.exists(experiments_file):
+        
+        candidates.append({f'candidate_{iteration}': result})
+        
+        # Reproducible Ledger
+        log_entry = {
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "target_name": target_name,
+            "period": float(best_period),
+            "stellar_rotation_period_days": stellar_rotation_period_days,
+            "snr": float(best_snr),
+            "data_source": data_source,
+            "metadata": metadata or {},
+            "is_valid_candidate": bool(is_valid)
+        }
+        
+        experiments_file = "experiments.json"
+        experiments = []
+        if os.path.exists(experiments_file):
+            try:
+                with open(experiments_file, "r") as f:
+                    experiments = json.load(f)
+            except Exception:
+                pass
+                
+        experiments.append(log_entry)
+        
         try:
-            with open(experiments_file, "r") as f:
-                experiments = json.load(f)
-        except Exception:
-            pass
-            
-    experiments.append(log_entry)
-    
-    try:
-        with open(experiments_file, "w") as f:
-            json.dump(experiments, f, indent=4)
-    except Exception as e:
-        print(f"Failed to write to experiments.json: {e}")
+            with open(experiments_file, "w") as f:
+                json.dump(experiments, f, indent=4)
+        except Exception as e:
+            print(f"Failed to write to experiments.json: {e}")
 
-    return result
+        # Mask out transit data points for the next iteration
+        if is_valid and best_snr > 7.0:
+            phase = (active_time - transit_time + 0.5 * best_period) % best_period - 0.5 * best_period
+            mask_window = 2.5 * duration
+            out_of_transit_mask = np.abs(phase) >= 0.5 * mask_window
+            
+            active_time = active_time[out_of_transit_mask]
+            active_flux = active_flux[out_of_transit_mask]
+        else:
+            break
+
+    return candidates
 
 def validate_bls_candidate(
     transit_depth: float, 
