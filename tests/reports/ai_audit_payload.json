@@ -1,0 +1,288 @@
+[
+  {
+    "test_id": "WASP-12_B_NASA_EXOPLANET_ARCHIVE",
+    "execution_status": "FAILED",
+    "execution_time_seconds": 2.481,
+    "error_traceback": "Phase 1 execution time 2.481s >= 1.5s limit",
+    "metadata_synchronization": {
+      "archive_stellar_radius": 0.0,
+      "pipeline_stellar_radius": 0.0,
+      "drift_detected": false
+    },
+    "analytical_layer_telemetry": {
+      "layer_1_arrays_shape": [],
+      "layer_2_measured_transit_depth_fraction": 0.0,
+      "layer_3_calculated_period_days": 0.0,
+      "layer_4_v_shape_metric": 0.0,
+      "layer_4_vetting_classification": "",
+      "layer_5_planet_radius_earth": 0.0,
+      "layer_5_jwst_tsm_score": 0.0,
+      "layer_6_ttv_datapoints_compiled": 0
+    },
+    "cross_ai_validation_metrics": {
+      "measured_vs_archival_period_delta_pct": 0.0,
+      "measured_vs_archival_depth_ratio": 0.0,
+      "signal_to_noise_ratio": 0.0
+    }
+  },
+  {
+    "test_id": "KEPLER-13_B_NASA_EXOPLANET_ARCHIVE",
+    "execution_status": "FAILED",
+    "execution_time_seconds": 2.446,
+    "error_traceback": "Phase 1 execution time 2.446s >= 1.5s limit",
+    "metadata_synchronization": {
+      "archive_stellar_radius": 0.0,
+      "pipeline_stellar_radius": 0.0,
+      "drift_detected": false
+    },
+    "analytical_layer_telemetry": {
+      "layer_1_arrays_shape": [],
+      "layer_2_measured_transit_depth_fraction": 0.0,
+      "layer_3_calculated_period_days": 0.0,
+      "layer_4_v_shape_metric": 0.0,
+      "layer_4_vetting_classification": "",
+      "layer_5_planet_radius_earth": 0.0,
+      "layer_5_jwst_tsm_score": 0.0,
+      "layer_6_ttv_datapoints_compiled": 0
+    },
+    "cross_ai_validation_metrics": {
+      "measured_vs_archival_period_delta_pct": 0.0,
+      "measured_vs_archival_depth_ratio": 0.0,
+      "signal_to_noise_ratio": 0.0
+    }
+  },
+  {
+    "test_id": "HAT-P-11_B_NASA_EXOPLANET_ARCHIVE",
+    "execution_status": "FAILED",
+    "execution_time_seconds": 2.374,
+    "error_traceback": "Phase 1 execution time 2.374s >= 1.5s limit",
+    "metadata_synchronization": {
+      "archive_stellar_radius": 0.0,
+      "pipeline_stellar_radius": 0.0,
+      "drift_detected": false
+    },
+    "analytical_layer_telemetry": {
+      "layer_1_arrays_shape": [],
+      "layer_2_measured_transit_depth_fraction": 0.0,
+      "layer_3_calculated_period_days": 0.0,
+      "layer_4_v_shape_metric": 0.0,
+      "layer_4_vetting_classification": "",
+      "layer_5_planet_radius_earth": 0.0,
+      "layer_5_jwst_tsm_score": 0.0,
+      "layer_6_ttv_datapoints_compiled": 0
+    },
+    "cross_ai_validation_metrics": {
+      "measured_vs_archival_period_delta_pct": 0.0,
+      "measured_vs_archival_depth_ratio": 0.0,
+      "signal_to_noise_ratio": 0.0
+    }
+  },
+  {
+    "test_id": "WASP-12_B_TESS",
+    "execution_status": "FAILED",
+    "execution_time_seconds": 17.517,
+    "error_traceback": "Ingestion returned status: no_time_series",
+    "metadata_synchronization": {
+      "archive_stellar_radius": 1.69,
+      "pipeline_stellar_radius": 1.69,
+      "drift_detected": false
+    },
+    "analytical_layer_telemetry": {
+      "layer_1_arrays_shape": [],
+      "layer_2_measured_transit_depth_fraction": 0.0,
+      "layer_3_calculated_period_days": 0.0,
+      "layer_4_v_shape_metric": 0.0,
+      "layer_4_vetting_classification": "",
+      "layer_5_planet_radius_earth": 0.0,
+      "layer_5_jwst_tsm_score": 0.0,
+      "layer_6_ttv_datapoints_compiled": 0
+    },
+    "cross_ai_validation_metrics": {
+      "measured_vs_archival_period_delta_pct": 0.0,
+      "measured_vs_archival_depth_ratio": 0.0,
+      "signal_to_noise_ratio": 0.0
+    }
+  },
+  {
+    "test_id": "KEPLER-13_B_TESS",
+    "execution_status": "FAILED",
+    "execution_time_seconds": 17.49,
+    "error_traceback": "Ingestion returned status: no_time_series",
+    "metadata_synchronization": {
+      "archive_stellar_radius": 0.0,
+      "pipeline_stellar_radius": 0.0,
+      "drift_detected": false
+    },
+    "analytical_layer_telemetry": {
+      "layer_1_arrays_shape": [],
+      "layer_2_measured_transit_depth_fraction": 0.0,
+      "layer_3_calculated_period_days": 0.0,
+      "layer_4_v_shape_metric": 0.0,
+      "layer_4_vetting_classification": "",
+      "layer_5_planet_radius_earth": 0.0,
+      "layer_5_jwst_tsm_score": 0.0,
+      "layer_6_ttv_datapoints_compiled": 0
+    },
+    "cross_ai_validation_metrics": {
+      "measured_vs_archival_period_delta_pct": 0.0,
+      "measured_vs_archival_depth_ratio": 0.0,
+      "signal_to_noise_ratio": 0.0
+    }
+  },
+  {
+    "test_id": "HAT-P-11_B_TESS",
+    "execution_status": "FAILED",
+    "execution_time_seconds": 19.579,
+    "error_traceback": "Ingestion returned status: no_time_series",
+    "metadata_synchronization": {
+      "archive_stellar_radius": 0.683,
+      "pipeline_stellar_radius": 0.683,
+      "drift_detected": false
+    },
+    "analytical_layer_telemetry": {
+      "layer_1_arrays_shape": [],
+      "layer_2_measured_transit_depth_fraction": 0.0,
+      "layer_3_calculated_period_days": 0.0,
+      "layer_4_v_shape_metric": 0.0,
+      "layer_4_vetting_classification": "",
+      "layer_5_planet_radius_earth": 0.0,
+      "layer_5_jwst_tsm_score": 0.0,
+      "layer_6_ttv_datapoints_compiled": 0
+    },
+    "cross_ai_validation_metrics": {
+      "measured_vs_archival_period_delta_pct": 0.0,
+      "measured_vs_archival_depth_ratio": 0.0,
+      "signal_to_noise_ratio": 0.0
+    }
+  },
+  {
+    "test_id": "WASP-12_B_KEPLER",
+    "execution_status": "SUCCESS",
+    "execution_time_seconds": 8.366,
+    "error_traceback": null,
+    "metadata_synchronization": {
+      "archive_stellar_radius": 1.69,
+      "pipeline_stellar_radius": 1.69,
+      "drift_detected": false
+    },
+    "analytical_layer_telemetry": {
+      "layer_1_arrays_shape": [],
+      "layer_2_measured_transit_depth_fraction": 0.0,
+      "layer_3_calculated_period_days": 0.0,
+      "layer_4_v_shape_metric": 0.0,
+      "layer_4_vetting_classification": "",
+      "layer_5_planet_radius_earth": 0.0,
+      "layer_5_jwst_tsm_score": 0.0,
+      "layer_6_ttv_datapoints_compiled": 0
+    },
+    "cross_ai_validation_metrics": {
+      "measured_vs_archival_period_delta_pct": 0.0,
+      "measured_vs_archival_depth_ratio": 0.0,
+      "signal_to_noise_ratio": 0.0
+    }
+  },
+  {
+    "test_id": "KEPLER-13_B_KEPLER",
+    "execution_status": "FAILED",
+    "execution_time_seconds": 17.535,
+    "error_traceback": "Ingestion returned status: no_time_series",
+    "metadata_synchronization": {
+      "archive_stellar_radius": 0.0,
+      "pipeline_stellar_radius": 0.0,
+      "drift_detected": false
+    },
+    "analytical_layer_telemetry": {
+      "layer_1_arrays_shape": [],
+      "layer_2_measured_transit_depth_fraction": 0.0,
+      "layer_3_calculated_period_days": 0.0,
+      "layer_4_v_shape_metric": 0.0,
+      "layer_4_vetting_classification": "",
+      "layer_5_planet_radius_earth": 0.0,
+      "layer_5_jwst_tsm_score": 0.0,
+      "layer_6_ttv_datapoints_compiled": 0
+    },
+    "cross_ai_validation_metrics": {
+      "measured_vs_archival_period_delta_pct": 0.0,
+      "measured_vs_archival_depth_ratio": 0.0,
+      "signal_to_noise_ratio": 0.0
+    }
+  },
+  {
+    "test_id": "HAT-P-11_B_KEPLER",
+    "execution_status": "FAILED",
+    "execution_time_seconds": 17.645,
+    "error_traceback": "Ingestion returned status: no_time_series",
+    "metadata_synchronization": {
+      "archive_stellar_radius": 0.683,
+      "pipeline_stellar_radius": 0.683,
+      "drift_detected": false
+    },
+    "analytical_layer_telemetry": {
+      "layer_1_arrays_shape": [],
+      "layer_2_measured_transit_depth_fraction": 0.0,
+      "layer_3_calculated_period_days": 0.0,
+      "layer_4_v_shape_metric": 0.0,
+      "layer_4_vetting_classification": "",
+      "layer_5_planet_radius_earth": 0.0,
+      "layer_5_jwst_tsm_score": 0.0,
+      "layer_6_ttv_datapoints_compiled": 0
+    },
+    "cross_ai_validation_metrics": {
+      "measured_vs_archival_period_delta_pct": 0.0,
+      "measured_vs_archival_depth_ratio": 0.0,
+      "signal_to_noise_ratio": 0.0
+    }
+  },
+  {
+    "test_id": "KEPLER-13_B_COMBINED_BASELINE_(KEPLER_+_TESS)",
+    "execution_status": "TIMEOUT",
+    "execution_time_seconds": 35.661,
+    "error_traceback": "[TIMEOUT] Phase 4: Kepler-13 b - Combined Baseline (Kepler + TESS)",
+    "metadata_synchronization": {
+      "archive_stellar_radius": 0.0,
+      "pipeline_stellar_radius": 0.0,
+      "drift_detected": false
+    },
+    "analytical_layer_telemetry": {
+      "layer_1_arrays_shape": [],
+      "layer_2_measured_transit_depth_fraction": 0.0,
+      "layer_3_calculated_period_days": 0.0,
+      "layer_4_v_shape_metric": 0.0,
+      "layer_4_vetting_classification": "",
+      "layer_5_planet_radius_earth": 0.0,
+      "layer_5_jwst_tsm_score": 0.0,
+      "layer_6_ttv_datapoints_compiled": 0
+    },
+    "cross_ai_validation_metrics": {
+      "measured_vs_archival_period_delta_pct": 0.0,
+      "measured_vs_archival_depth_ratio": 0.0,
+      "signal_to_noise_ratio": 0.0
+    }
+  },
+  {
+    "test_id": "HAT-P-11_B_COMBINED_BASELINE_(KEPLER_+_TESS)",
+    "execution_status": "TIMEOUT",
+    "execution_time_seconds": 30.13,
+    "error_traceback": "[TIMEOUT] Phase 4: HAT-P-11 b - Combined Baseline (Kepler + TESS)",
+    "metadata_synchronization": {
+      "archive_stellar_radius": 0.0,
+      "pipeline_stellar_radius": 0.0,
+      "drift_detected": false
+    },
+    "analytical_layer_telemetry": {
+      "layer_1_arrays_shape": [],
+      "layer_2_measured_transit_depth_fraction": 0.0,
+      "layer_3_calculated_period_days": 0.0,
+      "layer_4_v_shape_metric": 0.0,
+      "layer_4_vetting_classification": "",
+      "layer_5_planet_radius_earth": 0.0,
+      "layer_5_jwst_tsm_score": 0.0,
+      "layer_6_ttv_datapoints_compiled": 0
+    },
+    "cross_ai_validation_metrics": {
+      "measured_vs_archival_period_delta_pct": 0.0,
+      "measured_vs_archival_depth_ratio": 0.0,
+      "signal_to_noise_ratio": 0.0
+    }
+  }
+]

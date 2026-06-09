@@ -276,7 +276,7 @@ class RemoteDiscoveryEngine:
             params = {"query": query, "format": "json"}
 
             try:
-                resp = requests.get(url, params=params, timeout=3.0)
+                resp = requests.get(url, params=params, timeout=5.0)
                 resp.raise_for_status()
                 data = resp.json()
             except Exception as e:
@@ -481,7 +481,7 @@ class RemoteDiscoveryEngine:
             data = []
             for attempt in range(3):
                 try:
-                    resp = requests.get(url, params=params, timeout=15.0)
+                    resp = requests.get(url, params=params, timeout=5.0)
                     resp.raise_for_status()
                     data = resp.json()
                     break
@@ -624,7 +624,7 @@ class RemoteDiscoveryEngine:
                 # Use a sharp target name format — guarded against MAST search hangs
                 search = RemoteDiscoveryEngine._call_with_timeout(
                     lk.search_lightcurve, args=(t_name,),
-                    kwargs={"author": "SPOC"}, timeout=15.0,
+                    kwargs={"mission": "TESS", "author": "SPOC"}, timeout=15.0,
                     label="search_lightcurve(TESS/SPOC)"
                 )
                 if search is None:
@@ -667,6 +667,10 @@ class RemoteDiscoveryEngine:
                 
                 valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
                 t, f, e = t[valid], f[valid], e[valid]
+                
+                if len(t) == 0:
+                    return {"status": "no_time_series", "metadata": meta, "archive_error": archive_error}
+                    
                 sort_idx = np.argsort(t)
                 
                 return {
@@ -683,7 +687,7 @@ class RemoteDiscoveryEngine:
                 # Use a sharp target name format — guarded against MAST search hangs
                 search = RemoteDiscoveryEngine._call_with_timeout(
                     lk.search_lightcurve, args=(t_name,),
-                    kwargs={"author": "Kepler"}, timeout=15.0,
+                    kwargs={"mission": "Kepler", "author": "Kepler"}, timeout=15.0,
                     label="search_lightcurve(Kepler)"
                 )
                 if search is None:
@@ -726,6 +730,10 @@ class RemoteDiscoveryEngine:
                 
                 valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
                 t, f, e = t[valid], f[valid], e[valid]
+                
+                if len(t) == 0:
+                    return {"status": "no_time_series", "metadata": meta, "archive_error": archive_error}
+                    
                 sort_idx = np.argsort(t)
                 
                 return {
@@ -754,7 +762,7 @@ class RemoteDiscoveryEngine:
                 target_coords = t_name
                 for attempt in range(3):
                     try:
-                        resp = requests.get(url, params=params, timeout=15.0)
+                        resp = requests.get(url, params=params, timeout=5.0)
                         resp.raise_for_status()
                         data = resp.json()
                         if data and len(data) > 0:
@@ -771,14 +779,14 @@ class RemoteDiscoveryEngine:
 
                 search_tess = RemoteDiscoveryEngine._call_with_timeout(
                     lk.search_lightcurve, args=(target_coords,),
-                    kwargs={"author": "SPOC"}, timeout=15.0,
+                    kwargs={"mission": "TESS", "author": "SPOC"}, timeout=15.0,
                     label="search_lightcurve(combined/TESS)"
                 )
                 if search_tess is None:
                     search_tess = lk.SearchResult([])
                 search_kepler = RemoteDiscoveryEngine._call_with_timeout(
                     lk.search_lightcurve, args=(target_coords,),
-                    kwargs={"author": "Kepler"}, timeout=15.0,
+                    kwargs={"mission": "Kepler", "author": "Kepler"}, timeout=15.0,
                     label="search_lightcurve(combined/Kepler)"
                 )
                 if search_kepler is None:
@@ -853,6 +861,44 @@ class RemoteDiscoveryEngine:
                         f"{len(tess_fragments)} TESS fragments",
                         file=sys.stderr,
                     )
+
+                    if not kepler_fragments and not tess_fragments:
+                        return None
+                        
+                    if not kepler_fragments or not tess_fragments:
+                        unified_t = []
+                        unified_f = []
+                        unified_e = []
+                        fragments = tess_fragments if not kepler_fragments else kepler_fragments
+                        for lc in fragments:
+                            unified_t.append(np.asarray(lc.time.value, dtype=np.float64))
+                            unified_f.append(np.asarray(lc.flux.value, dtype=np.float64))
+                            unified_e.append(np.asarray(lc.flux_err.value, dtype=np.float64))
+                            
+                        if not unified_t:
+                            return None
+                            
+                        t_out = np.concatenate(unified_t)
+                        f_out = np.concatenate(unified_f)
+                        e_out = np.concatenate(unified_e)
+                        
+                        valid = np.isfinite(t_out) & np.isfinite(f_out) & np.isfinite(e_out)
+                        t_out, f_out, e_out = t_out[valid], f_out[valid], e_out[valid]
+                        
+                        if len(t_out) == 0:
+                            return None
+                            
+                        idx = np.argsort(t_out)
+                        t_out, f_out, e_out = t_out[idx], f_out[idx], e_out[idx]
+                        
+                        return {
+                            "kepler_segments": len(kepler_fragments),
+                            "tess_segments":   len(tess_fragments),
+                            "time": t_out,
+                            "flux": f_out,
+                            "flux_err": e_out,
+                            "baseline": "btjd" if not kepler_fragments else "bkjd"
+                        }
 
                     unified_t = []
                     unified_f = []
@@ -945,8 +991,10 @@ class RemoteDiscoveryEngine:
                         "archive_error": archive_error,
                     }
 
-                meta["time_baseline"]   = "unified_bkjd"
-                meta["unified_epoch"]   = _UNIFIED_EPOCH
+                baseline_val = combined_result.get("baseline", "unified_bkjd")
+                meta["time_baseline"]   = baseline_val
+                if baseline_val == "unified_bkjd":
+                    meta["unified_epoch"]   = _UNIFIED_EPOCH
                 meta["kepler_segments"] = combined_result["kepler_segments"]
                 meta["tess_segments"]   = combined_result["tess_segments"]
 
