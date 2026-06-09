@@ -498,7 +498,11 @@ class RemoteDiscoveryEngine:
         # ── 2. Fetch photometric time-series from MAST via Lightkurve ─────
         mast_error: str | None = None
         try:
-            search_result = lk.search_lightcurve(canonical, mission=mission)
+            if mission == "Combined Baseline (Kepler + TESS)":
+                search_result = lk.search_lightcurve(canonical, mission=("Kepler", "K2", "TESS"))
+            else:
+                search_result = lk.search_lightcurve(canonical, mission=mission)
+
             if len(search_result) == 0:
                 return {
                     "status": "no_time_series",
@@ -506,15 +510,28 @@ class RemoteDiscoveryEngine:
                     "archive_error": archive_error,
                 }
 
-            # Capped at first 2 sectors/quarters for download speed and to
-            # prevent application timeout disconnects.
-            lc_collection = search_result[:2].download_all()
-            if not lc_collection:
-                return {
-                    "status": "no_time_series",
-                    "metadata": meta,
-                    "archive_error": archive_error,
-                }
+            if mission == "Combined Baseline (Kepler + TESS)":
+                lc_collection = search_result.download_all()
+                if not lc_collection:
+                    return {
+                        "status": "no_time_series",
+                        "metadata": meta,
+                        "archive_error": archive_error,
+                    }
+                normalized_lcs = []
+                for lc in lc_collection:
+                    normalized_lcs.append(lc.normalize())
+                lc_collection = lk.LightCurveCollection(normalized_lcs)
+            else:
+                # Capped at first 2 sectors/quarters for download speed and to
+                # prevent application timeout disconnects.
+                lc_collection = search_result[:2].download_all()
+                if not lc_collection:
+                    return {
+                        "status": "no_time_series",
+                        "metadata": meta,
+                        "archive_error": archive_error,
+                    }
 
             stitched = lc_collection.stitch()
             try:

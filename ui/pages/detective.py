@@ -214,7 +214,8 @@ def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
         routes = [
             "NASA Exoplanet Archive",
             "TESS (via Lightkurve)",
-            "Kepler (via Lightkurve)"
+            "Kepler (via Lightkurve)",
+            "Combined Baseline (Kepler + TESS)"
         ]
         
         default_index = routes.index(st.session_state.data_route) if st.session_state.data_route in routes else 0
@@ -321,7 +322,9 @@ def render(main_panel, right_panel) -> None:
                     import traceback
 
                     mission = "Kepler"
-                    if "TESS" in route:
+                    if "Combined Baseline" in route:
+                        mission = "Combined Baseline (Kepler + TESS)"
+                    elif "TESS" in route:
                         mission = "TESS"
 
                     try:
