@@ -5,6 +5,13 @@ import json
 import os
 import datetime
 
+# --- Wotan Biweight Detrending (primary) with safe fallback ---
+try:
+    from wotan import flatten as wotan_flatten
+    _WOTAN_AVAILABLE = True
+except ImportError:
+    _WOTAN_AVAILABLE = False
+
 def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=5.0):
     """
     Detects a transit candidate in a light curve using the Box Least Squares (BLS) method.
@@ -14,24 +21,47 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     
     # 1. COMPUTE LOMB-SCARGLE STELLAR ROTATION ESTIMATION
     from astropy.timeseries import LombScargle
-    from scipy.ndimage import median_filter
     
     frequency, power = LombScargle(time, flux).autopower(minimum_frequency=0.1, maximum_frequency=10.0)
     stellar_rotation_period_days = float(1.0 / frequency[np.argmax(power)])
     
     # 2. DYNAMICALLY SCALE THE DETRENDING WINDOW
     window_length_days = min(0.5, stellar_rotation_period_days * 0.5)
-    dt = float(np.median(np.diff(time)))
-    
-    if dt > 0:
-        window_length_points = int(window_length_days / dt)
-        if window_length_points % 2 == 0:
-            window_length_points += 1
-        window_length_points = max(3, window_length_points)
-        
-        trend = median_filter(flux, size=window_length_points)
-        trend[trend == 0] = 1.0  # Avoid division by zero
-        flux = flux / trend
+
+    # 3. WOTAN BIWEIGHT DETRENDING (primary path)
+    if _WOTAN_AVAILABLE:
+        try:
+            flatten_flux, trend_flux = wotan_flatten(
+                time, flux,
+                window_length=window_length_days,
+                method='biweight',
+                return_trend=True
+            )
+            # Guard against NaN contamination from edge effects
+            nan_mask = np.isnan(flatten_flux)
+            if nan_mask.any():
+                flatten_flux[nan_mask] = 1.0
+            flux = flatten_flux
+        except Exception:
+            # Runtime failure inside wotan — fall back to median filter
+            _apply_median_fallback = True
+        else:
+            _apply_median_fallback = False
+    else:
+        _apply_median_fallback = True
+
+    # 4. MEDIAN-FILTER FALLBACK (legacy path)
+    if _apply_median_fallback:
+        from scipy.ndimage import median_filter
+        dt = float(np.median(np.diff(time)))
+        if dt > 0:
+            window_length_points = int(window_length_days / dt)
+            if window_length_points % 2 == 0:
+                window_length_points += 1
+            window_length_points = max(3, window_length_points)
+            trend = median_filter(flux, size=window_length_points)
+            trend[trend == 0] = 1.0  # Avoid division by zero
+            flux = flux / trend
 
     active_time = time.copy()
     active_flux = flux.copy()
