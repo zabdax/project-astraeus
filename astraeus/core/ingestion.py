@@ -536,7 +536,8 @@ class RemoteDiscoveryEngine:
                 }
 
             if mission == "Combined Baseline (Kepler + TESS)":
-                lc_collection = search_result.download_all()
+                # Cap to 2 sectors to avoid hanging, still yielding >10,000 observations
+                lc_collection = search_result[:2].download_all()
                 if not lc_collection:
                     return {
                         "status": "no_time_series",

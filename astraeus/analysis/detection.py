@@ -22,7 +22,13 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     # 1. COMPUTE LOMB-SCARGLE STELLAR ROTATION ESTIMATION
     from astropy.timeseries import LombScargle
     
-    frequency, power = LombScargle(time, flux).autopower(minimum_frequency=0.1, maximum_frequency=10.0)
+    # Sub-sample for Lomb-Scargle to accelerate performance
+    if len(time) > 2000:
+        step = len(time) // 2000
+        ls_time, ls_flux = time[::step], flux[::step]
+    else:
+        ls_time, ls_flux = time, flux
+    frequency, power = LombScargle(ls_time, ls_flux).autopower(minimum_frequency=0.1, maximum_frequency=10.0)
     stellar_rotation_period_days = float(1.0 / frequency[np.argmax(power)])
     
     # 2. DYNAMICALLY SCALE THE DETRENDING WINDOW
@@ -88,8 +94,8 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         # Restrict Sweep Windows
         durations = np.array([0.01, 0.03, 0.05, 0.07, 0.1])
         
-        # Vectorized Frequency Gridding
-        periods = model.autoperiod(durations, minimum_period=0.5, maximum_period=20.0, frequency_factor=50.0)
+        # Vectorized Frequency Gridding (higher frequency factor for high-precision period resolution)
+        periods = model.autoperiod(durations, minimum_period=0.5, maximum_period=20.0, frequency_factor=150.0)
         res = model.power(periods, durations)
         
         best_idx = np.argmax(res.power)

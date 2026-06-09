@@ -397,5 +397,137 @@
         "data_source": "Unknown",
         "metadata": {},
         "is_valid_candidate": false
+    },
+    {
+        "timestamp": "2026-06-09T07:13:43.568047+00:00",
+        "target_name": "WASP-12 b",
+        "period": 2.18282708604586,
+        "stellar_rotation_period_days": 0.2729729551025995,
+        "snr": 10.041890710185832,
+        "data_source": "Combined Baseline (Kepler + TESS)",
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 15377.7921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 15377.7921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": "1.091418901 d",
+                "pl_orbpererr1": "1.8e-08 d",
+                "st_rad": "1.69 solRad",
+                "st_raderr1": "0.019 solRad",
+                "st_lum": "0.59711",
+                "st_teff": "6265.0 K",
+                "st_mass": "1.325 solMass",
+                "sy_jmag": "10.477",
+                "pl_trandep": "1.53777921 %",
+                "pl_ratror": "0.117"
+            }
+        },
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T07:14:20.911192+00:00",
+        "target_name": "WASP-12 b",
+        "period": 2.1828370629194658,
+        "stellar_rotation_period_days": 0.2729729551025995,
+        "snr": 9.130575638432818,
+        "data_source": "Combined Baseline (Kepler + TESS)",
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 15377.7921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 15377.7921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": "1.091418901 d",
+                "pl_orbpererr1": "1.8e-08 d",
+                "st_rad": "1.69 solRad",
+                "st_raderr1": "0.019 solRad",
+                "st_lum": "0.59711",
+                "st_teff": "6265.0 K",
+                "st_mass": "1.325 solMass",
+                "sy_jmag": "10.477",
+                "pl_trandep": "1.53777921 %",
+                "pl_ratror": "0.117"
+            }
+        },
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T07:15:26.842125+00:00",
+        "target_name": "WASP-12 b",
+        "period": 5.130643620876577,
+        "stellar_rotation_period_days": 0.2729729551025995,
+        "snr": 6.68412705941059,
+        "data_source": "Combined Baseline (Kepler + TESS)",
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 15377.7921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 15377.7921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": "1.091418901 d",
+                "pl_orbpererr1": "1.8e-08 d",
+                "st_rad": "1.69 solRad",
+                "st_raderr1": "0.019 solRad",
+                "st_lum": "0.59711",
+                "st_teff": "6265.0 K",
+                "st_mass": "1.325 solMass",
+                "sy_jmag": "10.477",
+                "pl_trandep": "1.53777921 %",
+                "pl_ratror": "0.117"
+            }
+        },
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T07:34:08.114943+00:00",
+        "target_name": "Synthetic-Benchmark",
+        "period": 1.0893043174497885,
+        "stellar_rotation_period_days": 1.0944842035590965,
+        "snr": 121.23603216874437,
+        "data_source": "Local",
+        "metadata": {
+            "stellar_radius": 1.0,
+            "st_teff": 5700,
+            "st_mass": 1.0,
+            "sy_jmag": 10.0
+        },
+        "is_valid_candidate": true
+    },
+    {
+        "timestamp": "2026-06-09T07:34:08.165574+00:00",
+        "target_name": "Synthetic-Benchmark",
+        "period": 1.0940045046383575,
+        "stellar_rotation_period_days": 1.0944842035590965,
+        "snr": 5.3915268856068455,
+        "data_source": "Local",
+        "metadata": {
+            "stellar_radius": 1.0,
+            "st_teff": 5700,
+            "st_mass": 1.0,
+            "sy_jmag": 10.0
+        },
+        "is_valid_candidate": true
     }
 ]
