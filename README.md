@@ -48,6 +48,7 @@ The answer is computed by building the physics from scratch: Kepler's equation, 
 | 🧮 **Interactive Dashboard** | Full-featured Streamlit UI with 3D orbit views, live simulations, and MCMC execution panels |
 | 🤖 **AI Co-Pilot** | Pluggable LLM gateway (OpenAI, Anthropic, Google Gemini, or local Ollama) for automated result interpretation |
 | 📄 **PDF Reporting** | Auto-generation of research-grade analysis reports via `fpdf2` |
+| 🕵️ **Smart Vetting** | SNR-aware false positive vetting (V-shape, secondary eclipse occultation, ultra-short periods) |
 
 ---
 
@@ -87,7 +88,12 @@ project-astraeus/
     │   ├── fitting.py          # Model fitting utilities
     │   ├── optimization.py     # MAP (Maximum A Posteriori) estimation
     │   ├── error_analysis.py   # MCMC posterior sampling (emcee)
-    │   ├── detection.py        # Transit detection algorithms
+    │   ├── detection.py        # Main transit detection orchestrator
+    │   ├── bls_search.py       # BLS Search Engine
+    │   ├── detrending.py       # Detrending Engine
+    │   ├── geometric_validation.py # V-shape & secondary eclipse validation
+    │   ├── physical_properties.py  # Planet radius & temp derivation
+    │   ├── ttv_analysis.py     # Transit Timing Variation Analyzer
     │   ├── explanation.py      # LLM-driven result explanation
     │   ├── reporting.py        # PDF report generation
     │   └── logging.py          # Analysis logging
@@ -315,7 +321,7 @@ The AI co-pilot automatically contextualises retrieved astrophysical results and
 - [ ] Stellar variability modeling (non-constant baseline)
 - [ ] Multi-planet N-body system support
 - [ ] Auto-generated LaTeX / PDF research papers
-- [ ] Transit timing variation (TTV) analysis
+- [x] Transit timing variation (TTV) analysis
 - [ ] Comparative study across mission datasets (Kepler vs TESS)
 
 ---
