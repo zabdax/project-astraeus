@@ -69,11 +69,15 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
 
         # False-Positive Cross-Vetting
         if is_valid:
+            is_ultra_short_period = float(best_period) < 1.5
             if transit_depth_fraction < 0.03:
                 result['vetting_status'] = "Verified Planet Candidate"
             elif geom_metrics['v_shape_metric'] > 0.85 and geom_metrics['secondary_eclipse_detected']:
                 result['vetting_status'] = "Eclipsing Binary Detected"
-            elif geom_metrics['v_shape_metric'] > 0.8 or geom_metrics['flat_bottom_fraction'] < 0.05:
+            elif (
+                not is_ultra_short_period
+                and (geom_metrics['v_shape_metric'] > 0.8 or geom_metrics['flat_bottom_fraction'] < 0.05)
+            ):
                 result['vetting_status'] = "V-Shaped False Positive Risk (Potential Grazing Binary)"
             elif geom_metrics['secondary_eclipse_detected']:
                 result['vetting_status'] = "Eclipsing Binary Detected (Secondary Eclipse at Phase 0.5)"

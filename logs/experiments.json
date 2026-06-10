@@ -91,5 +91,167 @@
             }
         },
         "fig_paths": []
+    },
+    {
+        "id": "2331a05d-c72b-40fe-b6fd-46a716449847",
+        "timestamp": "2026-06-10T11:36:01.143950Z",
+        "dataset_hash": "a22beb4d669ccc615ea3e1e6bc00201b9605bdb0e6218e009ebc0ce72e2829ca",
+        "params": {
+            "target_name": "wasp-12b",
+            "period": 1.0929185837167434,
+            "stellar_rotation_period_days": 0.27281637274213666,
+            "snr": 9.165115307248382,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 1.53777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 1.53777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "29a6f857-9518-4d82-84f8-b549305fed20",
+        "timestamp": "2026-06-10T11:36:05.259548Z",
+        "dataset_hash": "a22beb4d669ccc615ea3e1e6bc00201b9605bdb0e6218e009ebc0ce72e2829ca",
+        "params": {
+            "target_name": "wasp-12b",
+            "period": 4.038007601520304,
+            "stellar_rotation_period_days": 0.27281637274213666,
+            "snr": 4.916239570108414,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 1.53777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 1.53777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "f92d03f1-c634-4c57-889d-fa751ce0ee66",
+        "timestamp": "2026-06-10T11:38:35.646479Z",
+        "dataset_hash": "ba81b9c97e1f21c034dc15887532547932ae02cc3d7e8368a05ca9db6d85913d",
+        "params": {
+            "target_name": "Kepler-13b",
+            "period": 1.7638527705541107,
+            "stellar_rotation_period_days": 0.881169166553612,
+            "snr": 75.26619308096907,
+            "data_source": "Combined Baseline (Kepler + TESS)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "KOI-13 b",
+            "orbital_period": 1.763588,
+            "stellar_radius": 1.74,
+            "transit_depth": 459060.0,
+            "pl_orbper": 1.763588,
+            "st_rad": 1.74,
+            "pl_trandep": 459060.0,
+            "st_teff": 7650.0,
+            "st_mass": 1.72,
+            "sy_jmag": 9.466,
+            "raw_row_dump": {
+                "pl_name": "KOI-13 b",
+                "pl_orbper": 1.763588,
+                "pl_orbpererr1": 1e-06,
+                "st_rad": 1.74,
+                "st_raderr1": 0.04,
+                "st_lum": 0.971,
+                "st_teff": 7650.0,
+                "st_mass": 1.72,
+                "sy_jmag": 9.466,
+                "pl_trandep": 0.45906,
+                "pl_ratror": 0.087373
+            },
+            "time_baseline": "unified",
+            "kepler_segments": 1,
+            "tess_segments": 1
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "6997a352-a0be-4d9e-8356-02e0a922e1f5",
+        "timestamp": "2026-06-10T11:38:37.300759Z",
+        "dataset_hash": "ba81b9c97e1f21c034dc15887532547932ae02cc3d7e8368a05ca9db6d85913d",
+        "params": {
+            "target_name": "Kepler-13b",
+            "period": 1.7599519903980796,
+            "stellar_rotation_period_days": 0.881169166553612,
+            "snr": 6.709455561823109,
+            "data_source": "Combined Baseline (Kepler + TESS)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "KOI-13 b",
+            "orbital_period": 1.763588,
+            "stellar_radius": 1.74,
+            "transit_depth": 459060.0,
+            "pl_orbper": 1.763588,
+            "st_rad": 1.74,
+            "pl_trandep": 459060.0,
+            "st_teff": 7650.0,
+            "st_mass": 1.72,
+            "sy_jmag": 9.466,
+            "raw_row_dump": {
+                "pl_name": "KOI-13 b",
+                "pl_orbper": 1.763588,
+                "pl_orbpererr1": 1e-06,
+                "st_rad": 1.74,
+                "st_raderr1": 0.04,
+                "st_lum": 0.971,
+                "st_teff": 7650.0,
+                "st_mass": 1.72,
+                "sy_jmag": 9.466,
+                "pl_trandep": 0.45906,
+                "pl_ratror": 0.087373
+            },
+            "time_baseline": "unified",
+            "kepler_segments": 1,
+            "tess_segments": 1
+        },
+        "fig_paths": []
     }
 ]

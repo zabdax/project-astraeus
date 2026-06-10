@@ -152,11 +152,7 @@ class LightkurveClient:
             
             lc_collection = lk.LightCurveCollection(lc_list)
             stitched = lc_collection.stitch()
-            try:
-                flat = stitched.flatten()
-            except Exception:
-                flat = stitched.normalize()
-            flat = flat.remove_nans()
+            flat = stitched.normalize().remove_nans()
             
             t = np.asarray(flat.time.value, dtype=np.float64)
             f = np.asarray(flat.flux.value, dtype=np.float64)

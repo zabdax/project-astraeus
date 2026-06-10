@@ -3,7 +3,7 @@
     "test_id": "WASP-12_B_NASA_EXOPLANET_ARCHIVE",
     "execution_status": "SUCCESS",
     "failed_at_layer": "None",
-    "execution_time_seconds": 2.203,
+    "execution_time_seconds": 2.408,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "SUCCESS",
@@ -24,7 +24,7 @@
     "test_id": "WASP-12_B_TESS",
     "execution_status": "SUCCESS",
     "failed_at_layer": "None",
-    "execution_time_seconds": 13.865,
+    "execution_time_seconds": 18.523,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "SUCCESS",
@@ -35,17 +35,17 @@
       "layer_6_ttv_status": "SUCCESS"
     },
     "scientific_telemetry": {
-      "measured_transit_depth_fraction": 0.00079,
+      "measured_transit_depth_fraction": 0.01429,
       "calculated_period_days": 1.09292,
       "vetting_classification": "Verified Planet Candidate",
-      "calculated_planet_radius_earth": 5.19
+      "calculated_planet_radius_earth": 22.06
     }
   },
   {
     "test_id": "WASP-12_B_KEPLER",
     "execution_status": "SKIPPED",
     "failed_at_layer": "None",
-    "execution_time_seconds": 9.574,
+    "execution_time_seconds": 11.222,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "NO_TIME_SERIES",
@@ -66,7 +66,7 @@
     "test_id": "WASP-12_B_COMBINED_BASELINE_(KEPLER_PLUS_TESS)",
     "execution_status": "SUCCESS",
     "failed_at_layer": "None",
-    "execution_time_seconds": 17.433,
+    "execution_time_seconds": 21.245,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "SUCCESS",
@@ -77,17 +77,17 @@
       "layer_6_ttv_status": "SUCCESS"
     },
     "scientific_telemetry": {
-      "measured_transit_depth_fraction": 0.00079,
+      "measured_transit_depth_fraction": 0.01429,
       "calculated_period_days": 1.09292,
       "vetting_classification": "Verified Planet Candidate",
-      "calculated_planet_radius_earth": 5.19
+      "calculated_planet_radius_earth": 22.06
     }
   },
   {
     "test_id": "KEPLER-13_B_NASA_EXOPLANET_ARCHIVE",
     "execution_status": "SUCCESS",
     "failed_at_layer": "None",
-    "execution_time_seconds": 5.895,
+    "execution_time_seconds": 4.547,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "SUCCESS",
@@ -108,7 +108,7 @@
     "test_id": "KEPLER-13_B_TESS",
     "execution_status": "SUCCESS",
     "failed_at_layer": "None",
-    "execution_time_seconds": 21.772,
+    "execution_time_seconds": 25.827,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "SUCCESS",
@@ -119,17 +119,17 @@
       "layer_6_ttv_status": "SUCCESS"
     },
     "scientific_telemetry": {
-      "measured_transit_depth_fraction": 0.00114,
+      "measured_transit_depth_fraction": 0.00687,
       "calculated_period_days": 1.76385,
       "vetting_classification": "Verified Planet Candidate",
-      "calculated_planet_radius_earth": 6.42
+      "calculated_planet_radius_earth": 15.75
     }
   },
   {
     "test_id": "KEPLER-13_B_KEPLER",
     "execution_status": "SUCCESS",
     "failed_at_layer": "None",
-    "execution_time_seconds": 14.682,
+    "execution_time_seconds": 21.541,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "SUCCESS",
@@ -140,17 +140,17 @@
       "layer_6_ttv_status": "SUCCESS"
     },
     "scientific_telemetry": {
-      "measured_transit_depth_fraction": 0.00439,
+      "measured_transit_depth_fraction": 0.0044,
       "calculated_period_days": 1.75605,
       "vetting_classification": "Verified Planet Candidate",
-      "calculated_planet_radius_earth": 12.59
+      "calculated_planet_radius_earth": 12.6
     }
   },
   {
     "test_id": "KEPLER-13_B_COMBINED_BASELINE_(KEPLER_PLUS_TESS)",
     "execution_status": "SUCCESS",
     "failed_at_layer": "None",
-    "execution_time_seconds": 33.191,
+    "execution_time_seconds": 40.279,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "SUCCESS",
@@ -161,17 +161,17 @@
       "layer_6_ttv_status": "SUCCESS"
     },
     "scientific_telemetry": {
-      "measured_transit_depth_fraction": 0.00089,
-      "calculated_period_days": 1.76385,
+      "measured_transit_depth_fraction": 0.00591,
+      "calculated_period_days": 0.88193,
       "vetting_classification": "Verified Planet Candidate",
-      "calculated_planet_radius_earth": 5.68
+      "calculated_planet_radius_earth": 14.61
     }
   },
   {
     "test_id": "HAT-P-11_B_NASA_EXOPLANET_ARCHIVE",
     "execution_status": "SUCCESS",
     "failed_at_layer": "None",
-    "execution_time_seconds": 2.249,
+    "execution_time_seconds": 2.173,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "SUCCESS",
@@ -192,7 +192,7 @@
     "test_id": "HAT-P-11_B_TESS",
     "execution_status": "SUCCESS",
     "failed_at_layer": "None",
-    "execution_time_seconds": 14.213,
+    "execution_time_seconds": 16.956,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "SUCCESS",
@@ -203,17 +203,17 @@
       "layer_6_ttv_status": "SUCCESS"
     },
     "scientific_telemetry": {
-      "measured_transit_depth_fraction": 0.00059,
-      "calculated_period_days": 4.89618,
+      "measured_transit_depth_fraction": 0.00384,
+      "calculated_period_days": 4.88838,
       "vetting_classification": "Verified Planet Candidate",
-      "calculated_planet_radius_earth": 1.82
+      "calculated_planet_radius_earth": 4.62
     }
   },
   {
     "test_id": "HAT-P-11_B_KEPLER",
     "execution_status": "SUCCESS",
     "failed_at_layer": "None",
-    "execution_time_seconds": 11.11,
+    "execution_time_seconds": 12.454,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "SUCCESS",
@@ -224,17 +224,17 @@
       "layer_6_ttv_status": "SUCCESS"
     },
     "scientific_telemetry": {
-      "measured_transit_depth_fraction": 0.00399,
+      "measured_transit_depth_fraction": 0.00403,
       "calculated_period_days": 4.87668,
       "vetting_classification": "Verified Planet Candidate",
-      "calculated_planet_radius_earth": 4.71
+      "calculated_planet_radius_earth": 4.74
     }
   },
   {
     "test_id": "HAT-P-11_B_COMBINED_BASELINE_(KEPLER_PLUS_TESS)",
     "execution_status": "SUCCESS",
     "failed_at_layer": "None",
-    "execution_time_seconds": 33.078,
+    "execution_time_seconds": 30.996,
     "error_traceback": null,
     "pipeline_flow_trace": {
       "layer_1_ingestion_status": "SUCCESS",
@@ -245,10 +245,10 @@
       "layer_6_ttv_status": "SUCCESS"
     },
     "scientific_telemetry": {
-      "measured_transit_depth_fraction": 0.00312,
-      "calculated_period_days": 4.88448,
+      "measured_transit_depth_fraction": 0.0038,
+      "calculated_period_days": 4.88838,
       "vetting_classification": "Verified Planet Candidate",
-      "calculated_planet_radius_earth": 4.16
+      "calculated_planet_radius_earth": 4.6
     }
   }
 ]
