@@ -15,7 +15,7 @@ def test_noise_injection():
     np.random.seed(42)
     flux = 1.0 + np.random.normal(0, 0.01, 500)
     
-    results = detect_transit_candidate(time, flux, threshold=5.0)
+    results = detect_transit_candidate(time, flux, snr_threshold=5.0)
     
     # The prompt refers to 'candidate_found', backend uses 'is_candidate'
     # We will assert that the candidate was not found.
@@ -44,7 +44,7 @@ def test_signal_recovery():
     np.random.seed(42)
     flux += np.random.normal(0, 0.001, len(time))
     
-    results = detect_transit_candidate(time, flux, threshold=5.0)
+    results = detect_transit_candidate(time, flux, snr_threshold=5.0)
     
     assert results['confidence_score'] > 0.8, f"Expected confidence > 0.8, got {results['confidence_score']}"
     assert abs(results['period'] - period_true) <= 0.05, f"Expected period ~{period_true}, got {results['period']}"

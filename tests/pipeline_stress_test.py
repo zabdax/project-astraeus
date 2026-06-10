@@ -126,10 +126,10 @@ def run_pipeline(target_name: str, run_label: str, mission_profile: str):
     _cache = os.path.join(os.path.expanduser("~"), ".lightkurve", "cache")
     if os.path.exists(_cache):
         try:
-            shutil.rmtree(_cache)
-            print(f"[{_ts()}] Pre-emptive cache wipe: removed '{_cache}'")
+            shutil.rmtree(_cache, ignore_errors=True)
+            print(f"[{_ts()}] Pre-emptive cache wipe: removed '{_cache}'", file=sys.__stdout__)
         except Exception as e:
-            print(f"[{_ts()}] Pre-emptive cache wipe failed (non-fatal): {e}")
+            print(f"[{_ts()}] Pre-emptive cache wipe failed (non-fatal): {e}", file=sys.__stdout__)
 
     # ══════════════════════════════════════════════════════════════════════
     #  LAYER 1 — Multi-Mission Ingestion & Stitching
