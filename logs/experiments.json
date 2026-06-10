@@ -337,5 +337,122 @@
             "tess_segments": 1
         },
         "fig_paths": []
+    },
+    {
+        "id": "d107f8cd-1307-4d78-9cdb-8bfdcbc0878e",
+        "timestamp": "2026-06-10T13:11:58.186795Z",
+        "dataset_hash": "e73f2cf0bdefbefe76fd1bb91c36cf45b9bcc2598e275d7641d3ef0d6e5eed7f",
+        "params": {
+            "target_name": "HAT-P-11 b",
+            "period": 4.876675335067013,
+            "stellar_rotation_period_days": 4.094403876632875,
+            "snr": 80.18965977993122,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "HAT-P-11 b",
+            "orbital_period": 4.888,
+            "stellar_radius": 0.683,
+            "transit_depth": 0.43421,
+            "pl_orbper": 4.888,
+            "st_rad": 0.683,
+            "pl_trandep": 0.43421,
+            "st_teff": 4653.0,
+            "st_mass": 0.811,
+            "sy_jmag": 7.608,
+            "raw_row_dump": {
+                "pl_name": "HAT-P-11 b",
+                "pl_orbper": 4.888,
+                "pl_orbpererr1": 0.0001,
+                "st_rad": 0.683,
+                "st_raderr1": 0.009,
+                "st_lum": -0.56702,
+                "st_teff": 4653.0,
+                "st_mass": 0.811,
+                "sy_jmag": 7.608,
+                "pl_trandep": 0.43421,
+                "pl_ratror": 0.057989
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "02d1617a-2ee8-4c5a-ba6c-86c88bcf434f",
+        "timestamp": "2026-06-10T13:11:59.977348Z",
+        "dataset_hash": "e73f2cf0bdefbefe76fd1bb91c36cf45b9bcc2598e275d7641d3ef0d6e5eed7f",
+        "params": {
+            "target_name": "HAT-P-11 b",
+            "period": 4.536957391478295,
+            "stellar_rotation_period_days": 4.094403876632875,
+            "snr": 17.33132073750958,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "HAT-P-11 b",
+            "orbital_period": 4.888,
+            "stellar_radius": 0.683,
+            "transit_depth": 0.43421,
+            "pl_orbper": 4.888,
+            "st_rad": 0.683,
+            "pl_trandep": 0.43421,
+            "st_teff": 4653.0,
+            "st_mass": 0.811,
+            "sy_jmag": 7.608,
+            "raw_row_dump": {
+                "pl_name": "HAT-P-11 b",
+                "pl_orbper": 4.888,
+                "pl_orbpererr1": 0.0001,
+                "st_rad": 0.683,
+                "st_raderr1": 0.009,
+                "st_lum": -0.56702,
+                "st_teff": 4653.0,
+                "st_mass": 0.811,
+                "sy_jmag": 7.608,
+                "pl_trandep": 0.43421,
+                "pl_ratror": 0.057989
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "ee256f6f-2acf-4677-9351-c2b47c1f0e1c",
+        "timestamp": "2026-06-10T13:12:01.211181Z",
+        "dataset_hash": "e73f2cf0bdefbefe76fd1bb91c36cf45b9bcc2598e275d7641d3ef0d6e5eed7f",
+        "params": {
+            "target_name": "HAT-P-11 b",
+            "period": 7.010402080416083,
+            "stellar_rotation_period_days": 4.094403876632875,
+            "snr": 17.109074860290722,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "HAT-P-11 b",
+            "orbital_period": 4.888,
+            "stellar_radius": 0.683,
+            "transit_depth": 0.43421,
+            "pl_orbper": 4.888,
+            "st_rad": 0.683,
+            "pl_trandep": 0.43421,
+            "st_teff": 4653.0,
+            "st_mass": 0.811,
+            "sy_jmag": 7.608,
+            "raw_row_dump": {
+                "pl_name": "HAT-P-11 b",
+                "pl_orbper": 4.888,
+                "pl_orbpererr1": 0.0001,
+                "st_rad": 0.683,
+                "st_raderr1": 0.009,
+                "st_lum": -0.56702,
+                "st_teff": 4653.0,
+                "st_mass": 0.811,
+                "sy_jmag": 7.608,
+                "pl_trandep": 0.43421,
+                "pl_ratror": 0.057989
+            }
+        },
+        "fig_paths": []
     }
 ]
