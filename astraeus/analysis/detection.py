@@ -70,17 +70,33 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         # False-Positive Cross-Vetting
         if is_valid:
             is_ultra_short_period = float(best_period) < 1.5
+            sec_depth = geom_metrics.get('secondary_eclipse_depth', 0.0)
+
             if transit_depth_fraction < 0.03:
                 result['vetting_status'] = "Verified Planet Candidate"
-            elif geom_metrics['v_shape_metric'] > 0.85 and geom_metrics['secondary_eclipse_detected']:
+            elif (geom_metrics['v_shape_metric'] > 0.85
+                  and geom_metrics['secondary_eclipse_detected']
+                  and (best_snr <= 20.0 or sec_depth >= 0.0008)):
+                # Both V-shaped AND secondary eclipse → binary, but only
+                # when SNR is low OR the eclipse is deep enough to rule
+                # out a planetary occultation.
                 result['vetting_status'] = "Eclipsing Binary Detected"
             elif (
-                not is_ultra_short_period
+                best_snr <= 20.0
+                and not is_ultra_short_period
                 and (geom_metrics['v_shape_metric'] > 0.8 or geom_metrics['flat_bottom_fraction'] < 0.05)
             ):
+                # V-shape / low flat-bottom only vetoes when SNR is NOT
+                # overwhelmingly high (oblate-star gravity-darkening
+                # produces V-shaped transits even for real planets).
                 result['vetting_status'] = "V-Shaped False Positive Risk (Potential Grazing Binary)"
             elif geom_metrics['secondary_eclipse_detected']:
-                result['vetting_status'] = "Eclipsing Binary Detected (Secondary Eclipse at Phase 0.5)"
+                if sec_depth < 0.0008:
+                    # Shallow occultation (<800 ppm) = planetary thermal
+                    # emission being occulted, NOT a binary eclipse.
+                    result['vetting_status'] = "Verified Planet Candidate (Atmospheric Occultation Detected)"
+                else:
+                    result['vetting_status'] = "Eclipsing Binary Detected (Secondary Eclipse at Phase 0.5)"
 
         # Physical Properties
         st_teff = float(archive_metadata.get('st_teff', 5778.0))

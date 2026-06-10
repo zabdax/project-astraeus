@@ -253,5 +253,89 @@
             "tess_segments": 1
         },
         "fig_paths": []
+    },
+    {
+        "id": "748794a6-e775-401a-9adc-c15f347a6c69",
+        "timestamp": "2026-06-10T12:08:38.528244Z",
+        "dataset_hash": "b1cebb5136acc1ba1ec6b56c54abd3dd3eb16de86df2725c48ac0a490b5c0a58",
+        "params": {
+            "target_name": "Kepler-13b",
+            "period": 1.7638527705541107,
+            "stellar_rotation_period_days": 0.881169166553612,
+            "snr": 75.26619308096907,
+            "data_source": "Combined Baseline (Kepler + TESS)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "KOI-13 b",
+            "orbital_period": 1.763588,
+            "stellar_radius": 1.74,
+            "transit_depth": 0.45906,
+            "pl_orbper": 1.763588,
+            "st_rad": 1.74,
+            "pl_trandep": 0.45906,
+            "st_teff": 7650.0,
+            "st_mass": 1.72,
+            "sy_jmag": 9.466,
+            "raw_row_dump": {
+                "pl_name": "KOI-13 b",
+                "pl_orbper": 1.763588,
+                "pl_orbpererr1": 1e-06,
+                "st_rad": 1.74,
+                "st_raderr1": 0.04,
+                "st_lum": 0.971,
+                "st_teff": 7650.0,
+                "st_mass": 1.72,
+                "sy_jmag": 9.466,
+                "pl_trandep": 0.45906,
+                "pl_ratror": 0.087373
+            },
+            "time_baseline": "unified",
+            "kepler_segments": 1,
+            "tess_segments": 1
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "99864203-b187-458e-9850-7df1955ac40e",
+        "timestamp": "2026-06-10T12:08:40.371991Z",
+        "dataset_hash": "b1cebb5136acc1ba1ec6b56c54abd3dd3eb16de86df2725c48ac0a490b5c0a58",
+        "params": {
+            "target_name": "Kepler-13b",
+            "period": 1.7599519903980796,
+            "stellar_rotation_period_days": 0.881169166553612,
+            "snr": 6.709455561823109,
+            "data_source": "Combined Baseline (Kepler + TESS)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "KOI-13 b",
+            "orbital_period": 1.763588,
+            "stellar_radius": 1.74,
+            "transit_depth": 0.45906,
+            "pl_orbper": 1.763588,
+            "st_rad": 1.74,
+            "pl_trandep": 0.45906,
+            "st_teff": 7650.0,
+            "st_mass": 1.72,
+            "sy_jmag": 9.466,
+            "raw_row_dump": {
+                "pl_name": "KOI-13 b",
+                "pl_orbper": 1.763588,
+                "pl_orbpererr1": 1e-06,
+                "st_rad": 1.74,
+                "st_raderr1": 0.04,
+                "st_lum": 0.971,
+                "st_teff": 7650.0,
+                "st_mass": 1.72,
+                "sy_jmag": 9.466,
+                "pl_trandep": 0.45906,
+                "pl_ratror": 0.087373
+            },
+            "time_baseline": "unified",
+            "kepler_segments": 1,
+            "tess_segments": 1
+        },
+        "fig_paths": []
     }
 ]

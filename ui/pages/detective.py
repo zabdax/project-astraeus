@@ -502,12 +502,24 @@ def render(main_panel, right_panel) -> None:
                 flat_bot = float(res.get('flat_bottom_fraction', 0.0))
                 sec_dep = float(res.get('secondary_eclipse_depth', 0.0))
                 sec_snr = float(res.get('secondary_eclipse_snr', 0.0))
+                # ── V-Shape check: high-SNR override for oblate stars ──
+                if snr > 20.0:
+                    v_status = "Pass (High-SNR Override)"
+                elif v_shape < 0.8 and flat_bot >= 0.05:
+                    v_status = "Pass"
+                else:
+                    v_status = "Fail (V-Shaped)"
+
+                # ── Secondary eclipse: differentiate occultation vs binary ──
+                if sec_snr <= 3.0:
+                    sec_status = "Pass"
+                elif sec_dep < 0.0008:
+                    sec_status = "Pass (Atmospheric Occultation Detected)"
+                else:
+                    sec_status = "Fail (Eclipse Detected)"
                 
-                v_status = "Pass" if v_shape < 0.8 and flat_bot >= 0.05 else "Fail (V-Shaped)"
-                sec_status = "Pass" if sec_snr <= 3.0 else "Fail (Eclipse Detected)"
-                
-                v_color = "#10B981" if v_status == "Pass" else "#EF4444"
-                sec_color = "#10B981" if sec_status == "Pass" else "#EF4444"
+                v_color = "#10B981" if v_status.startswith("Pass") else "#EF4444"
+                sec_color = "#10B981" if sec_status.startswith("Pass") else "#EF4444"
                 
                 st.markdown(f"""
                 <div class="telemetry-card" style="display: flex; flex-direction: column; gap: 16px;">

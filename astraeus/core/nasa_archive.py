@@ -169,16 +169,28 @@ class NASAExoplanetArchive:
                 st_mass = float(row.get('st_mass')) if row.get('st_mass') is not None else 1.0
                 sy_jmag = float(row.get('sy_jmag')) if row.get('sy_jmag') is not None else 10.0
 
+                # ── Transit-depth normalisation ──────────────────────────
+                # Contract: `transit_depth` is ALWAYS stored as a raw
+                # decimal fraction (e.g. 0.00459 for Kepler-13 b).
+                # The ppm conversion (× 1,000,000) happens ONCE, at the
+                # display layer in the UI.
+                #
+                # NASA archive `pl_trandep` semantics:
+                #   >= 1.0  → value is in percent   → divide by 100
+                #   <  1.0  → value is a fraction    → use as-is
+                # Fallback `pl_ratror` → (Rp/R★)²  → already a fraction
                 pl_trandep = row.get('pl_trandep')
                 if pl_trandep is not None:
                     pl_trandep = float(pl_trandep)
-                    if pl_trandep < 1.0:
-                        pl_trandep = pl_trandep * 1_000_000
+                    if pl_trandep >= 1.0:
+                        # Percent → fraction  (e.g. 0.459 % → 0.00459)
+                        pl_trandep = pl_trandep / 100.0
+                    # else: already a fraction, use as-is
                 else:
                     pl_ratror = row.get('pl_ratror')
                     if pl_ratror is not None:
                         pl_ratror = float(pl_ratror)
-                        pl_trandep = (pl_ratror ** 2) * 1_000_000
+                        pl_trandep = pl_ratror ** 2  # already a fraction
 
                 meta = {
                     "pl_name": matched_canonical,

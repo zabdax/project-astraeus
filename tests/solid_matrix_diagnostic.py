@@ -170,18 +170,25 @@ def _normalize_depth(raw_depth: float) -> float:
     return depth / 100.0 if depth > 0.1 else depth
 
 
-def _classify_vetting(depth_fraction: float, metrics: dict, orbital_period_days: float | None = None) -> str:
+def _classify_vetting(depth_fraction: float, metrics: dict, orbital_period_days: float | None = None, snr: float = 0.0) -> str:
     is_ultra_short_period = orbital_period_days is not None and orbital_period_days < 1.5
+    sec_depth = metrics.get("secondary_eclipse_depth", 0.0)
+
     if depth_fraction < 0.03:
         return "Verified Planet Candidate"
-    if metrics.get("v_shape_metric", 0.0) > 0.85 and metrics.get("secondary_eclipse_detected"):
+    if (metrics.get("v_shape_metric", 0.0) > 0.85
+            and metrics.get("secondary_eclipse_detected")
+            and (snr <= 20.0 or sec_depth >= 0.0008)):
         return "Eclipsing Binary Detected"
     if (
-        not is_ultra_short_period
+        snr <= 20.0
+        and not is_ultra_short_period
         and (metrics.get("v_shape_metric", 0.0) > 0.8 or metrics.get("flat_bottom_fraction", 1.0) < 0.05)
     ):
         return "V-Shaped False Positive Risk (Potential Grazing Binary)"
     if metrics.get("secondary_eclipse_detected"):
+        if sec_depth < 0.0008:
+            return "Verified Planet Candidate (Atmospheric Occultation Detected)"
         return "Eclipsing Binary Detected (Secondary Eclipse at Phase 0.5)"
     return "Planet Candidate Requires Follow-Up"
 
@@ -270,7 +277,7 @@ def run_cascade_for_track(target: str, source: str, timeout_limit: float = 45.0)
                     duration,
                     depth_fraction,
                 )
-                classification = _classify_vetting(depth_fraction, geom_metrics, period_days)
+                classification = _classify_vetting(depth_fraction, geom_metrics, period_days, snr=float(bls_result.get("snr", 0.0)))
                 if not isinstance(classification, str) or not classification.strip():
                     raise ValueError("Layer 4 failed to assign a classification string")
                 block["pipeline_flow_trace"]["layer_4_vetting_status"] = "SUCCESS"
