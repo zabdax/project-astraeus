@@ -24,15 +24,8 @@ class BLSSearchEngine:
 
     @staticmethod
     def search(time: np.ndarray, flux: np.ndarray) -> dict:
-        if len(time) > 1000:
-            n_bins = 1000
-            points_per_bin = len(time) // n_bins
-            truncate_idx = points_per_bin * n_bins
-            binned_time = time[:truncate_idx].reshape(n_bins, points_per_bin).mean(axis=1)
-            binned_flux = flux[:truncate_idx].reshape(n_bins, points_per_bin).mean(axis=1)
-        else:
-            binned_time = time
-            binned_flux = flux
+        binned_time = time
+        binned_flux = flux
 
         model = BoxLeastSquares(binned_time, binned_flux)
         durations = np.array([0.01, 0.03, 0.05, 0.07, 0.1])

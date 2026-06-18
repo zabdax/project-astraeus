@@ -25,6 +25,7 @@ def subtract_planetary_signal(flux, time, period, epoch, duration, depth_ppm, me
     
     try:
         import batman
+        print(f"[Orchestrator] Initializing high-precision batman engine for period {period:.3f}")
         
         # Initialize batman parameters
         params = batman.TransitParams()
@@ -55,7 +56,8 @@ def subtract_planetary_signal(flux, time, period, epoch, duration, depth_ppm, me
         # We need to add the dip (1.0 - transit_model) to our flux to flatten it.
         cleaned_flux += (1.0 - transit_model)
         
-    except Exception:
+    except Exception as e:
+        print(f"[Fallback] batman failed or unavailable ({e}). Initializing Trapezoidal module for period {period:.3f}")
         # Fallback Countermeasure (Trapezoidal Engine)
         # Shift time by epoch to center the transit at phase 0
         phase = (time - epoch + 0.5 * period) % period - 0.5 * period
