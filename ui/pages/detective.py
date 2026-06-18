@@ -6,6 +6,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from astraeus.analysis.detection import detect_transit_candidate
+from astraeus.core.orchestrator import run_multi_planet_search
 from astraeus.core.ingestion import RemoteDiscoveryEngine, DataAdapter
 
 # Custom CSS for Minimalist Dark Theme
@@ -257,20 +258,44 @@ def render(main_panel, right_panel) -> None:
         )
         
         uploaded_data, target, route = render_discovery_bar()
-        
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        col_multi, col_depth = st.columns([1, 1])
+        with col_multi:
+            multi_planet_mode = st.toggle("Multi-Planet Search Deep-Dive", value=False)
+        with col_depth:
+            max_depth = st.slider("Max Planetary Scan Depth", min_value=1, max_value=5, value=2, disabled=not multi_planet_mode)
+        st.markdown("<br>", unsafe_allow_html=True)
+
         def run_analysis(data_time, data_flux, t_name, d_source, metadata):
             with st.spinner("Executing optimized sub-harmonic resonant scan & multi-phase binning..."):
                 try:
-                    results = detect_transit_candidate(
-                        data_time, data_flux,
-                        target_name=t_name,
-                        data_source=d_source,
-                        metadata=metadata
-                    )
-                    if isinstance(results, list) and len(results) > 0:
-                        best_candidate = results[0].get('candidate_1', {})
+                    if multi_planet_mode and max_depth > 1:
+                        raw_lc = {
+                            'time': data_time,
+                            'flux': data_flux,
+                            'target_name': t_name,
+                            'data_source': d_source,
+                            'metadata': metadata
+                        }
+                        results = run_multi_planet_search(raw_lc, max_signals=max_depth)
+                        st.session_state['detective_results_list'] = results
+                        if results:
+                            best_candidate = dict(results[0])
+                        else:
+                            best_candidate = {}
                     else:
-                        best_candidate = results if isinstance(results, dict) else {}
+                        results = detect_transit_candidate(
+                            data_time, data_flux,
+                            target_name=t_name,
+                            data_source=d_source,
+                            metadata=metadata
+                        )
+                        if isinstance(results, list) and len(results) > 0:
+                            best_candidate = results[0].get('candidate_1', {})
+                        else:
+                            best_candidate = results if isinstance(results, dict) else {}
+                        st.session_state['detective_results_list'] = [best_candidate] if best_candidate else []
                     
                     periodogram_data = best_candidate.pop('periodogram', None)
                     st.session_state['detective_results'] = best_candidate
@@ -281,7 +306,9 @@ def render(main_panel, right_panel) -> None:
                     st.session_state['active_time'] = data_time
                     st.session_state['active_flux'] = data_flux
                 except Exception as e:
+                    import traceback
                     st.markdown(f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> BLS Execution failed: {e}</div>", unsafe_allow_html=True)
+                    st.error(traceback.format_exc())
                     
         if uploaded_data is not None:
             if isinstance(uploaded_data, dict) and 'time' in uploaded_data and 'flux' in uploaded_data:
@@ -538,6 +565,48 @@ def render(main_panel, right_panel) -> None:
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
+
+            # --- Tier 4: Multi-Planet Candidates Summary ---
+            if 'detective_results_list' in st.session_state and len(st.session_state['detective_results_list']) > 1:
+                st.markdown("<h3 style='margin-top: 24px; color: #00bcd4; font-size: 1.2rem; margin-bottom: 12px;'>Multi-Planet System Candidates</h3>", unsafe_allow_html=True)
+                
+                candidates = st.session_state['detective_results_list']
+                import string
+                letters = string.ascii_uppercase
+                
+                # Render Cards in columns
+                cols = st.columns(len(candidates))
+                for i, cand in enumerate(candidates):
+                    letter = letters[i] if i < len(letters) else str(i)
+                    per = float(cand.get('period', 0.0))
+                    rad = float(cand.get('planet_radius_earth', 0.0))
+                    tsm = float(cand.get('jwst_tsm_score', 0.0))
+                    
+                    with cols[i]:
+                        st.markdown(f'''
+                        <div class="telemetry-card" style="padding: 12px;">
+                            <div style="font-weight: bold; color: #00bcd4; font-size: 16px; margin-bottom: 8px;">Planet Candidate {letter}</div>
+                            <div style="font-size: 13px; color: #e6edf3;"><b>Period:</b> {per:.4f} d</div>
+                            <div style="font-size: 13px; color: #e6edf3;"><b>Radius:</b> {rad:.4f} R⊕</div>
+                            <div style="font-size: 13px; color: #e6edf3;"><b>TSM:</b> {tsm:.2f}</div>
+                        </div>
+                        ''', unsafe_allow_html=True)
+
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # Render scannable table
+                table_data = []
+                for i, cand in enumerate(candidates):
+                    letter = letters[i] if i < len(letters) else str(i)
+                    table_data.append({
+                        "Candidate": f"Candidate {letter}",
+                        "Period (Days)": f"{float(cand.get('period', 0.0)):.4f}",
+                        "Radius (R⊕)": f"{float(cand.get('planet_radius_earth', 0.0)):.4f}",
+                        "TSM Score": f"{float(cand.get('jwst_tsm_score', 0.0)):.2f}",
+                        "SNR": f"{float(cand.get('snr', 0.0)):.2f}",
+                        "Status": cand.get('vetting_status', 'Unknown')
+                    })
+                st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
                 
     if right_panel:
         with right_panel:
