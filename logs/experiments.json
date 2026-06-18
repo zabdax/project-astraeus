@@ -476,5 +476,320 @@
             "run_id": "20260618_060257"
         },
         "fig_paths": []
+    },
+    {
+        "id": "9e08b5c6-58a4-43bd-a3f7-906e5d3bbaeb",
+        "timestamp": "2026-06-18T08:40:18.419143Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 7.299059811962392,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 16.58283453707319,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "20bb5d00-9644-456e-bd42-913a33162a09",
+        "timestamp": "2026-06-18T08:40:20.892324Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 2.5807161432286456,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 18.002259053355974,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "4571aba7-623a-47cd-b28d-d95f353b986b",
+        "timestamp": "2026-06-18T08:40:23.379865Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 3.340468093618724,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 14.191632385195154,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "32a9366e-48c5-4036-be0a-358291d1794f",
+        "timestamp": "2026-06-18T08:40:54.866980Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 7.299059811962392,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 16.680908771109166,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "2b4180dd-addf-4c71-be29-e6a16a310e16",
+        "timestamp": "2026-06-18T08:40:57.466765Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 2.5807161432286456,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 18.48507044876396,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "3eb3f678-5225-4a11-bdad-84e02c1cb695",
+        "timestamp": "2026-06-18T08:40:59.844899Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 3.340468093618724,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 14.144686926380423,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "ca5d526e-43f0-48cf-8af6-f4a8c004b0be",
+        "timestamp": "2026-06-18T08:45:36.529819Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 7.299059811962392,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 16.58283453707319,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "8e009aef-e369-409f-82ce-2a693ba8bca0",
+        "timestamp": "2026-06-18T08:45:43.989121Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 2.5807161432286456,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 18.002259053355974,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "5b289472-9ac0-467d-98f0-43abf824e07f",
+        "timestamp": "2026-06-18T08:45:50.286454Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 3.340468093618724,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 14.191632385195154,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "99a4eedb-813d-4c35-a29e-8c5ebeeee682",
+        "timestamp": "2026-06-18T08:47:09.839492Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 7.299059811962392,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 16.680908771109166,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "b5e93c4f-bfa2-49fd-92ea-89f6de8ea1d8",
+        "timestamp": "2026-06-18T08:47:18.008222Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 2.5807161432286456,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 18.48507044876396,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "90c4d3c0-ec37-4754-bc87-aa8e72659b80",
+        "timestamp": "2026-06-18T08:47:25.405605Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 3.340468093618724,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 14.144686926380423,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "a503d0f1-ec21-4e13-8953-7a391e5b0fc3",
+        "timestamp": "2026-06-18T08:48:43.269388Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 7.299059811962392,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 16.897838818596092,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "1970c106-991e-4d30-b634-5128d2825cf2",
+        "timestamp": "2026-06-18T08:48:50.852951Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 2.5807161432286456,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 18.94202351906367,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "239e53bb-d868-4648-8539-bca406a82b2f",
+        "timestamp": "2026-06-18T08:48:57.525580Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 3.340468093618724,
+            "stellar_rotation_period_days": 0.12998369102813065,
+            "snr": 14.083300730935209,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "ceb5aac0-24fa-4456-af32-2fde6db6d107",
+        "timestamp": "2026-06-18T08:50:14.210150Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 7.299059811962392,
+            "stellar_rotation_period_days": 1.0587567021662359,
+            "snr": 18.394624662755298,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "e1ecd045-7d3a-4102-99bc-4d1cf47a6713",
+        "timestamp": "2026-06-18T08:50:21.467841Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 2.5807161432286456,
+            "stellar_rotation_period_days": 1.0587567021662359,
+            "snr": 21.205463400016594,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "a83fdfd7-57f5-4664-968a-403d3051c038",
+        "timestamp": "2026-06-18T08:50:27.856799Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 3.340468093618724,
+            "stellar_rotation_period_days": 1.0587567021662359,
+            "snr": 14.933329523951558,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "b7380636-c1e3-4801-a044-f6daab9f4836",
+        "timestamp": "2026-06-18T08:51:45.370011Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 7.299059811962392,
+            "stellar_rotation_period_days": 1.0587567021662359,
+            "snr": 18.705728704618252,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "5cf73acc-574a-484e-9e71-4e3d23fbe051",
+        "timestamp": "2026-06-18T08:51:53.298872Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 2.5807161432286456,
+            "stellar_rotation_period_days": 1.0587567021662359,
+            "snr": 21.851833897254032,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "9252c897-35a5-40e1-94d1-a460218ef44d",
+        "timestamp": "2026-06-18T08:51:59.861167Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "KIC 11442793",
+            "period": 3.340468093618724,
+            "stellar_rotation_period_days": 1.0587567021662359,
+            "snr": 14.852113703000883,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
     }
 ]
