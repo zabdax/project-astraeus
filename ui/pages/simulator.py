@@ -112,6 +112,72 @@ div[data-testid="stButton"] > button[kind="secondary"]:has(p:-webkit-any(*, *)) 
                 p["eccentricity"] = st.slider("Eccentricity", 0.0, 0.9, p["eccentricity"], 0.01, key=f"ecc_{i}")
                 p["inclination_degrees"] = st.slider("Inclination", 80.0, 90.0, p["inclination_degrees"], 0.1, key=f"inc_{i}")
 
+            st.markdown("---")
+            with st.expander("🔬 Orbital Stability Matrix", expanded=True):
+                import json
+                import hashlib
+                
+                config_str = json.dumps([{
+                    'mass': p.get('radius_ratio'),
+                    'a': p.get('period_days'),
+                    'e': p.get('eccentricity')
+                } for p in st.session_state.multi_planets], sort_keys=True)
+                current_hash = hashlib.md5(config_str.encode()).hexdigest()
+                
+                if "stability_results" in st.session_state and st.session_state.get("stability_config_hash") != current_hash:
+                    st.warning("⚠️ System configuration modified. Results below reflect the previous state. Re-run check to update.")
+                    
+                if st.button("Analyze Orbital Stability", use_container_width=True):
+                    from astraeus.core.nbody_solver import check_system_stability, estimate_mass_from_radius
+                    
+                    planet_dicts = []
+                    n_planets = len(st.session_state.multi_planets)
+                    for idx, p in enumerate(st.session_state.multi_planets):
+                        radius_ratio = p["radius_ratio"]
+                        radius_earth = radius_ratio / 0.00917
+                        mass_msun = estimate_mass_from_radius(radius_earth)
+                        
+                        period_days = p["period_days"]
+                        period_years = period_days / 365.25
+                        a_au = (1.0 * period_years**2)**(1.0/3.0)
+                        
+                        planet_dicts.append({
+                            "mass_msun": mass_msun,
+                            "semi_major_axis_au": a_au,
+                            "eccentricity": p["eccentricity"],
+                            "initial_phase_rad": 2.0 * np.pi * idx / n_planets if n_planets > 0 else 0.0,
+                        })
+                        
+                    res = check_system_stability(stellar_mass_msun=1.0, planet_dicts=planet_dicts)
+                    st.session_state.stability_results = res
+                    st.session_state.stability_config_hash = current_hash
+                    st.rerun()
+                    
+                if "stability_results" in st.session_state:
+                    res = st.session_state.stability_results
+                    if res["is_stable"]:
+                        st.markdown("<div style='text-align: center; font-size: 18px; font-weight: bold; color: #10B981; margin-bottom: 12px;'>✅ STABLE</div>", unsafe_allow_html=True)
+                    else:
+                        st.markdown("<div style='text-align: center; font-size: 18px; font-weight: bold; color: #EF4444; margin-bottom: 12px;'>❌ UNSTABLE</div>", unsafe_allow_html=True)
+                        
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Survival Time", f"{res['survival_time_years']:.1f} yr")
+                        st.metric("Max Ecc Drift", f"{res['max_eccentricity_drift']:.4f}")
+                    with col2:
+                        st.metric("Energy Error", f"{res['energy_relative_error']:.2e}")
+                        term = res["termination_reason"].replace("_", " ").title()
+                        st.metric("Termination", term)
+                        
+                    if res["termination_reason"] == "collision" and res["colliding_pair"]:
+                        p1, p2 = res["colliding_pair"]
+                        name1 = st.session_state.multi_planets[p1]["name"]
+                        name2 = st.session_state.multi_planets[p2]["name"]
+                        st.error(f"Collision between {name1} and {name2}")
+                    elif res["termination_reason"] == "ejection" and res["ejected_body"] is not None:
+                        name_eject = st.session_state.multi_planets[res["ejected_body"]]["name"]
+                        st.error(f"Ejection of {name_eject}")
+
         # Simulation
         samples = 900
         max_period = max([p["period_days"] for p in st.session_state.multi_planets]) if st.session_state.multi_planets else 1.0

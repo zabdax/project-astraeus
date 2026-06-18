@@ -608,6 +608,70 @@ def render(main_panel, right_panel) -> None:
                     })
                 st.dataframe(pd.DataFrame(table_data), use_container_width=True, hide_index=True)
                 
+                st.markdown("<br>", unsafe_allow_html=True)
+                with st.expander("🔬 Orbital Stability Matrix", expanded=True):
+                    import json
+                    import hashlib
+                    
+                    config_str = json.dumps([{
+                        'a': c.get('period', 0.0),
+                        'r': c.get('planet_radius_earth', 0.0)
+                    } for c in candidates], sort_keys=True)
+                    current_hash = hashlib.md5(config_str.encode()).hexdigest()
+                    
+                    if "stability_detective_results" in st.session_state and st.session_state.get("stability_detective_config_hash") != current_hash:
+                        st.warning("⚠️ Candidate configuration changed. Results below reflect the previous search. Re-run stability check to update.")
+                        
+                    if st.button("Analyze System Stability", use_container_width=True):
+                        from astraeus.core.nbody_solver import check_system_stability, estimate_mass_from_radius
+                        
+                        stellar_mass = st.session_state.get('active_metadata', {}).get('stellar_mass', 1.0)
+                        
+                        planet_dicts = []
+                        n_candidates = len(candidates)
+                        for idx, cand in enumerate(candidates):
+                            radius_earth = float(cand.get('planet_radius_earth', 0.0))
+                            mass_msun = estimate_mass_from_radius(radius_earth)
+                            
+                            period_days = float(cand.get('period', 0.0))
+                            period_years = period_days / 365.25
+                            a_au = (stellar_mass * period_years**2)**(1.0/3.0)
+                            
+                            planet_dicts.append({
+                                "mass_msun": mass_msun,
+                                "semi_major_axis_au": a_au,
+                                "eccentricity": float(cand.get('eccentricity', 0.0)),
+                                "initial_phase_rad": 2.0 * np.pi * idx / n_candidates if n_candidates > 0 else 0.0,
+                            })
+                            
+                        res = check_system_stability(stellar_mass_msun=stellar_mass, planet_dicts=planet_dicts)
+                        st.session_state.stability_detective_results = res
+                        st.session_state.stability_detective_config_hash = current_hash
+                        st.rerun()
+                        
+                    if "stability_detective_results" in st.session_state:
+                        res = st.session_state.stability_detective_results
+                        if res["is_stable"]:
+                            st.markdown("<div style='text-align: center; font-size: 18px; font-weight: bold; color: #10B981; margin-bottom: 12px;'>✅ STABLE</div>", unsafe_allow_html=True)
+                        else:
+                            st.markdown("<div style='text-align: center; font-size: 18px; font-weight: bold; color: #EF4444; margin-bottom: 12px;'>❌ UNSTABLE</div>", unsafe_allow_html=True)
+                            
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric("Survival Time", f"{res['survival_time_years']:.1f} yr")
+                            st.metric("Max Ecc Drift", f"{res['max_eccentricity_drift']:.4f}")
+                        with col2:
+                            st.metric("Energy Error", f"{res['energy_relative_error']:.2e}")
+                            term = res["termination_reason"].replace("_", " ").title()
+                            st.metric("Termination", term)
+                            
+                        if res["termination_reason"] == "collision" and res["colliding_pair"]:
+                            p1, p2 = res["colliding_pair"]
+                            st.error(f"Collision between Candidate {letters[p1] if p1 < len(letters) else str(p1)} and Candidate {letters[p2] if p2 < len(letters) else str(p2)}")
+                        elif res["termination_reason"] == "ejection" and res["ejected_body"] is not None:
+                            p_idx = res["ejected_body"]
+                            st.error(f"Ejection of Candidate {letters[p_idx] if p_idx < len(letters) else str(p_idx)}")
+                            
     if right_panel:
         with right_panel:
             st.subheader("Detection Report")
