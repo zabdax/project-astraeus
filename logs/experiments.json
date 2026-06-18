@@ -1241,5 +1241,95 @@
         },
         "metadata": {},
         "fig_paths": []
+    },
+    {
+        "id": "02fc98b0-fc00-4625-9cc2-19845db0d06f",
+        "timestamp": "2026-06-18T10:06:38.968657Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "Unknown",
+            "period": 8.718943788757752,
+            "stellar_rotation_period_days": 0.5770521506351006,
+            "snr": 8.627534389181434,
+            "data_source": "Unknown",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "0ac03765-ac73-476d-ba4c-a90a0566d724",
+        "timestamp": "2026-06-18T10:06:41.895116Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "Unknown",
+            "period": 14.589617923584717,
+            "stellar_rotation_period_days": 0.5770521506351006,
+            "snr": 8.47438138023168,
+            "data_source": "Unknown",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "53e3bcde-da81-46dd-ba47-7baf27b72d71",
+        "timestamp": "2026-06-18T10:06:44.715945Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "Unknown",
+            "period": 7.008101620324065,
+            "stellar_rotation_period_days": 0.5770521506351006,
+            "snr": 9.92571009346597,
+            "data_source": "Unknown",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "dbabb196-9459-40e4-917d-e98fc02edde0",
+        "timestamp": "2026-06-18T10:06:48.086320Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "Unknown",
+            "period": 14.589617923584717,
+            "stellar_rotation_period_days": 0.13249471465451101,
+            "snr": 8.45922329431766,
+            "data_source": "Unknown",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "5438b6cb-c831-4635-aebc-f2b4fec9fcd6",
+        "timestamp": "2026-06-18T10:06:50.914646Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "Unknown",
+            "period": 7.008101620324065,
+            "stellar_rotation_period_days": 0.13249471465451101,
+            "snr": 10.198280759311618,
+            "data_source": "Unknown",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "620b57b2-8235-4478-bee3-12f8e644d49e",
+        "timestamp": "2026-06-18T10:06:54.016043Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "Unknown",
+            "period": 10.216843368673734,
+            "stellar_rotation_period_days": 0.13249471465451101,
+            "snr": 7.594328244554384,
+            "data_source": "Unknown",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
     }
 ]
