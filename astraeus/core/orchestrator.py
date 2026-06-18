@@ -23,6 +23,11 @@ def subtract_planetary_signal(flux, time, period, epoch, duration, depth_ppm, me
     """
     cleaned_flux = flux.copy()
     
+    # Dynamic window scaling: Add 10% safety buffer on each wing (20% total increase)
+    padded_duration = duration * 1.2
+    print(f"[Orchestrator] Dynamically scaling subtraction window: BLS duration {duration:.4f}d -> {padded_duration:.4f}d (10% padding on wings)")
+    duration = padded_duration
+    
     try:
         import batman
         print(f"[Orchestrator] Initializing high-precision batman engine for period {period:.3f}")
@@ -113,14 +118,29 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
         metadata = getattr(raw_lightcurve, 'metadata', {})
         
     discovered_planetary_properties = []
+    discovered_periods = []  # Track periods for duplicate detection
     
     # State tracking
     active_time = time.copy()
     current_working_flux = flux.copy()
     
-    for iteration in range(1, max_signals + 1):
-        if len(active_time) < 10:
+    duplicate_retries = 0
+    max_duplicate_retries = 3  # Max times we retry after finding a duplicate before giving up
+    
+    iteration = 0
+    while len(discovered_planetary_properties) < max_signals:
+        iteration += 1
+        if iteration > max_signals + max_duplicate_retries:
+            print(f"[Orchestrator] Maximum iteration budget exhausted ({iteration - 1} iterations). Stopping.")
             break
+            
+        if len(active_time) < 10:
+            print(f"[Orchestrator] Insufficient data points ({len(active_time)}). Stopping.")
+            break
+        
+        print(f"\n{'='*70}")
+        print(f"[Orchestrator] === ITERATION {iteration} === (Found {len(discovered_planetary_properties)}/{max_signals} candidates)")
+        print(f"{'='*70}")
             
         # We wrap the existing main pipeline execution function
         # detect_transit_candidate returns a dictionary with candidate information
@@ -136,21 +156,62 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
         # Read the returned dictionary from the run. Extract the calculated SNR and vetting status.
         snr = result.get('snr', 0.0)
         vetting_status = result.get('vetting_status', '')
-        
-        # GUARDRAIL 1 (The Break)
-        if snr < snr_floor or vetting_status != "Verified Planet Candidate":
-            print("Signal significance floor reached. Halting iterative search.")
-            break
-            
-        # GUARDRAIL 2 (The Counter)
-        discovered_planetary_properties.append(result)
-        
-        # Subtract the transit out of the current_working_flux for the next iteration
-        best_period = result.get('period')
+        best_period = result.get('period', 0.0)
         transit_time = result.get('t0')
         duration = result.get('duration')
         depth = result.get('depth')
         
+        print(f"[Orchestrator] Iteration {iteration} result: Period={best_period:.4f}d, SNR={snr:.2f}, Duration={duration:.4f}d, Depth={depth:.6f}, Status={vetting_status}")
+        
+        # GUARDRAIL 1 (The SNR/Vetting Break)
+        if snr < snr_floor or not vetting_status.startswith("Verified Planet Candidate"):
+            print(f"[Orchestrator] Signal significance floor reached (SNR={snr:.2f}, status='{vetting_status}'). Halting iterative search.")
+            break
+        
+        # GUARDRAIL 2 (Duplicate Period Detection)
+        is_duplicate = False
+        for prev_idx, prev_period in enumerate(discovered_periods):
+            period_ratio = best_period / prev_period if prev_period > 0 else 0
+            # Check if within 5% of a previous period OR a near-integer harmonic
+            if abs(period_ratio - 1.0) < 0.05:
+                print(f"[Orchestrator] DUPLICATE DETECTED: Period {best_period:.4f}d is within 5% of previously found {prev_period:.4f}d (candidate #{prev_idx + 1}). Skipping.")
+                is_duplicate = True
+                break
+            # Also check half/double harmonics
+            for harmonic in [0.5, 2.0]:
+                if abs(period_ratio - harmonic) < 0.05:
+                    print(f"[Orchestrator] HARMONIC DUPLICATE DETECTED: Period {best_period:.4f}d is a {harmonic}x harmonic of {prev_period:.4f}d. Skipping.")
+                    is_duplicate = True
+                    break
+            if is_duplicate:
+                break
+        
+        if is_duplicate:
+            duplicate_retries += 1
+            if duplicate_retries > max_duplicate_retries:
+                print(f"[Orchestrator] Too many duplicate detections ({duplicate_retries}). Residual signal likely not erasable. Stopping.")
+                break
+            # Still subtract the signal to erode the residual, then continue
+            if best_period is not None and transit_time is not None and duration is not None and depth is not None:
+                depth_ppm = depth * 1e6
+                current_working_flux = subtract_planetary_signal(
+                    flux=current_working_flux,
+                    time=active_time,
+                    period=best_period,
+                    epoch=transit_time,
+                    duration=duration,
+                    depth_ppm=depth_ppm,
+                    metadata=metadata
+                )
+                print(f"[Orchestrator] Re-subtracted duplicate signal at {best_period:.4f}d to further erode residual.")
+            continue
+            
+        # GUARDRAIL 3 (The Counter) - Accept unique candidate
+        discovered_planetary_properties.append(result)
+        discovered_periods.append(best_period)
+        print(f"[Orchestrator] [OK] ACCEPTED candidate #{len(discovered_planetary_properties)}: Period={best_period:.4f}d")
+        
+        # Subtract the transit out of the current_working_flux for the next iteration
         if best_period is not None and transit_time is not None and duration is not None and depth is not None:
             depth_ppm = depth * 1e6
             current_working_flux = subtract_planetary_signal(
@@ -164,8 +225,37 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
             )
         else:
             # If we don't have enough info to mask, we must break to prevent infinite loops finding the same signal
+            print(f"[Orchestrator] Insufficient transit parameters to subtract. Stopping.")
             break
-    else:
-        print(json.dumps(discovered_planetary_properties, indent=2))
+    
+    # Final summary
+    print(f"\n{'='*70}")
+    print(f"[Orchestrator] SEARCH COMPLETE: {len(discovered_planetary_properties)} unique candidates found in {iteration} iterations.")
+    print(f"{'='*70}")
+    for idx, prop in enumerate(discovered_planetary_properties):
+        print(f"  Candidate #{idx+1}: Period={prop.get('period', 0):.4f}d, SNR={prop.get('snr', 0):.2f}, Depth={prop.get('depth', 0):.6f}")
+    
+    # Print consolidated JSON
+    # Build a serializable version (strip non-JSON-serializable fields like periodogram arrays)
+    serializable_results = []
+    for prop in discovered_planetary_properties:
+        clean = {}
+        for k, v in prop.items():
+            if k == 'periodogram':
+                continue  # Skip large array data
+            elif k == 'ttv_data':
+                continue  # Skip nested complex data
+            elif isinstance(v, (np.integer,)):
+                clean[k] = int(v)
+            elif isinstance(v, (np.floating,)):
+                clean[k] = float(v)
+            elif isinstance(v, np.ndarray):
+                continue
+            else:
+                clean[k] = v
+        serializable_results.append(clean)
+    
+    print(f"\n[Orchestrator] Consolidated Discovery Payload:")
+    print(json.dumps(serializable_results, indent=2))
             
     return discovered_planetary_properties
