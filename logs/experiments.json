@@ -454,5 +454,27 @@
             }
         },
         "fig_paths": []
+    },
+    {
+        "id": "b54d9978-4346-4501-a4d3-1f19b52e1994",
+        "timestamp": "2026-06-18T06:03:27.148679Z",
+        "dataset_hash": "1b71f211b24acaa02d481cb128a16cfb8d3e071557b48a3e87aaa11743ec6069",
+        "params": {
+            "target_name": "Kepler-90",
+            "period": 4.724544908981796,
+            "snr": 10.565122382215113,
+            "data_source": "Kepler Archival (KIC 11442793)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "stellar_params": {
+                "st_rad": 1.2,
+                "st_teff": 5930.0,
+                "st_mass": 1.13,
+                "sy_jmag": 12.49
+            },
+            "run_id": "20260618_060257"
+        },
+        "fig_paths": []
     }
 ]

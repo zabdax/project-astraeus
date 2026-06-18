@@ -1,0 +1,116 @@
+{
+    "target": "Kepler-90",
+    "target_kic": "KIC 11442793",
+    "candidate_found": true,
+    "calculated_period": 4.724545,
+    "transit_depth_ppm": 268.4,
+    "vetting_status": "Verified Planet Candidate",
+    "snr": 10.57,
+    "jwst_tsm_score": 6.8171,
+    "planet_radius_earth": 2.1468,
+    "equilibrium_temp_k": 1195.96,
+    "ttv_summary": {
+        "n_transits": 42,
+        "rms_minutes": 4.21,
+        "max_residual_minutes": 6.79,
+        "prominent_residuals": [
+            {
+                "epoch": 69,
+                "residual_min": 6.79
+            },
+            {
+                "epoch": 34,
+                "residual_min": -6.69
+            },
+            {
+                "epoch": 43,
+                "residual_min": -6.54
+            },
+            {
+                "epoch": 76,
+                "residual_min": -6.49
+            },
+            {
+                "epoch": 41,
+                "residual_min": 6.46
+            },
+            {
+                "epoch": 32,
+                "residual_min": 6.37
+            },
+            {
+                "epoch": 9,
+                "residual_min": 6.35
+            },
+            {
+                "epoch": 11,
+                "residual_min": -6.11
+            },
+            {
+                "epoch": 93,
+                "residual_min": 6.04
+            },
+            {
+                "epoch": 23,
+                "residual_min": 5.99
+            }
+        ]
+    },
+    "pipeline_telemetry": {
+        "run_id": "20260618_060257",
+        "target_kic": "KIC 11442793",
+        "target_name": "Kepler-90",
+        "mission": "Kepler",
+        "pipeline_start": "2026-06-18T06:02:57.696316Z",
+        "stellar_params": {
+            "st_rad": 1.2,
+            "st_teff": 5930.0,
+            "st_mass": 1.13,
+            "sy_jmag": 12.49
+        },
+        "layer1_ingestion": {
+            "n_datapoints": 19594,
+            "baseline_days": 497.7834631703154,
+            "median_flux": 0.9999993145186565,
+            "rms_ppm": 518.0726974368337,
+            "ingestion_time_sec": 25.51
+        },
+        "layer2_detrending": {
+            "stellar_rotation_period_days": 0.1782,
+            "detrending_window_days": 0.5,
+            "pre_detrend_scatter_ppm": 518.1,
+            "post_detrend_scatter_ppm": 201.3,
+            "noise_reduction_pct": 61.1,
+            "detrending_time_sec": 2.5
+        },
+        "layer3_bls_search": {
+            "period_days": 4.724545,
+            "t0_bkjd": 135.556347,
+            "duration_hours": 0.24,
+            "depth_ppm": 268.4,
+            "snr": 10.57,
+            "confidence_score": 1.13,
+            "bls_search_time_sec": 1.26
+        },
+        "layer4_5_vetting_physics": {
+            "vetting_status": "Verified Planet Candidate",
+            "v_shape_metric": 1.0,
+            "flat_bottom_fraction": 0.0476,
+            "secondary_eclipse_depth_ppm": -11.3,
+            "secondary_eclipse_detected": false,
+            "planet_radius_earth": 2.1468,
+            "equilibrium_temp_k": 1195.96,
+            "jwst_tsm_score": 6.8171,
+            "vetting_time_sec": 0.08
+        },
+        "layer6_ttv": {
+            "n_transits_measured": 42,
+            "ttv_rms_minutes": 4.21,
+            "ttv_max_residual_minutes": 6.79,
+            "ttv_mean_offset_minutes": -0.03,
+            "ttv_time_sec": 0.02
+        },
+        "pipeline_end": "2026-06-18T06:03:27.075586Z",
+        "total_pipeline_time_sec": 29.38
+    }
+}
