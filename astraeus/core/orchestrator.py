@@ -23,9 +23,9 @@ def subtract_planetary_signal(flux, time, period, epoch, duration, depth_ppm, me
     """
     cleaned_flux = flux.copy()
     
-    # Dynamic window scaling: Add 10% safety buffer on each wing (20% total increase)
-    padded_duration = duration * 1.2
-    print(f"[Orchestrator] Dynamically scaling subtraction window: BLS duration {duration:.4f}d -> {padded_duration:.4f}d (10% padding on wings)")
+    # Dynamic window scaling: Add 25% safety buffer on each wing (50% total increase)
+    padded_duration = duration * 1.5
+    print(f"[Orchestrator] Dynamically scaling subtraction window: BLS duration {duration:.4f}d -> {padded_duration:.4f}d (25% padding on wings)")
     duration = padded_duration
     
     try:

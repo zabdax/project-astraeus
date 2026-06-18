@@ -28,8 +28,28 @@ class BLSSearchEngine:
         binned_flux = flux
 
         model = BoxLeastSquares(binned_time, binned_flux)
-        durations = np.array([0.01, 0.03, 0.05, 0.07, 0.1])
-        periods = np.linspace(0.5, 20.0, 5000)
+        # Calculate the true observational time span of the active dataset
+        T_baseline = float(np.max(time) - np.min(time))
+        
+        # Dynamically bound the search space (require at least 2 transits within the baseline)
+        p_min = 0.5
+        p_max = min(350.0, T_baseline / 2.0)
+        
+        if p_max <= 20.0:
+            # Short baseline dataset (e.g., TESS single sector) - use a clean localized grid
+            periods = np.linspace(p_min, p_max, 5000)
+        else:
+            # Long baseline dataset (e.g., Kepler/PLATO) - use a balanced dual-zone layout
+            # Zone 1: High-density linear tracking for rapid inner planets
+            grid_inner = np.linspace(p_min, 20.0, 4000)
+            # Zone 2: Physics-matched resolution for long-period outer giants
+            grid_outer = np.linspace(20.0, p_max, 6000)
+            
+            # Merge and ensure unique, sorted periods
+            periods = np.unique(np.concatenate([grid_inner, grid_outer]))
+
+        durations = np.array([0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0])
+        durations = durations[durations < p_min] # Keep your astropy ValueError shield active
         res = model.power(periods, durations)
         
         best_idx = np.argmax(res.power)

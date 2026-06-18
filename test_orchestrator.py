@@ -20,8 +20,8 @@ def main():
         'metadata': {}
     }
     
-    print(f"Starting multi-planet search with max_signals=5, snr_floor=7.1")
-    results = run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1)
+    print(f"Starting multi-planet search with max_signals=5, snr_floor=5.0")
+    results = run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=5.0)
     
     # The output requirement: Print the final consolidated discovery payload in JSON format,
     # detailing every verified candidate found, their respective periods, and the total number 

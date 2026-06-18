@@ -11,7 +11,7 @@ import numpy as np
 print("=" * 70)
 print("PROJECT ASTRAEUS - Multi-Planet Discovery Engine")
 print("Target: Kepler-90 (KIC 11442793)")
-print("Mode: Full 5-Pass Iterative Extraction")
+print("Mode: Full 6-Pass Deep Extraction (Expanded Grid)")
 print("=" * 70)
 
 # Step 1: Load data
@@ -36,11 +36,11 @@ raw_lightcurve = {
 }
 
 # Step 3: Run multi-planet search
-print(f"\n[Phase 2] Starting multi-planet search (max_signals=5, snr_floor=7.1)...")
+print(f"\n[Phase 2] Starting deep multi-planet search (max_signals=6, snr_floor=5.0)...")
 search_start = time_mod.time()
 
 from astraeus.core.orchestrator import run_multi_planet_search
-results = run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1)
+results = run_multi_planet_search(raw_lightcurve, max_signals=6, snr_floor=5.0)
 
 search_elapsed = time_mod.time() - search_start
 total_elapsed = time_mod.time() - start_time
