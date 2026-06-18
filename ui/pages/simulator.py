@@ -160,14 +160,11 @@ div[data-testid="stButton"] > button[kind="secondary"]:has(p:-webkit-any(*, *)) 
                     else:
                         st.markdown("<div style='text-align: center; font-size: 18px; font-weight: bold; color: #EF4444; margin-bottom: 12px;'>❌ UNSTABLE</div>", unsafe_allow_html=True)
                         
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("Survival Time", f"{res['survival_time_years']:.1f} yr")
-                        st.metric("Max Ecc Drift", f"{res['max_eccentricity_drift']:.4f}")
-                    with col2:
-                        st.metric("Energy Error", f"{res['energy_relative_error']:.2e}")
-                        term = res["termination_reason"].replace("_", " ").title()
-                        st.metric("Termination", term)
+                    st.metric("Survival Time", f"{res['survival_time_years']:.1f} yr")
+                    st.metric("Max Ecc Drift", f"{res['max_eccentricity_drift']:.4f}")
+                    st.metric("Energy Error", f"{res['energy_relative_error']:.2e}")
+                    term = res["termination_reason"].replace("_", " ").title()
+                    st.metric("Termination", term)
                         
                     if res["termination_reason"] == "collision" and res["colliding_pair"]:
                         p1, p2 = res["colliding_pair"]
