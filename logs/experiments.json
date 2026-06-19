@@ -2216,5 +2216,122 @@
         },
         "metadata": {},
         "fig_paths": []
+    },
+    {
+        "id": "18910e3d-ae1f-42f4-9496-88d021d9737e",
+        "timestamp": "2026-06-19T13:26:49.881410Z",
+        "dataset_hash": "09d5bed6990edc53b12997192ef037f0b3cb96d7d3addd4fd6a984ed9683de49",
+        "params": {
+            "target_name": "wasp-12b",
+            "period": 1.0925508205652381,
+            "stellar_rotation_period_days": 1.0947579537756778,
+            "snr": 239.533761187894,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 0.0153777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 0.0153777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "01e08061-0972-479d-9f7d-58c643f26814",
+        "timestamp": "2026-06-19T13:26:51.826078Z",
+        "dataset_hash": "09d5bed6990edc53b12997192ef037f0b3cb96d7d3addd4fd6a984ed9683de49",
+        "params": {
+            "target_name": "wasp-12b",
+            "period": 1.0925508205652381,
+            "stellar_rotation_period_days": 1.0947579537756778,
+            "snr": 9.876975136294996,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 0.0153777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 0.0153777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "adba4ca5-b0af-4040-b95b-f1aedeff1866",
+        "timestamp": "2026-06-19T13:26:53.553980Z",
+        "dataset_hash": "09d5bed6990edc53b12997192ef037f0b3cb96d7d3addd4fd6a984ed9683de49",
+        "params": {
+            "target_name": "wasp-12b",
+            "period": 0.5454708090210612,
+            "stellar_rotation_period_days": 1.0947579537756778,
+            "snr": 0.0,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 0.0153777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 0.0153777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "fig_paths": []
     }
 ]

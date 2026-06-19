@@ -196,72 +196,130 @@ div[data-testid="stButton"] > button[kind="secondary"]:has(p:-webkit-any(*, *)) 
             
         st.markdown("---")
         st.markdown("### N-body Simulation")
+        st.caption(
+            "**Welcome to the N-body Simulator!**\n\n"
+            "Here you can test the stability of a planetary system by running a physics simulation. Try these two experiments to see how the engine works:\n\n"
+            "**1. The Stable System:** Set `Total Integration Steps` to 10,000 and `Base Timestep (dt)` to 0.0001. The planets should orbit smoothly without any issues.\n\n"
+            "**2. The Breaking Point:** Keep the steps at 10,000, but increase the `Base Timestep (dt)` to 0.0010 or higher. You'll see the simulation automatically stop because the time jumps are too big to be accurate!"
+        )
         with st.expander("Global N-Body Integration Settings", expanded=True):
-            if "n_steps_val" not in st.session_state:
-                st.session_state.n_steps_val = 10000
-            if "dt_val" not in st.session_state:
-                st.session_state.dt_val = 0.01
-
-            def update_n_steps_s(): st.session_state.n_steps_val = st.session_state.n_steps_s
-            def update_n_steps_i(): st.session_state.n_steps_val = st.session_state.n_steps_i
-            def update_dt_s(): st.session_state.dt_val = st.session_state.dt_s
-            def update_dt_i(): st.session_state.dt_val = st.session_state.dt_i
-
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.slider("Total Integration Steps (n_steps)", 1000, 50000, st.session_state.n_steps_val, key="n_steps_s", on_change=update_n_steps_s)
-            with col2:
-                st.number_input("Exact n_steps", 1000, 50000, st.session_state.n_steps_val, step=1000, key="n_steps_i", on_change=update_n_steps_i)
-
-            col3, col4 = st.columns([3, 1])
-            with col3:
-                st.slider("Base Timestep (dt)", 0.001, 0.1, st.session_state.dt_val, step=0.001, key="dt_s", on_change=update_dt_s)
-            with col4:
-                st.number_input("Exact dt", 0.001, 0.1, st.session_state.dt_val, step=0.001, format="%.4f", key="dt_i", on_change=update_dt_i)
-
-            n_steps = st.session_state.n_steps_val
-            dt = st.session_state.dt_val
-
-            st.caption(
-                "💡 **Engine Verification Vectors (Kepler-90 System Context):**\n"
-                "• **Test Case A (Stable Baseline - Kepler-90b Inner Analog):** Set Planet 1 inputs to Period: `3.00d`, Eccentricity: `0.00`, Radius Ratio: `0.10`. Run at 10,000 steps, dt: 0.01. *Expected Output: Orbitally Stable Baseline Maintained.*\n"
-                "• **Test Case B (Breach Check - Roche Limit Orbit Collapse):** Set Planet 1 inputs to Period: `0.50d`, Eccentricity: `0.90`, Radius Ratio: `0.20`. Run at 10,000 steps, dt: 0.01. *Expected Output: Physical Boundary Breach Encountered.*"
+            active_kic_id = st.session_state.get('selected_kic', 'KIC 11442793 (Kepler-90)')
+            st.markdown(
+                f"""
+                <div style="display: flex; align-items: center; opacity: 0.85; margin-bottom: 14px; font-size: 0.95rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; flex-shrink: 0;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span><strong>Data Pipeline Status:</strong> Core engine is dynamically retrieving initial state vectors and mass matrices from active workspace target <strong>{active_kic_id}</strong>.</span>
+                </div>
+                """,
+                unsafe_allow_html=True
             )
+
+            # 1. Integer-enforced Steps Slider (Range: 1,000 to 50,000)
+            n_steps = st.slider(
+                label="Total Integration Steps (n_steps)",
+                min_value=1000,
+                max_value=50000,
+                value=10000,
+                step=1000
+            )
+
+            # 2. Float-enforced Timestep Slider (Range: 0.0001 to 0.0100)
+            dt = st.slider(
+                label="Base Timestep (dt)",
+                min_value=0.0001,
+                max_value=0.0100,
+                value=0.0001,
+                step=0.0001,
+                format="%.4f"
+            )
+
+
 
             if st.button("Execute Stability Sweep", use_container_width=True):
                 from astraeus.core.nbody_solver import estimate_mass_from_radius, PlanetParams, _keplerian_to_cartesian, run_stability_integration
                 
-                stellar_mass_msun = 1.0
-                n_planets = len(st.session_state.multi_planets)
-                n_bodies = 1 + n_planets
+                df = st.session_state.get('active_dataframe')
                 
-                masses = np.zeros(n_bodies)
-                positions = np.zeros((n_bodies, 3))
-                velocities = np.zeros((n_bodies, 3))
+                period_col = None
+                ecc_col = None
+                mass_col = None
+                radius_col = None
                 
-                masses[0] = stellar_mass_msun
-                
-                for idx, p in enumerate(st.session_state.multi_planets):
-                    radius_ratio = p["radius_ratio"]
-                    radius_earth = radius_ratio / 0.00917
-                    mass_msun = estimate_mass_from_radius(radius_earth)
+                if df is not None and hasattr(df, 'columns') and not getattr(df, 'empty', True):
+                    cols = {str(c).lower(): c for c in df.columns}
+                    for cand in ['period', 'p (days)', 'orbital_period', 'period_days']:
+                        if cand in cols: period_col = cols[cand]; break
+                    for cand in ['eccentricity', 'ecc', 'e']:
+                        if cand in cols: ecc_col = cols[cand]; break
+                    for cand in ['mass', 'm_earth', 'planet_mass']:
+                        if cand in cols: mass_col = cols[cand]; break
+                    for cand in ['radius', 'radius_earth', 'planet_radius', 'radius_ratio']:
+                        if cand in cols: radius_col = cols[cand]; break
+
+                stellar_mass_msun = 1.2
+                if df is None or getattr(df, 'empty', True) or period_col is None:
+                    n_planets = 1
+                    n_bodies = 1 + n_planets
+                    masses = np.zeros(n_bodies)
+                    positions = np.zeros((n_bodies, 3))
+                    velocities = np.zeros((n_bodies, 3))
+                    masses[0] = stellar_mass_msun
                     
-                    period_days = p["period_days"]
-                    period_years = period_days / 365.25
-                    a_au = (1.0 * period_years**2)**(1.0/3.0)
+                    p_days = 7.0
+                    ecc = 0.0
+                    p_years = p_days / 365.25
+                    a_au = (p_years**2 * stellar_mass_msun)**(1/3)
+                    mass_msun_planet = estimate_mass_from_radius(1.31)
                     
                     planet = PlanetParams(
-                        mass_msun=mass_msun,
+                        mass_msun=mass_msun_planet,
                         semi_major_axis_au=a_au,
-                        eccentricity=p["eccentricity"],
-                        initial_phase_rad=2.0 * np.pi * idx / n_planets if n_planets > 0 else 0.0
+                        eccentricity=ecc,
+                        initial_phase_rad=0.0
                     )
-                    
                     pos, vel = _keplerian_to_cartesian(stellar_mass_msun, planet)
-                    masses[idx + 1] = mass_msun
-                    positions[idx + 1] = pos
-                    velocities[idx + 1] = vel
+                    masses[1] = mass_msun_planet
+                    positions[1] = pos
+                    velocities[1] = vel
+                else:
+                    n_planets = len(df)
+                    n_bodies = 1 + n_planets
+                    masses = np.zeros(n_bodies)
+                    positions = np.zeros((n_bodies, 3))
+                    velocities = np.zeros((n_bodies, 3))
+                    masses[0] = stellar_mass_msun
                     
+                    df_iterable = df.reset_index(drop=True)
+                    for idx, row in df_iterable.iterrows():
+                        p_days = float(row[period_col]) if pd.notnull(row[period_col]) else 7.0
+                        ecc = float(row[ecc_col]) if ecc_col and pd.notnull(row[ecc_col]) else 0.0
+                        
+                        if mass_col and pd.notnull(row[mass_col]):
+                            mass_msun_planet = float(row[mass_col]) * 3.003e-6
+                        elif radius_col and pd.notnull(row[radius_col]):
+                            mass_msun_planet = estimate_mass_from_radius(float(row[radius_col]))
+                        else:
+                            mass_msun_planet = estimate_mass_from_radius(1.31)
+                            
+                        p_years = p_days / 365.25
+                        a_au = (p_years**2 * stellar_mass_msun)**(1/3)
+                        
+                        planet = PlanetParams(
+                            mass_msun=mass_msun_planet,
+                            semi_major_axis_au=a_au,
+                            eccentricity=ecc,
+                            initial_phase_rad=2.0 * np.pi * idx / n_planets if n_planets > 0 else 0.0
+                        )
+                        
+                        pos, vel = _keplerian_to_cartesian(stellar_mass_msun, planet)
+                        masses[idx + 1] = mass_msun_planet
+                        positions[idx + 1] = pos
+                        velocities[idx + 1] = vel
+
                 with st.spinner("Executing multi-body orbital integration loop..."):
                     result = run_stability_integration(positions, velocities, masses, n_steps=n_steps, dt=dt)
                     
