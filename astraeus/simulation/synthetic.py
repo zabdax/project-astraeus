@@ -161,11 +161,21 @@ def run_injection_recovery(
         raise ValueError("Physical violation: Impact parameter does not allow a crossing transit")
     
     baseline = np.max(time) - np.min(time)
-    if injected_period > baseline:
-        raise ValueError("Injected period exceeds data duration baseline.")
+    if injected_period >= baseline:
+        return {
+            "signal_recovered": False,
+            "error": "Data baseline insufficient",
+            "period_error_delta": 0.0,
+            "snr_attenuation": 0.0,
+            "recovered_period": 0.0,
+            "recovered_snr": 0.0,
+            "injected_snr": 0.0
+        }
         
     # 2. Deep copy to prevent memory leaks during iterations
-    working_flux = np.array(flux, copy=True)
+    local_time = np.copy(time)
+    local_flux = np.copy(flux)
+    working_flux = np.copy(flux)
     
     # 3. Anti-Collision Guard
     if known_planets:
@@ -176,7 +186,7 @@ def run_injection_recovery(
             
             working_flux = subtract_planetary_signal(
                 flux=working_flux,
-                time=time,
+                time=local_time,
                 period=kp['period'],
                 epoch=t0,
                 duration=kp['duration'],
@@ -188,7 +198,7 @@ def run_injection_recovery(
     a_rs_val = max(15.0, injected_b + 2.0)
     inclination_rad = np.arccos(injected_b / a_rs_val)
     
-    time_quant = (time - injected_epoch) * u.day
+    time_quant = (local_time - injected_epoch) * u.day
     period_quant = injected_period * u.day
     a_quant = a_rs_val * u.R_sun
     inc_quant = inclination_rad * u.rad
@@ -223,7 +233,7 @@ def run_injection_recovery(
     if len(durations) == 0:
         durations = np.array([p_min / 2.0])
         
-    model = BoxLeastSquares(time, working_flux)
+    model = BoxLeastSquares(local_time, working_flux)
     res = model.power(periods, durations)
     
     best_idx = np.argmax(res.power)
@@ -233,7 +243,7 @@ def run_injection_recovery(
     
     # 6. Output Completeness Scoring
     snr, depth = BLSSearchEngine.compute_snr_depth(
-        time, working_flux, recovered_period, recovered_t0, recovered_duration
+        local_time, working_flux, recovered_period, recovered_t0, recovered_duration
     )
     
     period_error_delta = abs(recovered_period - injected_period)
@@ -241,7 +251,7 @@ def run_injection_recovery(
     
     in_transit = transit_model < 1.0
     n_in_transit = np.sum(in_transit)
-    noise = np.std(flux)
+    noise = np.std(local_flux)
     injected_depth = float(1.0 - np.min(transit_model)) if n_in_transit > 0 else 0.0
     
     injected_theoretical_snr = (injected_depth / noise) * np.sqrt(n_in_transit) if noise > 0 else 0.0

@@ -191,7 +191,13 @@ def _compute_accelerations(
         # Displacement vectors from body i to all other bodies
         # Shape: (N, 3) but we mask out self-interaction
         dx = positions - positions[i]  # (N, 3)
-        r_sq = np.sum(dx**2, axis=1) + SOFTENING_SQ  # (N,)
+        dist_sq = np.sum(dx**2, axis=1)
+        
+        # Enforce upstream validation clip ensuring distance > 10^-5 AU
+        if np.any((dist_sq > 0.0) & (dist_sq < 1.0e-10)):
+            raise ValueError("Physical Boundary Breach: Distance delta check failed (distance < 10^-5 AU).")
+            
+        r_sq = dist_sq + SOFTENING_SQ  # (N,)
 
         # Gravitational acceleration magnitude: G * m_j / (r² + ε²)^(3/2)
         inv_r3 = 1.0 / (r_sq * np.sqrt(r_sq))  # (N,)
@@ -367,23 +373,27 @@ def run_stability_analysis(
         E0 = 1.0e-30  # prevent division by zero for degenerate systems
 
     # --- Velocity Verlet integration loop ---
-    acc = _compute_accelerations(positions, masses)
-
     termination_reason = "completed"
     colliding_pair = None
     ejected_body = None
     survival_step = n_steps
 
-    for step in range(n_steps):
-        # --- Verlet step 1: update positions ---
-        positions += velocities * dt + 0.5 * acc * dt**2
-
-        # --- Verlet step 2: compute new accelerations ---
-        acc_new = _compute_accelerations(positions, masses)
-
-        # --- Verlet step 3: update velocities ---
-        velocities += 0.5 * (acc + acc_new) * dt
-        acc = acc_new
+    try:
+        acc = _compute_accelerations(positions, masses)
+    
+        for step in range(n_steps):
+            # --- Verlet step 1: update positions ---
+            positions += velocities * dt + 0.5 * acc * dt**2
+            
+            if not np.all(np.isfinite(positions)) or not np.all(np.isfinite(velocities)):
+                raise ValueError("Physical Boundary Breach: NaN/Inf detected in component vectors.")
+    
+            # --- Verlet step 2: compute new accelerations ---
+            acc_new = _compute_accelerations(positions, masses)
+    
+            # --- Verlet step 3: update velocities ---
+            velocities += 0.5 * (acc + acc_new) * dt
+            acc = acc_new
 
         # ===== DIAGNOSTIC CHECKS (every step) =====
 
@@ -442,6 +452,15 @@ def run_stability_analysis(
                 survival_step = step + 1
                 termination_reason = "energy_divergence"
                 break
+
+    except Exception as e:
+        if "Physical Boundary Breach" in str(e) or "NaN" in str(e) or "inf" in str(e).lower():
+            import logging
+            logging.getLogger(__name__).warning(f"Solver aborted: {e}")
+            survival_step = step if 'step' in locals() else 0
+            termination_reason = "Physical Boundary Breach"
+        else:
+            raise
 
     # --- Final diagnostics ---
     survival_time = survival_step * dt

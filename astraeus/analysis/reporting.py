@@ -1,6 +1,7 @@
 import io
 import gc
 import copy
+import re
 import logging
 import datetime
 from typing import Dict, Any, List
@@ -63,24 +64,25 @@ class NumberedCanvas(canvas.Canvas):
 
 
 def sanitize_text(text: str) -> str:
-    """Sanitize text for basic ReportLab core fonts."""
+    """Sanitize text using strict regex mapping for ReportLab core fonts."""
     if text is None:
         return ""
     if not isinstance(text, str):
         text = str(text)
     
     replacements = {
-        r'α': 'alpha', r'β': 'beta', r'γ': 'gamma', r'δ': 'delta',
-        r'θ': 'theta', r'σ': 'sigma', r'μ': 'mu', r'π': 'pi',
-        r'±': '+/-', r'°': ' deg', r'≥': '>=', r'≤': '<=',
-        r'×': 'x', r'≈': '~', r'≠': '!=',
-        r'—': '-', r'–': '-', r'”': '"', r'“': '"', r'’': "'", r'‘': "'"
+        r'[α]': 'alpha', r'[β]': 'beta', r'[γ]': 'gamma', r'[δ]': 'delta',
+        r'[θ]': 'theta', r'[σ]': 'sigma', r'[μ]': 'mu', r'[π]': 'pi',
+        r'[±]': '+/-', r'[°]': ' deg', r'[≥]': '>=', r'[≤]': '<=',
+        r'[×]': 'x', r'[≈]': '~', r'[≠]': '!=',
+        r'[—–]': '-', r'[”“]': '"', r'[‘’]': "'"
     }
     for pattern, replacement in replacements.items():
-        text = text.replace(pattern, replacement)
+        text = re.sub(pattern, replacement, text)
     
-    # Remove any remaining non-ascii characters
-    return text.encode('ascii', 'ignore').decode('ascii')
+    # Strict regex to remove any remaining non-ASCII characters (e.g., emojis)
+    text = re.sub(r'[^\x00-\x7F]+', '', text)
+    return text
 
 
 def _validate_schema(metrics_payload: Dict[str, Any]):
@@ -149,6 +151,9 @@ def generate_academic_report(metrics_payload: Dict[str, Any], figures: Dict[str,
         raise ImportError("reportlab library is required. Install it via 'pip install reportlab'.")
         
     _validate_schema(metrics_payload)
+    
+    # Countermeasure against Pass-By-Reference Mutation
+    metrics_payload = copy.deepcopy(metrics_payload)
     
     out_buffer = io.BytesIO()
     
@@ -268,9 +273,10 @@ def generate_academic_report(metrics_payload: Dict[str, Any], figures: Dict[str,
         story.append(rule_table)
         story.append(Spacer(1, 10))
         
-        table_data = [["Candidate ID", "Period (days)", "SNR", "Depth", "Epoch"]]
+        header_row = ["Candidate ID", "Period (days)", "SNR", "Depth", "Epoch"]
+        candidate_rows = []
         for cand in metrics_payload['candidates']:
-            table_data.append([
+            candidate_rows.append([
                 sanitize_text(str(cand.get('candidate_id', cand.get('planet_id', '-')))),
                 sanitize_text(f"{cand.get('period', 0.0):.4f}"),
                 sanitize_text(f"{cand.get('snr', 0.0):.2f}"),
@@ -278,34 +284,44 @@ def generate_academic_report(metrics_payload: Dict[str, Any], figures: Dict[str,
                 sanitize_text(f"{cand.get('epoch', 0.0):.4f}")
             ])
             
-        # Wrapping in paragraphs for text wrapping
-        wrapped_data = []
-        for row in table_data:
-            wrapped_data.append([Paragraph(f"<b>{cell}</b>" if i == 0 else cell, normal_style) for i, cell in enumerate(row)])
-            
-        col_w = usable_width / 5.0
-        props_table = Table(wrapped_data, colWidths=[col_w]*5)
-        
-        t_style = [
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1E293B")), # Deep Charcoal header
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
-            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor("#94A3B8")), # Soft gray layout border
-        ]
-        
-        # Alternating row colors
-        for i in range(1, len(table_data)):
-            if i % 2 == 0:
-                t_style.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor("#F8FAFC")))
-            else:
-                t_style.append(('BACKGROUND', (0, i), (-1, i), colors.white))
+        def build_table(data_rows, is_first=False):
+            table_data = [header_row] + data_rows
+            wrapped_data = []
+            for row in table_data:
+                wrapped_data.append([Paragraph(f"<b>{cell}</b>" if i == 0 else cell, normal_style) for i, cell in enumerate(row)])
                 
-        props_table.setStyle(TableStyle(t_style))
-        story.append(props_table)
+            col_w = usable_width / 5.0
+            t = Table(wrapped_data, colWidths=[col_w]*5)
+            
+            t_style = [
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1E293B")),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+                ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.HexColor("#E2E8F0")),
+                ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor("#94A3B8")),
+            ]
+            for i in range(1, len(table_data)):
+                if i % 2 == 0:
+                    t_style.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor("#F8FAFC")))
+                else:
+                    t_style.append(('BACKGROUND', (0, i), (-1, i), colors.white))
+            t.setStyle(TableStyle(t_style))
+            return t
+
+        MAX_ROWS = 8
+        if not candidate_rows:
+            # Handle empty case
+            story.append(build_table([]))
+        else:
+            for i in range(0, len(candidate_rows), MAX_ROWS):
+                chunk = candidate_rows[i:i + MAX_ROWS]
+                props_table = build_table(chunk, is_first=(i==0))
+                story.append(props_table)
+                if i + MAX_ROWS < len(candidate_rows):
+                    story.append(Spacer(1, 15))
         
         # Figures
         if figures:
