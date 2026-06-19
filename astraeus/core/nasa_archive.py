@@ -105,6 +105,12 @@ class NASAExoplanetArchive:
         if kepler_component_match:
             host, planet_letter = kepler_component_match.groups()
             names.append(f"{host} A {planet_letter.lower()}")
+            
+        if canonical_name.lower() == "kepler-90":
+            names.extend(["KOI-351", "Kepler-90 i", "KOI-351 b"])
+        elif not re.search(r"\s+[a-z]$", canonical_name, re.IGNORECASE):
+            # If it's just a host star name, try appending ' b' as a fallback
+            names.append(f"{canonical_name} b")
 
         return list(dict.fromkeys(names))
 
@@ -119,7 +125,7 @@ class NASAExoplanetArchive:
             data = []
             matched_canonical = safe_canonical
             for candidate_name in NASAExoplanetArchive._metadata_name_candidates(safe_canonical):
-                query = f"select pl_name, pl_orbper, pl_orbpererr1, st_rad, st_raderr1, st_lum, st_teff, st_mass, sy_jmag, pl_trandep, pl_ratror from pscomppars where pl_name='{candidate_name}'"
+                query = f"select pl_name, pl_orbper, pl_orbpererr1, st_rad, st_raderr1, st_lum, st_teff, st_mass, sy_jmag, pl_trandep, pl_ratror from pscomppars where pl_name='{candidate_name}' or hostname='{candidate_name}'"
                 params = {"query": query, "format": "json"}
 
                 for attempt in range(3):

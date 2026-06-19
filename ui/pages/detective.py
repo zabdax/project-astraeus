@@ -342,6 +342,8 @@ def render(main_panel, right_panel) -> None:
                         mission = "Combined Baseline (Kepler + TESS)"
                     elif "TESS" in route:
                         mission = "TESS"
+                    elif "NASA Exoplanet Archive" in route:
+                        mission = "NASA Exoplanet Archive"
 
                     try:
                         with st.status("Querying NASA Exoplanet Archive...", expanded=True) as status:
@@ -363,9 +365,14 @@ def render(main_panel, right_panel) -> None:
                         fetch_status = res.get("status")
 
                         if fetch_status == "no_time_series":
-                            st.markdown(
-                                f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> <span>Metadata found, but no time-series data available for <b>{target}</b> on mission <b>{mission}</b>.</span></div>", unsafe_allow_html=True
-                            )
+                            if mission == "NASA Exoplanet Archive":
+                                st.session_state["active_metadata"] = res.get("metadata", {})
+                                st.session_state['fetched_target_data'] = res
+                                st.rerun()
+                            else:
+                                st.markdown(
+                                    f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> <span>Metadata found, but no time-series data available for <b>{target}</b> on mission <b>{mission}</b>.</span></div>", unsafe_allow_html=True
+                                )
                         elif fetch_status == "error":
                             st.markdown(
                                 f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> <span><b>MAST download failed</b> for <code>{target}</code></span></div>", unsafe_allow_html=True
@@ -408,8 +415,11 @@ def render(main_panel, right_panel) -> None:
                     
                     st.markdown("<br>", unsafe_allow_html=True)
                     
-                    if st.button("Analyze Telemetry & Verify Harmonics", type="primary", use_container_width=True):
-                        run_analysis(res['time'], res['flux'], target, route, meta)
+                    if 'time' in res and 'flux' in res:
+                        if st.button("Analyze Telemetry & Verify Harmonics", type="primary", use_container_width=True):
+                            run_analysis(res['time'], res['flux'], target, route, meta)
+                    else:
+                        st.info("Time-series data is required to run Detective Analysis. Please select a Lightkurve mission route to download telemetry.")
 
         # 3-Tier Layout
         if 'detective_results' in st.session_state:
