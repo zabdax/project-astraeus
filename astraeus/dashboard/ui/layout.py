@@ -175,7 +175,7 @@ def render_left_nav() -> str:
         st.markdown(
             """
             <div class='sidebar-header-wrapper'>
-                <h2 style='margin:0; color:#A78BFA; font-family:"Fira Code", monospace; font-size: 1.5rem;'>🚀 ASTRAEUS</h2>
+                <h2 style='margin:0; color:#A78BFA; font-family:"Fira Code", monospace; font-size: 1.5rem;'>ASTRAEUS</h2>
                 <span style='color: #64748B; font-size: 0.8rem;'>Professional Workbench</span>
             </div>
             """,
@@ -193,6 +193,7 @@ def render_left_nav() -> str:
             ("Simulation", ":material/rocket_launch:"),
             ("Lab", ":material/science:"),
             ("Detective", ":material/manage_search:"),
+            ("Discover", ":material/explore:"),
             ("History", ":material/history:"),
             ("Settings", ":material/settings:")
         ]

@@ -47,7 +47,7 @@ The answer is computed by building the physics from scratch: Kepler's equation, 
 | 🗺️ **MAP Optimization** | Maximum A Posteriori estimation as a fast warm-start before expensive MCMC runs |
 | 🧮 **Interactive Dashboard** | Full-featured Streamlit UI with 3D orbit views, live simulations, and MCMC execution panels |
 | 🤖 **AI Co-Pilot** | Pluggable LLM gateway (OpenAI, Anthropic, Google Gemini, or local Ollama) for automated result interpretation |
-| 📄 **PDF Reporting** | Auto-generation of research-grade analysis reports via `fpdf2` |
+| 📄 **PDF Reporting** | Auto-generation of research-grade analysis reports via `reportlab` |
 | 🕵️ **Smart Vetting** | SNR-aware false positive vetting (V-shape, secondary eclipse occultation, ultra-short periods) |
 
 ---
@@ -338,7 +338,8 @@ The AI co-pilot automatically contextualises retrieved astrophysical results and
 | [Plotly](https://plotly.com/) | 5.24.1 | Interactive 3D orbit & light curve visualization |
 | [Streamlit](https://streamlit.io/) | 1.41.1 | Interactive dashboard framework |
 | [emcee](https://emcee.readthedocs.io/) | — | MCMC ensemble sampling |
-| [fpdf2](https://pyfpdf.github.io/fpdf2/) | ≥ 2.7.9 | PDF report generation |
+| [reportlab](https://www.reportlab.com/) | 4.1.x | PDF report generation |
+| [kaleido](https://github.com/plotly/Kaleido) | 0.2.1 | Headless Plotly image rendering |
 
 ---
 

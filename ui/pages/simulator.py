@@ -3,6 +3,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import numpy as np
+import pandas as pd
 from astropy import units as u
 from types import SimpleNamespace
 
@@ -112,68 +113,6 @@ div[data-testid="stButton"] > button[kind="secondary"]:has(p:-webkit-any(*, *)) 
                 p["eccentricity"] = st.slider("Eccentricity", 0.0, 0.9, p["eccentricity"], 0.01, key=f"ecc_{i}")
                 p["inclination_degrees"] = st.slider("Inclination", 80.0, 90.0, p["inclination_degrees"], 0.1, key=f"inc_{i}")
 
-            st.markdown("---")
-            with st.expander("🔬 Orbital Stability Matrix", expanded=True):
-                import json
-                import hashlib
-                
-                config_str = json.dumps([{
-                    'mass': p.get('radius_ratio'),
-                    'a': p.get('period_days'),
-                    'e': p.get('eccentricity')
-                } for p in st.session_state.multi_planets], sort_keys=True)
-                current_hash = hashlib.md5(config_str.encode()).hexdigest()
-                
-                if "stability_results" in st.session_state and st.session_state.get("stability_config_hash") != current_hash:
-                    st.warning("⚠️ System configuration modified. Results below reflect the previous state. Re-run check to update.")
-                    
-                if st.button("Analyze Orbital Stability", use_container_width=True):
-                    from astraeus.core.nbody_solver import check_system_stability, estimate_mass_from_radius
-                    
-                    planet_dicts = []
-                    n_planets = len(st.session_state.multi_planets)
-                    for idx, p in enumerate(st.session_state.multi_planets):
-                        radius_ratio = p["radius_ratio"]
-                        radius_earth = radius_ratio / 0.00917
-                        mass_msun = estimate_mass_from_radius(radius_earth)
-                        
-                        period_days = p["period_days"]
-                        period_years = period_days / 365.25
-                        a_au = (1.0 * period_years**2)**(1.0/3.0)
-                        
-                        planet_dicts.append({
-                            "mass_msun": mass_msun,
-                            "semi_major_axis_au": a_au,
-                            "eccentricity": p["eccentricity"],
-                            "initial_phase_rad": 2.0 * np.pi * idx / n_planets if n_planets > 0 else 0.0,
-                        })
-                        
-                    res = check_system_stability(stellar_mass_msun=1.0, planet_dicts=planet_dicts)
-                    st.session_state.stability_results = res
-                    st.session_state.stability_config_hash = current_hash
-                    st.rerun()
-                    
-                if "stability_results" in st.session_state:
-                    res = st.session_state.stability_results
-                    if res["is_stable"]:
-                        st.markdown("<div style='text-align: center; font-size: 18px; font-weight: bold; color: #10B981; margin-bottom: 12px;'>✅ STABLE</div>", unsafe_allow_html=True)
-                    else:
-                        st.markdown("<div style='text-align: center; font-size: 18px; font-weight: bold; color: #EF4444; margin-bottom: 12px;'>❌ UNSTABLE</div>", unsafe_allow_html=True)
-                        
-                    st.metric("Survival Time", f"{res['survival_time_years']:.1f} yr")
-                    st.metric("Max Ecc Drift", f"{res['max_eccentricity_drift']:.4f}")
-                    st.metric("Energy Error", f"{res['energy_relative_error']:.2e}")
-                    term = res["termination_reason"].replace("_", " ").title()
-                    st.metric("Termination", term)
-                        
-                    if res["termination_reason"] == "collision" and res["colliding_pair"]:
-                        p1, p2 = res["colliding_pair"]
-                        name1 = st.session_state.multi_planets[p1]["name"]
-                        name2 = st.session_state.multi_planets[p2]["name"]
-                        st.error(f"Collision between {name1} and {name2}")
-                    elif res["termination_reason"] == "ejection" and res["ejected_body"] is not None:
-                        name_eject = st.session_state.multi_planets[res["ejected_body"]]["name"]
-                        st.error(f"Ejection of {name_eject}")
 
         # Simulation
         samples = 900
@@ -254,6 +193,96 @@ div[data-testid="stButton"] > button[kind="secondary"]:has(p:-webkit-any(*, *)) 
             
             st.subheader("Residuals")
             st.plotly_chart(make_residuals_figure(simulation), width="stretch")
+            
+        st.markdown("---")
+        st.markdown("### N-body Simulation")
+        with st.expander("Global N-Body Integration Settings", expanded=True):
+            if "n_steps_val" not in st.session_state:
+                st.session_state.n_steps_val = 10000
+            if "dt_val" not in st.session_state:
+                st.session_state.dt_val = 0.01
+
+            def update_n_steps_s(): st.session_state.n_steps_val = st.session_state.n_steps_s
+            def update_n_steps_i(): st.session_state.n_steps_val = st.session_state.n_steps_i
+            def update_dt_s(): st.session_state.dt_val = st.session_state.dt_s
+            def update_dt_i(): st.session_state.dt_val = st.session_state.dt_i
+
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.slider("Total Integration Steps (n_steps)", 1000, 50000, st.session_state.n_steps_val, key="n_steps_s", on_change=update_n_steps_s)
+            with col2:
+                st.number_input("Exact n_steps", 1000, 50000, st.session_state.n_steps_val, step=1000, key="n_steps_i", on_change=update_n_steps_i)
+
+            col3, col4 = st.columns([3, 1])
+            with col3:
+                st.slider("Base Timestep (dt)", 0.001, 0.1, st.session_state.dt_val, step=0.001, key="dt_s", on_change=update_dt_s)
+            with col4:
+                st.number_input("Exact dt", 0.001, 0.1, st.session_state.dt_val, step=0.001, format="%.4f", key="dt_i", on_change=update_dt_i)
+
+            n_steps = st.session_state.n_steps_val
+            dt = st.session_state.dt_val
+
+            st.caption(
+                "💡 **Engine Verification Vectors (Kepler-90 System Context):**\n"
+                "• **Test Case A (Stable Baseline - Kepler-90b Inner Analog):** Set Planet 1 inputs to Period: `3.00d`, Eccentricity: `0.00`, Radius Ratio: `0.10`. Run at 10,000 steps, dt: 0.01. *Expected Output: Orbitally Stable Baseline Maintained.*\n"
+                "• **Test Case B (Breach Check - Roche Limit Orbit Collapse):** Set Planet 1 inputs to Period: `0.50d`, Eccentricity: `0.90`, Radius Ratio: `0.20`. Run at 10,000 steps, dt: 0.01. *Expected Output: Physical Boundary Breach Encountered.*"
+            )
+
+            if st.button("Execute Stability Sweep", use_container_width=True):
+                from astraeus.core.nbody_solver import estimate_mass_from_radius, PlanetParams, _keplerian_to_cartesian, run_stability_integration
+                
+                stellar_mass_msun = 1.0
+                n_planets = len(st.session_state.multi_planets)
+                n_bodies = 1 + n_planets
+                
+                masses = np.zeros(n_bodies)
+                positions = np.zeros((n_bodies, 3))
+                velocities = np.zeros((n_bodies, 3))
+                
+                masses[0] = stellar_mass_msun
+                
+                for idx, p in enumerate(st.session_state.multi_planets):
+                    radius_ratio = p["radius_ratio"]
+                    radius_earth = radius_ratio / 0.00917
+                    mass_msun = estimate_mass_from_radius(radius_earth)
+                    
+                    period_days = p["period_days"]
+                    period_years = period_days / 365.25
+                    a_au = (1.0 * period_years**2)**(1.0/3.0)
+                    
+                    planet = PlanetParams(
+                        mass_msun=mass_msun,
+                        semi_major_axis_au=a_au,
+                        eccentricity=p["eccentricity"],
+                        initial_phase_rad=2.0 * np.pi * idx / n_planets if n_planets > 0 else 0.0
+                    )
+                    
+                    pos, vel = _keplerian_to_cartesian(stellar_mass_msun, planet)
+                    masses[idx + 1] = mass_msun
+                    positions[idx + 1] = pos
+                    velocities[idx + 1] = vel
+                    
+                with st.spinner("Executing multi-body orbital integration loop..."):
+                    result = run_stability_integration(positions, velocities, masses, n_steps=n_steps, dt=dt)
+                    
+                if result.is_stable:
+                    st.success("System Status: Orbitally Stable Baseline Maintained")
+                else:
+                    if result.termination_reason in ["Physical Boundary Breach", "collision", "ejection"]:
+                        st.error("System Unstable: Physical Boundary Breach Encountered (Catastrophic Collision Singularity or Hyperbolic Escape Intercepted).")
+                    else:
+                        st.error(f"System Unstable: {result.termination_reason.replace('_', ' ').title()}")
+                        
+                st.markdown("#### Diagnostic Summary")
+                survival_step = int(round(result.survival_time_years / dt))
+                
+                summary_df = pd.DataFrame([
+                    {"Metric": "Survival Step", "Value": str(survival_step)},
+                    {"Metric": "Survival Time (years)", "Value": f"{result.survival_time_years:.2f}"},
+                    {"Metric": "Max Eccentricity Drift", "Value": f"{result.max_eccentricity_drift:.4f}"},
+                    {"Metric": "Termination Reason", "Value": result.termination_reason.replace('_', ' ').title()}
+                ])
+                st.table(summary_df.set_index("Metric"))
         
     if right_panel:
         with right_panel:

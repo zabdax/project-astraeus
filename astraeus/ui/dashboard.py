@@ -9,12 +9,36 @@ directly via::
 from __future__ import annotations
 
 import io
+import logging
 from typing import Any, Dict, List
 
 import pandas as pd
 import streamlit as st
 
 from astraeus.analysis.reporting import generate_academic_report
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Headless environment guard -- detect missing Kaleido / headless deps early
+# ---------------------------------------------------------------------------
+def _check_headless_prerequisites() -> None:
+    """Log and surface a clear warning if headless rendering deps are absent.
+
+    Kaleido (or Orca) is required by the Plotly ``Figure.to_image()`` path that
+    the PDF compiler delegates to.  On Linux servers without libX11 / Chromium
+    this import will succeed at the Python level but fail at runtime.  We probe
+    eagerly and emit an actionable notification so operators know exactly what
+    to install.
+    """
+    try:
+        import kaleido  # noqa: F401
+    except ImportError:
+        logger.warning(
+            "Kaleido is not installed. Plotly figure images in the PDF "
+            "manuscript will render as styled placeholder canvases.  Install "
+            "with 'pip install kaleido==0.2.1' for embedded chart images."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -268,6 +292,7 @@ def main() -> None:
         page_icon="chart",
     )
 
+    _check_headless_prerequisites()
     _initialize_session_state()
 
     payload = st.session_state["discovery_payload"]

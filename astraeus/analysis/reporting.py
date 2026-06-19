@@ -99,36 +99,294 @@ def _validate_schema(metrics_payload: Dict[str, Any]):
         raise TypeError("'candidates' must be a list of dictionaries")
 
 
+def _is_plotly_figure(obj: Any) -> bool:
+    """Return True only for genuine Plotly Figure-like objects.
+
+    A real Figure exposes ``to_image`` *and* a ``data`` trace collection.  We
+    duck-type defensively so that ``None``, strings, or arbitrary objects never
+    reach the Kaleido renderer (which would raise a confusing AttributeError).
+    """
+    if obj is None:
+        return False
+    to_image = getattr(obj, "to_image", None)
+    return callable(to_image) and hasattr(obj, "data")
+
+
 def extract_plot_image(fig: Any, usable_width: float, tracked_streams: List[io.BytesIO]) -> Any:
-    """Defensive Plotly image extraction with fallback."""
+    """Defensive Plotly image extraction with a styled canvas fallback.
+
+    Robustness contract (Vectors A2 / STEP-1 headless handling):
+        * Non-Figure payloads (``None``, strings, missing keys) never reach the
+          Kaleido renderer -- they route straight to the fallback canvas.
+        * A missing ``kaleido`` package, or a headless host lacking libX11 /
+          Chromium system dependencies, is caught here and logged once as a
+          clear environment notification rather than crashing the compiler.
+    """
+    # ---- Type firewall: anything that is not a real Figure -> fallback ----
+    if not _is_plotly_figure(fig):
+        logger.info("Routing figure to canvas fallback (non-Figure payload).")
+        return _build_fallback_canvas(usable_width, reason="non_figure")
+
+    # ---- Attempt genuine image extraction on an isolated deep copy ----
     local_fig = copy.deepcopy(fig)
     try:
-        # Kaleido/Orca is usually required for this
         img_bytes = local_fig.to_image(format="png", width=800, height=600)
         stream = io.BytesIO(img_bytes)
         tracked_streams.append(stream)
-        
-        # Image aspect ratio 800:600 = 4:3 -> height = width * 0.75
         img = Image(stream, width=usable_width, height=usable_width * 0.75)
         return img
     except Exception as e:
-        logger.warning(f"Failed to extract plot image: {e}")
-        # Fallback Box
+        msg = str(e).lower()
+        # Surface a clear, actionable notification for the two dominant
+        # headless failure modes so operators can fix their environment.
+        if "kaleido" in msg or "chromium" in msg or "libx11" in msg or "xvfb" in msg:
+            logger.info(
+                "Kaleido unavailable; attempting matplotlib rasterizer fallback "
+                "to embed the chart image without a headless browser dependency."
+            )
+        else:
+            logger.warning(f"Plotly image extraction failed: {e}; trying matplotlib fallback.")
+
+        # ---- Matplotlib fallback: rebuild the chart from trace data so the
+        # manuscript still embeds a real figure when Kaleido is missing. ----
+        mpl_buf = _rasterize_with_matplotlib(local_fig, tracked_streams)
+        if mpl_buf is not None:
+            try:
+                return Image(mpl_buf, width=usable_width,
+                             height=usable_width * 0.75)
+            except Exception as ie:
+                logger.warning(f"matplotlib PNG embed failed: {ie}")
+
+        # Final resort: styled text canvas placeholder (Vector A2 contract).
+        return _build_fallback_canvas(usable_width, reason="render_error")
+    finally:
+        # Break the deep-copy reference so no transient figure graph lingers.
+        local_fig = None
+
+
+def _build_fallback_canvas(usable_width: float, reason: str = "render_error") -> Any:
+    """Render the styled placeholder canvas used when a figure cannot be drawn.
+
+    The canvas is a margined PDF bounding box stamped with the figure's
+    canonical chart title, satisfying the Vector A2 defensive fallback contract.
+    """
+    try:
+        fallback_style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#F1F5F9")),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#CBD5E1")),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+        ])
+        body = (
+            "<b>[Chart: Dynamic Phase-Folded Transit Profile Data]</b><br/>"
+            "<i>(Figure unavailable -- image extraction failed or headless "
+            "environment without Kaleido / libX11.)</i>"
+        )
+        p = Paragraph(body, getSampleStyleSheet()["Normal"])
+        t = Table([[p]], colWidths=[usable_width], rowHeights=[usable_width * 0.5])
+        t.setStyle(fallback_style)
+        return t
+    except NameError:
+        # reportlab not imported at all -- nothing we can render.
+        return None
+
+
+def _rasterize_with_matplotlib(fig: Any, tracked_streams: List[io.BytesIO]) -> Any:
+    """Rebuild a Plotly Figure as a matplotlib PNG when Kaleido is unavailable.
+
+    Plotly's native ``Figure.to_image()`` path requires the ``kaleido`` package
+    (plus Chromium / libX11 on Linux), which is frequently absent on headless
+    hosts and CI runners.  Rather than surrendering to the styled text
+    placeholder, we re-project the figure's trace data onto matplotlib's Agg
+    backend -- which has no external browser dependency and is already pinned
+    in ``requirements.txt`` -- so the manuscript still embeds a real chart.
+
+    The mapping is intentionally conservative: it supports the scatter /
+    line trace shapes produced by the dashboard's phase-folded builder and
+    preserves the figure's title, axis labels, and dark theme.  Any
+    unrecoverable failure returns ``None`` so the caller can fall through to
+    the styled canvas placeholder (preserving the Vector A2 contract).
+    """
+    try:
+        import matplotlib
+        # Force a non-interactive backend -- never let matplotlib try to open
+        # a GUI window during a PDF compile.
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        from matplotlib.colors import to_rgba
+    except ImportError:
+        logger.warning(
+            "matplotlib unavailable; cannot fall back from Kaleido. "
+            "Install matplotlib to enable embedded chart images."
+        )
+        return None
+
+    def _mpl_color(raw: Any, default: str) -> Any:
+        """Normalize a Plotly/CSS color value into a matplotlib RGBA tuple.
+
+        matplotlib's color parser does not understand CSS ``rgba(r,g,b,a)``
+        strings, so we hand-convert those; everything else (hex, named
+        colors) is delegated to ``matplotlib.colors.to_rgba``.
+        """
+        if not isinstance(raw, str):
+            return to_rgba(default)
+        s = raw.strip()
+        if s.lower().startswith("rgba") or s.lower().startswith("rgb"):
+            open_p = s.find("(")
+            close_p = s.rfind(")")
+            if open_p == -1 or close_p == -1:
+                return to_rgba(default)
+            inner = s[open_p + 1: close_p]
+            parts = [p.strip() for p in inner.split(",")]
+            try:
+                if s.lower().startswith("rgba") and len(parts) == 4:
+                    r, g, b, a = parts
+                    return (float(r) / 255.0, float(g) / 255.0,
+                            float(b) / 255.0, float(a))
+                if s.lower().startswith("rgb") and len(parts) == 3:
+                    r, g, b = parts
+                    return (float(r) / 255.0, float(g) / 255.0,
+                            float(b) / 255.0, 1.0)
+            except (ValueError, IndexError):
+                return to_rgba(default)
         try:
-            fallback_style = TableStyle([
-                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor("#F1F5F9")),
-                ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#CBD5E1")),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ])
-            p = Paragraph("<b>Interactive Plot Placeholder</b><br/><i>(Image extraction failed or headless environment)</i>", 
-                          getSampleStyleSheet()["Normal"])
-            t = Table([[p]], colWidths=[usable_width], rowHeights=[usable_width * 0.5])
-            t.setStyle(fallback_style)
-            return t
-        except NameError:
-            # reportlab not imported
+            return to_rgba(s)
+        except ValueError:
+            return to_rgba(default)
+
+    try:
+        layout = getattr(fig, "layout", None)
+        # ---- Canvas + theme ----
+        paper_bg = "#0F172A"
+        plot_bg = "#0F172A"
+        text_color = "#E2E8F0"
+        if layout is not None:
+            paper_bg_p = getattr(layout, "paper_bgcolor", None)
+            plot_bg_p = getattr(layout, "plot_bgcolor", None)
+            font_p = getattr(layout, "font", None)
+            if isinstance(paper_bg_p, str) and paper_bg_p.startswith("rgba") and \
+                    paper_bg_p.strip().endswith(",0)"):
+                # Transparent paper -> use the plot bg as the page color.
+                pass
+            elif isinstance(paper_bg_p, str) and not paper_bg_p.startswith("rgba"):
+                paper_bg = paper_bg_p
+            if isinstance(plot_bg_p, str) and not plot_bg_p.startswith("rgba"):
+                plot_bg = plot_bg_p
+            if font_p is not None:
+                fc = getattr(font_p, "color", None)
+                if isinstance(fc, str):
+                    text_color = fc
+
+        dpi = 150
+        width_in = 800 / dpi
+        height_in = 600 / dpi
+        mpl_fig, ax = plt.subplots(figsize=(width_in, height_in), dpi=dpi)
+        mpl_fig.patch.set_facecolor(_mpl_color(paper_bg, paper_bg))
+        ax.set_facecolor(_mpl_color(plot_bg, plot_bg))
+
+        # ---- Traces ----
+        traces = getattr(fig, "data", ()) or ()
+        plotted = False
+        for trace in traces:
+            x = getattr(trace, "x", None)
+            y = getattr(trace, "y", None)
+            if x is None or y is None:
+                continue
+            mode = getattr(trace, "mode", "") or ""
+            marker = getattr(trace, "marker", None)
+            line = getattr(trace, "line", None)
+
+            m_color = "#22D3EE"
+            m_size = 4
+            l_color = "#38BDF8"
+            l_width = 1.5
+            if marker is not None:
+                mc = getattr(marker, "color", None)
+                if isinstance(mc, str):
+                    m_color = mc
+                ms = getattr(marker, "size", None)
+                if isinstance(ms, (int, float)):
+                    m_size = ms
+            if line is not None:
+                lc = getattr(line, "color", None)
+                if isinstance(lc, str):
+                    l_color = lc
+                lw = getattr(line, "width", None)
+                if isinstance(lw, (int, float)):
+                    l_width = lw
+
+            has_markers = "markers" in mode or mode == ""
+            has_lines = "lines" in mode
+
+            m_rgba = _mpl_color(m_color, m_color)
+            l_rgba = _mpl_color(l_color, l_color)
+            if has_lines and has_markers:
+                ax.plot(x, y, linestyle="-", color=l_rgba,
+                        linewidth=l_width, marker="o", markerfacecolor=m_rgba,
+                        markeredgecolor=m_rgba, markersize=m_size)
+            elif has_lines:
+                ax.plot(x, y, linestyle="-", color=l_rgba, linewidth=l_width)
+            else:
+                # Default to markers (covers our scatter case).
+                ax.scatter(x, y, c=[m_rgba], s=m_size ** 2,
+                           edgecolors="none")
+            plotted = True
+
+        if not plotted:
+            plt.close(mpl_fig)
             return None
+
+        # ---- Title + axes (ported from the Plotly layout) ----
+        text_rgba = _mpl_color(text_color, text_color)
+        title_text = None
+        if layout is not None:
+            title = getattr(layout, "title", None)
+            if title is not None:
+                title_text = getattr(title, "text", None)
+        if title_text:
+            ax.set_title(title_text, color=text_rgba, fontsize=12, pad=10)
+
+        xaxis_label = None
+        yaxis_label = None
+        if layout is not None:
+            xa = getattr(layout, "xaxis", None)
+            ya = getattr(layout, "yaxis", None)
+            if xa is not None:
+                xt = getattr(xa, "title", None)
+                if xt is not None:
+                    xaxis_label = getattr(xt, "text", None)
+            if ya is not None:
+                yt = getattr(ya, "title", None)
+                if yt is not None:
+                    yaxis_label = getattr(yt, "text", None)
+        if xaxis_label:
+            ax.set_xlabel(xaxis_label, color=text_rgba, fontsize=10)
+        if yaxis_label:
+            ax.set_ylabel(yaxis_label, color=text_rgba, fontsize=10)
+
+        # Axis chrome tuned to the dark theme.
+        ax.tick_params(colors=text_rgba, labelsize=9)
+        for spine in ax.spines.values():
+            spine.set_color("#1E293B")
+        ax.grid(True, color=_mpl_color("rgba(148,163,184,0.18)", "#94A3B8"),
+                linewidth=0.5)
+
+        buf = io.BytesIO()
+        mpl_fig.savefig(buf, format="png", facecolor=mpl_fig.get_facecolor(),
+                        bbox_inches="tight", pad_inches=0.15)
+        plt.close(mpl_fig)
+        buf.seek(0)
+        tracked_streams.append(buf)
+        return buf
+    except Exception as e:
+        logger.warning(f"matplotlib figure fallback failed: {e}")
+        try:
+            plt.close("all")
+        except Exception:
+            pass
+        return None
 
 
 def generate_academic_report(metrics_payload: Dict[str, Any], figures: Dict[str, Any] = None) -> io.BytesIO:

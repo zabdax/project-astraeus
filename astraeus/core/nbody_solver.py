@@ -372,97 +372,155 @@ def run_stability_analysis(
     if abs(E0) < 1.0e-30:
         E0 = 1.0e-30  # prevent division by zero for degenerate systems
 
-    # --- Velocity Verlet integration loop ---
+    return run_stability_integration(
+        positions=positions,
+        velocities=velocities,
+        masses=masses,
+        n_steps=n_steps,
+        dt=dt
+    )
+
+def run_stability_integration(
+    positions: np.ndarray,
+    velocities: np.ndarray,
+    masses: np.ndarray,
+    n_steps: int = 10000,
+    dt: float = 0.01
+) -> StabilityResult:
+    """Run an N-body gravitational stability simulation from state vectors.
+    
+    Parameters:
+        positions : (N, 3) array of body positions [AU]. Body 0 is the star.
+        velocities: (N, 3) array of body velocities [AU/yr].
+        masses    : (N,) array of body masses [M_sun].
+        n_steps   : Total integration steps.
+        dt        : Timestep in years.
+    """
+    n_bodies = len(masses)
+    stellar_mass_msun = masses[0]
+    n_planets = n_bodies - 1
+
+    if n_planets == 0:
+        return StabilityResult(
+            is_stable=True,
+            survival_time_years=0.0,
+            max_eccentricity_drift=0.0,
+            termination_reason="completed",
+            final_eccentricities=[],
+            energy_relative_error=0.0,
+        )
+
+    # Shift to centre-of-mass frame
+    total_mass = np.sum(masses)
+    com_pos = np.sum(masses[:, np.newaxis] * positions, axis=0) / total_mass
+    com_vel = np.sum(masses[:, np.newaxis] * velocities, axis=0) / total_mass
+    positions = positions.copy() - com_pos
+    velocities = velocities.copy() - com_vel
+
+    hill_radii = np.zeros(n_bodies)
+    initial_eccentricities = np.zeros(n_planets)
+
+    for i in range(1, n_bodies):
+        mu = G_AU3_MSUN_YR2 * (stellar_mass_msun + masses[i])
+        rel_pos = positions[i] - positions[0]
+        rel_vel = velocities[i] - velocities[0]
+        
+        r = np.linalg.norm(rel_pos)
+        v_sq = np.sum(rel_vel**2)
+        inv_a = 2.0 / r - v_sq / mu if r > 1e-15 else 0.0
+        a = 1.0 / inv_a if inv_a > 0 else 0.0
+        
+        hill_radii[i] = _hill_radius(masses[i], stellar_mass_msun, a)
+        initial_eccentricities[i-1] = _compute_osculating_eccentricity(rel_pos, rel_vel, mu)
+
+    max_eccentricity_drift = 0.0
+    current_eccentricities = initial_eccentricities.copy()
+
+    E0 = _compute_total_energy(positions, velocities, masses)
+    if abs(E0) < 1.0e-30:
+        E0 = 1.0e-30
+
     termination_reason = "completed"
     colliding_pair = None
     ejected_body = None
     survival_step = n_steps
 
+    step = -1
     try:
         acc = _compute_accelerations(positions, masses)
-    
+
         for step in range(n_steps):
-            # --- Verlet step 1: update positions ---
             positions += velocities * dt + 0.5 * acc * dt**2
-            
+
             if not np.all(np.isfinite(positions)) or not np.all(np.isfinite(velocities)):
                 raise ValueError("Physical Boundary Breach: NaN/Inf detected in component vectors.")
-    
-            # --- Verlet step 2: compute new accelerations ---
+
             acc_new = _compute_accelerations(positions, masses)
-    
-            # --- Verlet step 3: update velocities ---
             velocities += 0.5 * (acc + acc_new) * dt
             acc = acc_new
 
-        # ===== DIAGNOSTIC CHECKS (every step) =====
-
-        # --- Check 1: Velocity sanity ---
-        v_magnitudes = np.sqrt(np.sum(velocities[1:]**2, axis=1))
-        if np.any(v_magnitudes > VELOCITY_SANITY_CAP):
-            blown_idx = int(np.argmax(v_magnitudes)) + 1  # +1 for planet index
-            survival_step = step + 1
-            termination_reason = "ejection"
-            ejected_body = blown_idx - 1  # 0-indexed planet
-            break
-
-        # --- Check 2: Close encounters / Collisions ---
-        for i in range(1, n_bodies):
-            for j in range(i + 1, n_bodies):
-                dx = positions[j] - positions[i]
-                dist = np.sqrt(np.sum(dx**2))
-                mutual_hill = hill_radii[i] + hill_radii[j]
-                if mutual_hill > 0.0 and dist < mutual_hill:
-                    survival_step = step + 1
-                    termination_reason = "collision"
-                    colliding_pair = (i - 1, j - 1)  # 0-indexed planets
-                    break
-            if termination_reason == "collision":
-                break
-
-        if termination_reason != "completed":
-            break
-
-        # --- Check 3: Osculating eccentricity / ejection ---
-        for i in range(n_planets):
-            mu = G_AU3_MSUN_YR2 * (stellar_mass_msun + planets[i].mass_msun)
-            rel_pos = positions[i + 1] - positions[0]
-            rel_vel = velocities[i + 1] - velocities[0]
-            ecc = _compute_osculating_eccentricity(rel_pos, rel_vel, mu)
-            current_eccentricities[i] = ecc
-
-            drift = abs(ecc - initial_eccentricities[i])
-            if drift > max_eccentricity_drift:
-                max_eccentricity_drift = drift
-
-            if ecc >= 1.0:
+            v_magnitudes = np.sqrt(np.sum(velocities[1:]**2, axis=1))
+            if not np.all(np.isfinite(v_magnitudes)) or np.any(v_magnitudes > VELOCITY_SANITY_CAP):
+                blown_idx = int(np.argmax(v_magnitudes)) + 1
                 survival_step = step + 1
                 termination_reason = "ejection"
-                ejected_body = i  # 0-indexed planet
+                ejected_body = blown_idx - 1
                 break
 
-        if termination_reason != "completed":
-            break
+            for i in range(1, n_bodies):
+                for j in range(i + 1, n_bodies):
+                    dx = positions[j] - positions[i]
+                    dist = np.sqrt(np.sum(dx**2))
+                    mutual_hill = hill_radii[i] + hill_radii[j]
+                    if mutual_hill > 0.0 and dist < mutual_hill:
+                        survival_step = step + 1
+                        termination_reason = "collision"
+                        colliding_pair = (i - 1, j - 1)
+                        break
+                if termination_reason == "collision":
+                    break
 
-        # --- Check 4: Energy drift early-exit ---
-        if (step + 1) % 100 == 0:  # check every 100 steps to save compute
-            E_now = _compute_total_energy(positions, velocities, masses)
-            rel_error = abs((E_now - E0) / E0)
-            if rel_error > ENERGY_DRIFT_THRESHOLD:
-                survival_step = step + 1
-                termination_reason = "energy_divergence"
+            if termination_reason != "completed":
                 break
+
+            for i in range(n_planets):
+                mu = G_AU3_MSUN_YR2 * (stellar_mass_msun + masses[i+1])
+                rel_pos = positions[i+1] - positions[0]
+                rel_vel = velocities[i+1] - velocities[0]
+                ecc = _compute_osculating_eccentricity(rel_pos, rel_vel, mu)
+                current_eccentricities[i] = ecc
+
+                drift = abs(ecc - initial_eccentricities[i])
+                if drift > max_eccentricity_drift:
+                    max_eccentricity_drift = drift
+
+                if ecc >= 1.0:
+                    survival_step = step + 1
+                    termination_reason = "ejection"
+                    ejected_body = i
+                    break
+
+            if termination_reason != "completed":
+                break
+
+            if (step + 1) % 100 == 0:
+                E_now = _compute_total_energy(positions, velocities, masses)
+                rel_error = abs((E_now - E0) / E0)
+                if rel_error > ENERGY_DRIFT_THRESHOLD:
+                    survival_step = step + 1
+                    termination_reason = "energy_divergence"
+                    break
 
     except Exception as e:
-        if "Physical Boundary Breach" in str(e) or "NaN" in str(e) or "inf" in str(e).lower():
+        msg = str(e)
+        if "Physical Boundary Breach" in msg or "NaN" in msg or "inf" in msg.lower():
             import logging
             logging.getLogger(__name__).warning(f"Solver aborted: {e}")
-            survival_step = step if 'step' in locals() else 0
+            survival_step = max(step, 0)
             termination_reason = "Physical Boundary Breach"
         else:
             raise
 
-    # --- Final diagnostics ---
     survival_time = survival_step * dt
     E_final = _compute_total_energy(positions, velocities, masses)
     energy_rel_error = abs((E_final - E0) / E0)
