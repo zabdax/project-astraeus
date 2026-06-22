@@ -1,0 +1,3 @@
+# Test-only dependencies. Not required at runtime.
+# Installed alongside requirements.txt by CI and local dev setups.
+pytest>=8.0,<10
