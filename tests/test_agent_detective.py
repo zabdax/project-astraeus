@@ -84,11 +84,11 @@ def test_panel_routing():
             
             run_btn = None
             for btn in at.get("button"):
-                if "Run Detection" in btn.label:
+                if "Analyze Telemetry & Verify Harmonics" in btn.label:
                     run_btn = btn
                     break
-                    
-            assert run_btn is not None, "Run Detection button not found"
+
+            assert run_btn is not None, "Analyze Telemetry & Verify Harmonics button not found"
             run_btn.click().run()
             
             # Verify Center Panel (Plot)

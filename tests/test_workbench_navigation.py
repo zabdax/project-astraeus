@@ -46,14 +46,16 @@ def test_workbench_navigation_persistence():
             
             assert at.session_state.current_route == "Detective", "Navigation to Detective failed."
             
-            # 3. Run Detection (file is already 'uploaded' via mock)
+            # 3. Run Detection (button is labelled 'Analyze Telemetry & Verify Harmonics'
+            # in ui/pages/detective.py:327 and :464; the test was previously
+            # keyed on the older 'Run Detection' label).
             run_btn = None
             for btn in at.get("button"):
-                if "Run Detection" in btn.label:
+                if "Analyze Telemetry & Verify Harmonics" in btn.label:
                     run_btn = btn
                     break
-                    
-            assert run_btn is not None, "Run Detection button not found."
+
+            assert run_btn is not None, "Analyze Telemetry & Verify Harmonics button not found."
             run_btn.click().run()
             
         # Verify right panel has the detection report
