@@ -64,9 +64,9 @@ def test_signal_recovery():
     assert abs(results['period'] - period_true) <= 0.05, f"Expected period ~{period_true}, got {results['period']}"
 
 
-def test_panel_routing():
+def test_panel_routing(fake_uploaded_file):
     """
-    Ensure the backend returns a JSON object and verify that the UI correctly unpacks 
+    Ensure the backend returns a JSON object and verify that the UI correctly unpacks
     this object, rendering the plot in the Center and metrics in the Right (Asset) Panel.
     """
     # Create a dummy CSV file with a signal
@@ -77,22 +77,20 @@ def test_panel_routing():
     flux[phases < 0.1] -= 0.05
     df = pd.DataFrame({'time': time, 'flux': flux})
     df.to_csv(test_csv, index=False)
-    
+
     try:
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import patch
         # The Detective page (ui/pages/detective.py:235-239) reads the
         # uploaded file via `st.file_uploader(...)` and expects an object
         # with `.getvalue()` (bytes) and `.name` (str, e.g. "x.csv"). A
         # bare path string is not enough — the upload branch would silently
         # except on `.getvalue()` and the "Analyze Telemetry & Verify
-        # Harmonics" button would never render. MagicMock satisfies the
-        # duck-typed contract without a real UploadedFile.
-        with open(test_csv, "rb") as f:
-            file_bytes = f.read()
-        fake_uploaded = MagicMock()
-        fake_uploaded.getvalue.return_value = file_bytes
-        fake_uploaded.name = test_csv
-        with patch("ui.pages.detective.st.file_uploader", return_value=fake_uploaded):
+        # Harmonics" button would never render. The fake_uploaded_file
+        # fixture (tests/conftest.py) returns a small dataclass exposing
+        # only the contract — see bucket8 audit §2 and the fixture
+        # docstring for the rationale.
+        with patch("ui.pages.detective.st.file_uploader",
+                   return_value=fake_uploaded_file(test_csv)):
             at = AppTest.from_file("app.py", default_timeout=60)
             at.run()
             

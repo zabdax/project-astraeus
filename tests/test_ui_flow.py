@@ -2,7 +2,7 @@ import os
 import pytest
 from streamlit.testing.v1 import AppTest
 
-def test_ui_flow():
+def test_ui_flow(fake_uploaded_file):
     """
     Smoke test for the ASTRAEUS UI flow.
 
@@ -31,15 +31,16 @@ def test_ui_flow():
     # .getvalue() returns the file bytes and .name is the CSV path —
     # the contract the detective page reads at ui/pages/detective.py:235-239
     # (see reports/bucket8_mock_audit.md §2 for the full contract).
-    from unittest.mock import patch, MagicMock
-    with open(test_csv, "rb") as f:
-        file_bytes = f.read()
-    fake_uploaded = MagicMock()
-    fake_uploaded.getvalue.return_value = file_bytes
-    fake_uploaded.name = test_csv
+    # The fake_uploaded_file fixture (tests/conftest.py) returns a small
+    # dataclass exposing only the contract — see the fixture docstring
+    # for the rationale (MagicMock would silently auto-satisfy any
+    # attribute access; the dataclass raises AttributeError on
+    # out-of-contract access, which is the desired signal).
+    from unittest.mock import patch
 
     try:
-        with patch("ui.pages.detective.st.file_uploader", return_value=fake_uploaded):
+        with patch("ui.pages.detective.st.file_uploader",
+                   return_value=fake_uploaded_file(test_csv)):
             at = AppTest.from_file("app.py", default_timeout=60)
             at.run()
 
