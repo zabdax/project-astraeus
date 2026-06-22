@@ -1,0 +1,146 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.3, pluggy-1.6.0 -- C:\Users\MIT\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: F:\solo_leveling_assistant\project-astraeus
+configfile: pytest.ini
+collecting ... collected 105 items / 33 deselected / 72 selected
+
+tests/test_adapter.py::test_adapter_csv_happy_path PASSED                [  1%]
+tests/test_adapter.py::test_adapter_csv_noise_and_sorting PASSED         [  2%]
+tests/test_adapter.py::test_adapter_json PASSED                          [  4%]
+tests/test_adapter.py::test_adapter_fits_parsing PASSED                  [  5%]
+tests/test_adapter.py::test_adapter_column_override PASSED               [  6%]
+tests/test_adapter.py::test_adapter_unsupported_format PASSED            [  8%]
+tests/test_adapter.py::test_adapter_streamlit_integration PASSED         [  9%]
+tests/test_agent_detective.py::test_noise_injection FAILED               [ 11%]
+tests/test_agent_detective.py::test_signal_recovery PASSED               [ 12%]
+tests/test_agent_detective.py::test_panel_routing PASSED                 [ 13%]
+tests/test_bulletproof_detector.py::test_mathematical_aliasing_stress_test PASSED [ 15%]
+tests/test_bulletproof_detector.py::test_state_binding_safety_verification PASSED [ 16%]
+tests/test_dashboard_simulation.py::DashboardSimulationTests::test_invalid_dashboard_scenario_is_rejected PASSED [ 18%]
+tests/test_dashboard_simulation.py::DashboardSimulationTests::test_residuals_are_derived_from_flux_arrays PASSED [ 19%]
+tests/test_dashboard_simulation.py::DashboardSimulationTests::test_same_scenario_is_reproducible PASSED [ 20%]
+tests/test_dashboard_simulation.py::DashboardSimulationTests::test_simulation_arrays_are_aligned PASSED [ 22%]
+tests/test_experiment_history.py::test_experiment_history_cycle PASSED   [ 23%]
+tests/test_lab_realtime.py::test_performance_get_model_curve PASSED      [ 25%]
+tests/test_lab_realtime.py::test_ui_sync_slider_events PASSED            [ 26%]
+tests/test_loader.py::test_stress_data_handling PASSED                   [ 27%]
+tests/test_loader.py::test_format_mapping PASSED                         [ 29%]
+tests/test_mcmc.py::test_mcmc_retrieval PASSED                           [ 30%]
+tests/test_multi_planet_scaling.py::test_ui_dynamic_expansion PASSED     [ 31%]
+tests/test_multi_planet_scaling.py::test_physics_summation PASSED        [ 33%]
+tests/test_multi_planet_scaling.py::test_regression_mcmc PASSED          [ 34%]
+tests/test_nbody_solver.py::test_energy_conservation PASSED              [ 36%]
+tests/test_nbody_solver.py::test_known_stable_system PASSED              [ 37%]
+tests/test_nbody_solver.py::test_forced_collision PASSED                 [ 38%]
+tests/test_nbody_solver.py::test_forced_ejection PASSED                  [ 40%]
+tests/test_nbody_solver.py::test_circular_orbit_eccentricity_drift PASSED [ 41%]
+tests/test_nbody_solver.py::test_estimate_mass_from_radius PASSED        [ 43%]
+tests/test_nbody_solver.py::test_check_system_stability_api PASSED       [ 44%]
+tests/test_nbody_solver.py::test_empty_planets PASSED                    [ 45%]
+tests/test_nbody_solver.py::test_earth_sun_circular_via_state_vectors PASSED [ 47%]
+tests/test_nbody_solver.py::test_kepler90b_high_resolution_stability PASSED [ 48%]
+tests/test_nbody_solver.py::test_kepler90b_oversized_dt_forces_blowup PASSED [ 50%]
+tests/test_orbital_models.py::KeplerSolverTests::test_solver_satisfies_kepler_equation PASSED [ 51%]
+tests/test_orbital_models.py::KeplerianOrbitTests::test_edge_on_circular_quarter_orbit PASSED [ 52%]
+tests/test_orbital_models.py::KeplerianOrbitTests::test_position_at_periapsis PASSED [ 54%]
+tests/test_physics.py::test_transit_depth PASSED                         [ 55%]
+tests/test_physics.py::test_limb_darkening_module PASSED                 [ 56%]
+tests/test_physics.py::test_kepler_solver_eccentric_orbits PASSED        [ 58%]
+tests/test_pipeline_smoke.py::test_full_pipeline_recovers_synthetic_planet PASSED [ 59%]
+tests/test_pipeline_smoke.py::test_reporting_does_not_crash_on_minimal_payload PASSED [ 61%]
+tests/test_preprocessing.py::GaussianNoiseInjectionTests::test_noise_scale_uses_target_snr PASSED [ 62%]
+tests/test_preprocessing.py::GaussianNoiseInjectionTests::test_seed_makes_noise_reproducible PASSED [ 63%]
+tests/test_preprocessing.py::GaussianNoiseInjectionTests::test_snr_must_be_positive PASSED [ 65%]
+tests/test_synthetic_simulation.py::SyntheticTransitSeriesTests::test_default_hot_jupiter_series_contains_transits PASSED [ 66%]
+tests/test_synthetic_simulation.py::SyntheticTransitSeriesTests::test_default_hot_jupiter_series_has_expected_shape PASSED [ 68%]
+tests/test_synthetic_simulation.py::SyntheticTransitSeriesTests::test_invalid_sample_count_is_rejected PASSED [ 69%]
+tests/test_synthetic_simulation.py::SyntheticTransitSeriesTests::test_residuals_are_observed_minus_theoretical PASSED [ 70%]
+tests/test_system_flight_bench.py::test_synthetic_pipeline_recovers_injected_planet PASSED [ 72%]
+tests/test_transit_model.py::TransitGeometryTests::test_circle_overlap_area_rejects_negative_separation PASSED [ 73%]
+tests/test_transit_model.py::TransitGeometryTests::test_circle_overlap_area_returns_area_quantity PASSED [ 75%]
+tests/test_transit_model.py::TransitGeometryTests::test_sky_separation_projects_onto_xy_plane PASSED [ 76%]
+tests/test_transit_model.py::TransitGeometryTests::test_sky_separation_requires_quantities PASSED [ 77%]
+tests/test_transit_model.py::GeometricTransitTests::test_equal_radius_zero_separation_is_full_occultation PASSED [ 79%]
+tests/test_transit_model.py::GeometricTransitTests::test_full_transit_depth_equals_radius_ratio_squared PASSED [ 80%]
+tests/test_transit_model.py::GeometricTransitTests::test_negative_separation_is_rejected PASSED [ 81%]
+tests/test_transit_model.py::GeometricTransitTests::test_out_of_transit_depth_is_zero PASSED [ 83%]
+tests/test_transit_model.py::GeometricTransitTests::test_partial_transit_uses_intersection_area PASSED [ 84%]
+tests/test_ui_flow.py::test_ui_flow PASSED                               [ 86%]
+tests/test_vetting_threshold_hardening.py::test_expected_occultation_depth_ppm_hot_jupiter_around_sun PASSED [ 87%]
+tests/test_vetting_threshold_hardening.py::test_expected_occultation_depth_ppm_earth_sun_analog PASSED [ 88%]
+tests/test_vetting_threshold_hardening.py::test_expected_occultation_depth_ppm_hot_planet_around_m_dwarf_exceeds_800ppm PASSED [ 90%]
+tests/test_vetting_threshold_hardening.py::test_expected_occultation_depth_ppm_returns_none_for_missing_inputs PASSED [ 91%]
+tests/test_vetting_threshold_hardening.py::test_expected_occultation_depth_ppm_caps_temperature_ratio_at_one PASSED [ 93%]
+tests/test_vetting_threshold_hardening.py::test_pipeline_uses_physical_threshold_for_hot_planet_around_m_dwarf PASSED [ 94%]
+tests/test_vetting_threshold_hardening.py::test_pipeline_fallback_when_physical_inputs_missing PASSED [ 95%]
+tests/test_vetting_threshold_hardening.py::test_pipeline_fallback_when_transit_depth_unavailable PASSED [ 97%]
+tests/test_vetting_threshold_hardening.py::test_pipeline_threshold_mode_present_in_result_dict_for_known_truth PASSED [ 98%]
+tests/test_workbench_navigation.py::test_workbench_navigation_persistence PASSED [100%]
+
+================================== FAILURES ===================================
+____________________________ test_noise_injection _____________________________
+
+    def test_noise_injection():
+        """
+        Feed the backend a lightcurve with non-periodic noise.
+        Assert that candidate_found (or is_candidate) is False.
+        """
+        time = np.linspace(0, 10, 500)
+        # Random noise with no periodic signal
+        np.random.seed(42)
+        flux = 1.0 + np.random.normal(0, 0.01, 500)
+    
+        results = detect_transit_candidate(time, flux, snr_threshold=5.0)
+    
+        # The prompt refers to 'candidate_found', backend uses 'is_candidate'
+        # We will assert that the candidate was not found.
+>       assert results.get('is_candidate', results.get('candidate_found')) is False, "Expected no candidate to be found for pure noise"
+E       AssertionError: Expected no candidate to be found for pure noise
+E       assert True is False
+E        +  where True = <built-in method get of dict object at 0x000001AFD6076E00>('is_candidate', True)
+E        +    where <built-in method get of dict object at 0x000001AFD6076E00> = {'candidate_found': True, 'confidence_score': 4.086090680685773, 'delta_chi2_u': 0.0002665166585847159, 'delta_chi2_v': 4.811314653365567e-05, ...}.get
+E        +    and   True = <built-in method get of dict object at 0x000001AFD6076E00>('candidate_found')
+E        +      where <built-in method get of dict object at 0x000001AFD6076E00> = {'candidate_found': True, 'confidence_score': 4.086090680685773, 'delta_chi2_u': 0.0002665166585847159, 'delta_chi2_v': 4.811314653365567e-05, ...}.get
+
+tests\test_agent_detective.py:22: AssertionError
+============================== warnings summary ===============================
+C:\Users\MIT\AppData\Local\Programs\Python\Python312\Lib\site-packages\reportlab\lib\rl_safe_eval.py:11
+  C:\Users\MIT\AppData\Local\Programs\Python\Python312\Lib\site-packages\reportlab\lib\rl_safe_eval.py:11: DeprecationWarning: ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead
+    haveNameConstant = hasattr(ast,'NameConstant')
+
+tests/test_agent_detective.py::test_noise_injection
+tests/test_agent_detective.py::test_signal_recovery
+tests/test_agent_detective.py::test_signal_recovery
+  F:\solo_leveling_assistant\project-astraeus\astraeus\analysis\logging.py:35: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "timestamp": datetime.utcnow().isoformat() + "Z",
+
+tests/test_agent_detective.py: 2 warnings
+tests/test_bulletproof_detector.py: 4 warnings
+tests/test_experiment_history.py: 1 warning
+tests/test_pipeline_smoke.py: 2 warnings
+tests/test_system_flight_bench.py: 2 warnings
+tests/test_vetting_threshold_hardening.py: 9 warnings
+  F:\solo_leveling_assistant\project-astraeus\astraeus\analysis\logging.py:35: DeprecationWarning:
+  
+  datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/test_agent_detective.py::test_panel_routing
+  F:\solo_leveling_assistant\project-astraeus\astraeus\analysis\bls_search.py:80: RuntimeWarning:
+  
+  invalid value encountered in scalar divide
+
+tests/test_mcmc.py::test_mcmc_retrieval
+  F:\solo_leveling_assistant\project-astraeus\tests\test_mcmc.py:92: UserWarning:
+  
+  MCMC acceptance fraction is 0.527, which is poorly tuned (should be between 0.2 and 0.5). Consider adjusting step sizes or priors.
+
+tests/test_multi_planet_scaling.py::test_regression_mcmc
+  C:\Users\MIT\AppData\Local\Programs\Python\Python312\Lib\site-packages\emcee\moves\red_blue.py:99: RuntimeWarning:
+  
+  invalid value encountered in scalar subtract
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_agent_detective.py::test_noise_injection - AssertionError: ...
+===== 1 failed, 71 passed, 33 deselected, 27 warnings in 72.83s (0:01:12) =====
