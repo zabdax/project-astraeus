@@ -73,5 +73,35 @@
         },
         "metadata": {},
         "fig_paths": []
+    },
+    {
+        "id": "f3b87219-a52d-46d3-90a5-8132f623bbbd",
+        "timestamp": "2026-06-22T07:43:16.112628Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "SMOKE",
+            "period": 2.998899779955991,
+            "stellar_rotation_period_days": 1.0,
+            "snr": 16.415120916910617,
+            "data_source": "synthetic",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "62618c83-57c6-43d5-9504-2d07004e932c",
+        "timestamp": "2026-06-22T07:43:16.635254Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "SMOKE",
+            "period": 2.4371874374874976,
+            "stellar_rotation_period_days": 1.0,
+            "snr": 5.029671466038173,
+            "data_source": "synthetic",
+            "is_valid_candidate": true
+        },
+        "metadata": {},
+        "fig_paths": []
     }
 ]
