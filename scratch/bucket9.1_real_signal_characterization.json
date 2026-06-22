@@ -1,0 +1,338 @@
+{
+  "snr_threshold": 5.0,
+  "summary_by_scenario": {
+    "pipeline_smoke (SyntheticTransitScenario, samples=2000)": {
+      "n": 5,
+      "snr_min": 16.415120916910617,
+      "snr_max": 16.415120916910617,
+      "snr_median": 16.415120916910617,
+      "snr_mean": 16.415120916910617,
+      "confidence_min": 9.021036775707664,
+      "confidence_max": 9.021036775707664,
+      "confidence_median": 9.021036775707664,
+      "confidence_mean": 9.021036775707664
+    },
+    "test_signal_recovery (3.14d, depth=0.02, sigma=0.001)": {
+      "n": 5,
+      "snr_min": 61.58750791827711,
+      "snr_max": 61.58750791827711,
+      "snr_median": 61.58750791827711,
+      "snr_mean": 61.58750791827711,
+      "confidence_min": 13.320346311585698,
+      "confidence_max": 13.320346311585698,
+      "confidence_median": 13.320346311585698,
+      "confidence_mean": 13.320346311585698
+    },
+    "hot_jupiter_clean (3.0d, depth=0.01, no secondary)": {
+      "n": 5,
+      "snr_min": 1602.8879974902318,
+      "snr_max": 1652.1143620862238,
+      "snr_median": 1632.450836513527,
+      "snr_mean": 1630.2800699647676,
+      "confidence_min": 21.559061676935162,
+      "confidence_max": 21.728597456084106,
+      "confidence_median": 21.668762167741203,
+      "confidence_mean": 21.649106987087304
+    },
+    "hot_planet_around_m_dwarf (1.5d, primary=0.04, secondary=0.001)": {
+      "n": 5,
+      "snr_min": 2538.4840669745677,
+      "snr_max": 2566.5621321266317,
+      "snr_median": 2560.3419902491164,
+      "snr_mean": 2555.346777892492,
+      "confidence_min": 28.994373140578187,
+      "confidence_max": 29.076777532296923,
+      "confidence_median": 29.023971725529886,
+      "confidence_mean": 29.027920756683642
+    },
+    "earth_sun_analog (2.0d, depth=0.04)": {
+      "n": 5,
+      "snr_min": 5538.694746851452,
+      "snr_max": 5704.703263032248,
+      "snr_median": 5660.308676976596,
+      "snr_mean": 5637.634946173525,
+      "confidence_min": 23.428091245330368,
+      "confidence_max": 23.489346845397012,
+      "confidence_median": 23.443045734397522,
+      "confidence_mean": 23.45369467976863
+    }
+  },
+  "rows": [
+    {
+      "scenario": "pipeline_smoke (SyntheticTransitScenario, samples=2000)",
+      "repeat": 0,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 9.021036775707664,
+      "snr": 16.415120916910617,
+      "period": 2.998899779955991,
+      "transit_depth": 0.009264930213529032,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "pipeline_smoke (SyntheticTransitScenario, samples=2000)",
+      "repeat": 1,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 9.021036775707664,
+      "snr": 16.415120916910617,
+      "period": 2.998899779955991,
+      "transit_depth": 0.009264930213529032,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "pipeline_smoke (SyntheticTransitScenario, samples=2000)",
+      "repeat": 2,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 9.021036775707664,
+      "snr": 16.415120916910617,
+      "period": 2.998899779955991,
+      "transit_depth": 0.009264930213529032,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "pipeline_smoke (SyntheticTransitScenario, samples=2000)",
+      "repeat": 3,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 9.021036775707664,
+      "snr": 16.415120916910617,
+      "period": 2.998899779955991,
+      "transit_depth": 0.009264930213529032,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "pipeline_smoke (SyntheticTransitScenario, samples=2000)",
+      "repeat": 4,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 9.021036775707664,
+      "snr": 16.415120916910617,
+      "period": 2.998899779955991,
+      "transit_depth": 0.009264930213529032,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "test_signal_recovery (3.14d, depth=0.02, sigma=0.001)",
+      "repeat": 0,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 13.320346311585698,
+      "snr": 61.58750791827711,
+      "period": 3.128225645129026,
+      "transit_depth": 0.01933873082847859,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "test_signal_recovery (3.14d, depth=0.02, sigma=0.001)",
+      "repeat": 1,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 13.320346311585698,
+      "snr": 61.58750791827711,
+      "period": 3.128225645129026,
+      "transit_depth": 0.01933873082847859,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "test_signal_recovery (3.14d, depth=0.02, sigma=0.001)",
+      "repeat": 2,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 13.320346311585698,
+      "snr": 61.58750791827711,
+      "period": 3.128225645129026,
+      "transit_depth": 0.01933873082847859,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "test_signal_recovery (3.14d, depth=0.02, sigma=0.001)",
+      "repeat": 3,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 13.320346311585698,
+      "snr": 61.58750791827711,
+      "period": 3.128225645129026,
+      "transit_depth": 0.01933873082847859,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "test_signal_recovery (3.14d, depth=0.02, sigma=0.001)",
+      "repeat": 4,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 13.320346311585698,
+      "snr": 61.58750791827711,
+      "period": 3.128225645129026,
+      "transit_depth": 0.01933873082847859,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "hot_jupiter_clean (3.0d, depth=0.01, no secondary)",
+      "repeat": 0,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 21.668762167741203,
+      "snr": 1652.1143620862238,
+      "period": 1.499749949989998,
+      "transit_depth": 0.009864102129484409,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "hot_jupiter_clean (3.0d, depth=0.01, no secondary)",
+      "repeat": 1,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 21.60843993821084,
+      "snr": 1602.8879974902318,
+      "period": 1.499749949989998,
+      "transit_depth": 0.009873913473524065,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "hot_jupiter_clean (3.0d, depth=0.01, no secondary)",
+      "repeat": 2,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 21.728597456084106,
+      "snr": 1622.3738933420286,
+      "period": 1.499749949989998,
+      "transit_depth": 0.009848303619784171,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "hot_jupiter_clean (3.0d, depth=0.01, no secondary)",
+      "repeat": 3,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 21.559061676935162,
+      "snr": 1641.5732603918264,
+      "period": 1.499749949989998,
+      "transit_depth": 0.009852689315112406,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "hot_jupiter_clean (3.0d, depth=0.01, no secondary)",
+      "repeat": 4,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 21.680673696465202,
+      "snr": 1632.450836513527,
+      "period": 1.499749949989998,
+      "transit_depth": 0.009866308364247067,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "hot_planet_around_m_dwarf (1.5d, primary=0.04, secondary=0.001)",
+      "repeat": 0,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 29.014593160884825,
+      "snr": 2566.5621321266317,
+      "period": 1.4991998399679936,
+      "transit_depth": 0.03996874940350381,
+      "vetting_status": "Verified Planet Candidate (Atmospheric Occultation Detected)"
+    },
+    {
+      "scenario": "hot_planet_around_m_dwarf (1.5d, primary=0.04, secondary=0.001)",
+      "repeat": 1,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 29.023971725529886,
+      "snr": 2538.4840669745677,
+      "period": 1.4991998399679936,
+      "transit_depth": 0.03996142037267236,
+      "vetting_status": "Verified Planet Candidate (Atmospheric Occultation Detected)"
+    },
+    {
+      "scenario": "hot_planet_around_m_dwarf (1.5d, primary=0.04, secondary=0.001)",
+      "repeat": 2,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 29.02988822412839,
+      "snr": 2560.3419902491164,
+      "period": 1.4991998399679936,
+      "transit_depth": 0.03996289573077483,
+      "vetting_status": "Verified Planet Candidate (Atmospheric Occultation Detected)"
+    },
+    {
+      "scenario": "hot_planet_around_m_dwarf (1.5d, primary=0.04, secondary=0.001)",
+      "repeat": 3,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 28.994373140578187,
+      "snr": 2565.6187841000824,
+      "period": 1.4991998399679936,
+      "transit_depth": 0.03994981686121135,
+      "vetting_status": "Verified Planet Candidate (Atmospheric Occultation Detected)"
+    },
+    {
+      "scenario": "hot_planet_around_m_dwarf (1.5d, primary=0.04, secondary=0.001)",
+      "repeat": 4,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 29.076777532296923,
+      "snr": 2545.7269160120613,
+      "period": 1.4991998399679936,
+      "transit_depth": 0.03995266003739395,
+      "vetting_status": "Verified Planet Candidate (Atmospheric Occultation Detected)"
+    },
+    {
+      "scenario": "earth_sun_analog (2.0d, depth=0.04)",
+      "repeat": 0,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 23.489346845397012,
+      "snr": 5704.703263032248,
+      "period": 2.0033006601320262,
+      "transit_depth": 0.03996620885167168,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "earth_sun_analog (2.0d, depth=0.04)",
+      "repeat": 1,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 23.443045734397522,
+      "snr": 5538.694746851452,
+      "period": 2.0003000600120022,
+      "transit_depth": 0.03994756535507027,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "earth_sun_analog (2.0d, depth=0.04)",
+      "repeat": 2,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 23.44233583186734,
+      "snr": 5598.779752089149,
+      "period": 2.0003000600120022,
+      "transit_depth": 0.03996967086182579,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "earth_sun_analog (2.0d, depth=0.04)",
+      "repeat": 3,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 23.465653741850918,
+      "snr": 5685.688291918182,
+      "period": 2.0018003600720142,
+      "transit_depth": 0.03997717120631816,
+      "vetting_status": "Verified Planet Candidate"
+    },
+    {
+      "scenario": "earth_sun_analog (2.0d, depth=0.04)",
+      "repeat": 4,
+      "candidate_found": true,
+      "is_candidate": true,
+      "confidence_score": 23.428091245330368,
+      "snr": 5660.308676976596,
+      "period": 2.0003000600120022,
+      "transit_depth": 0.03994928436513989,
+      "vetting_status": "Verified Planet Candidate"
+    }
+  ],
+  "elapsed_seconds": 125.26854538917542
+}
