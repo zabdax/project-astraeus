@@ -65,8 +65,20 @@ def test_panel_routing():
     df.to_csv(test_csv, index=False)
     
     try:
-        from unittest.mock import patch
-        with patch("ui.pages.detective.st.file_uploader", return_value=test_csv):
+        from unittest.mock import patch, MagicMock
+        # The Detective page (ui/pages/detective.py:235-239) reads the
+        # uploaded file via `st.file_uploader(...)` and expects an object
+        # with `.getvalue()` (bytes) and `.name` (str, e.g. "x.csv"). A
+        # bare path string is not enough — the upload branch would silently
+        # except on `.getvalue()` and the "Analyze Telemetry & Verify
+        # Harmonics" button would never render. MagicMock satisfies the
+        # duck-typed contract without a real UploadedFile.
+        with open(test_csv, "rb") as f:
+            file_bytes = f.read()
+        fake_uploaded = MagicMock()
+        fake_uploaded.getvalue.return_value = file_bytes
+        fake_uploaded.name = test_csv
+        with patch("ui.pages.detective.st.file_uploader", return_value=fake_uploaded):
             at = AppTest.from_file("app.py", default_timeout=60)
             at.run()
             
@@ -91,12 +103,19 @@ def test_panel_routing():
             assert run_btn is not None, "Analyze Telemetry & Verify Harmonics button not found"
             run_btn.click().run()
             
-            # Verify Center Panel (Plot)
-            subheaders = [sh.value for sh in at.get("subheader")]
-            assert "BLS Periodogram" in subheaders, "Center panel plot title (BLS Periodogram) not found"
+            # Verify Center Panel (Plot). The page renders the center panel
+            # plot title as an <h3> markdown element (see
+            # ui/pages/detective.py:522 "Phase-Folded Light Curve"), not as
+            # an st.subheader. The earlier "BLS Periodogram" subheader was
+            # removed in a prior refactor; the plotly_chart count check
+            # below still asserts the actual chart is rendered.
+            markdown_texts = [str(m.value) for m in at.get("markdown")]
+            assert any("Phase-Folded Light Curve" in m for m in markdown_texts), \
+                "Center panel plot title (Phase-Folded Light Curve) not found"
             assert len(at.get("plotly_chart")) > 0, "Expected a plotly chart to be rendered in the center panel"
-            
+
             # Verify Right (Asset) Panel (Metrics)
+            subheaders = [sh.value for sh in at.get("subheader")]
             assert "Detection Report" in subheaders, "Right panel title (Detection Report) not found"
             
             # In the right panel, we should have a JSON element containing the results

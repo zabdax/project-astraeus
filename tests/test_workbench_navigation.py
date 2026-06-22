@@ -1,7 +1,7 @@
 import os
 import pytest
 from streamlit.testing.v1 import AppTest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 def test_workbench_navigation_persistence():
     """
@@ -12,8 +12,17 @@ def test_workbench_navigation_persistence():
         f.write("time,flux\n0.0,1.0\n1.0,0.99\n2.0,1.0\n")
         
     try:
-        # Patch the file uploader before the app runs
-        with patch("ui.pages.detective.st.file_uploader", return_value=test_csv):
+        # Patch the file uploader before the app runs. The detective page
+        # (ui/pages/detective.py:235-239) reads .getvalue() and .name on the
+        # upload widget; a bare path string silently fails the upload branch
+        # and the "Analyze Telemetry & Verify Harmonics" button never
+        # renders. MagicMock satisfies the duck-typed contract.
+        with open(test_csv, "rb") as f:
+            file_bytes = f.read()
+        fake_uploaded = MagicMock()
+        fake_uploaded.getvalue.return_value = file_bytes
+        fake_uploaded.name = test_csv
+        with patch("ui.pages.detective.st.file_uploader", return_value=fake_uploaded):
             at = AppTest.from_file("app.py", default_timeout=60)
             at.run()
         
