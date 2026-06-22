@@ -61,9 +61,11 @@ def test_mathematical_aliasing_stress_test():
     flux_arr[mask] -= sec_depth
 
     results = detect_transit_candidate(time_arr, flux_arr)
-    result = results[0].get('candidate_1', {}) if results else {}
+    # detect_transit_candidate returns a single flat dict (the strongest
+    # candidate), not a list of candidates. See astraeus/analysis/detection.py:183.
+    result = results if results else {}
 
-    # We expect the Harmonic Correction Logic to identify the 2.0 day period, 
+    # We expect the Harmonic Correction Logic to identify the 2.0 day period,
     # overriding any potential sub-harmonic peak at 1.0 or 0.5 days.
     detected_period = result.get('orbital_period', result.get('period'))
     assert abs(detected_period - primary_period) < 0.05, \
@@ -81,7 +83,9 @@ def test_state_binding_safety_verification():
     flux_arr = np.random.normal(1.0, 0.001, n_points)
 
     results = detect_transit_candidate(time_arr, flux_arr)
-    result = results[0].get('candidate_1', {}) if results else {}
+    # detect_transit_candidate returns a single flat dict (the strongest
+    # candidate), not a list of candidates. See astraeus/analysis/detection.py:183.
+    result = results if results else {}
 
     required_keys = [
         'orbital_period', 'transit_depth', 'stellar_radius', 'vetting_status',
