@@ -77,3 +77,14 @@ htmlcov/
 .github/
 .windsurfrules
 AGENTS.md
+
+# --- Bucket 7: untracked regenerable artifacts (root-only) ---
+# Sibling of the already-ignored test.html (Plotly debug export).
+test3d.html
+# Root-level duplicate of logs/experiments.json. Anchored to the repo
+# root so it does NOT affect logs/experiments.json.
+/experiments.json
+# Regen pytest / diagnostic output that should never have been committed.
+pytest_log.txt
+pytest_output.txt
+test_orchestrator_log.txt
