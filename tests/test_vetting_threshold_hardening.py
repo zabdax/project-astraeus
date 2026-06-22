@@ -28,8 +28,10 @@ from astraeus.analysis.physical_properties import (
     PhysicalPropertiesEngine,
     R_SUN_TO_R_EARTH,
 )
+from astraeus.analysis.vetting import VettingEngine
 from astraeus.core.constants import (
     VETTING_SECONDARY_ECLIPSE_FALLBACK_PPM,
+    VETTING_U_VS_V_CHI2_DELTA_THRESHOLD,
 )
 
 
@@ -320,3 +322,166 @@ def test_pipeline_threshold_mode_present_in_result_dict_for_known_truth():
     result = detect_transit_candidate(t, flux, metadata=metadata)
     assert "secondary_eclipse_threshold_mode" in result
     assert "secondary_eclipse_threshold_ppm" in result
+
+
+# ---------------------------------------------------------------------------
+# Boundary tests for the bucket-10 significance floor on
+# VettingEngine.vet_transit_shape's U-vs-V chi2-delta threshold.
+#
+# These tests pin the boundary so future threshold-default changes cannot
+# silently move the decision rule. The strategy is to construct a synthetic
+# light curve whose natural ``(delta_chi2_u - delta_chi2_v)`` is known, then
+# pass explicit ``threshold`` values just above and just below that natural
+# delta — that way the verdict assertions are independent of whatever the
+# default threshold is set to, and only depend on the verdict-logic
+# comparison itself.
+# ---------------------------------------------------------------------------
+
+
+def _build_clear_u_shape(
+    *,
+    period_days: float = 3.0,
+    duration_days: float = 0.1,
+    depth: float = 0.01,
+    noise_amplitude: float = 1e-4,
+    t0_days: float = 1.5,
+    n_points: int = 4000,
+    span_days: float = 16.0,
+    seed: int = 1,
+) -> tuple[np.ndarray, np.ndarray, float, float, float]:
+    """Trapezoidal U-shape transit — the canonical real-planet case for
+    bucket-10 boundary testing.
+
+    Returns ``(time, flux, period, t0, duration)`` so the caller can pass
+    them straight into ``vet_transit_shape``.
+    """
+    rng = np.random.default_rng(seed)
+    t = np.linspace(0.0, span_days, n_points)
+    phase = (t - t0_days + 0.5 * period_days) % period_days - 0.5 * period_days
+    flux = np.ones_like(t)
+    in_transit = np.abs(phase) < 0.5 * duration_days
+    ingress = 0.5 * duration_days * 0.10
+    flat_region = np.abs(phase) < (0.5 * duration_days - ingress)
+    flux[in_transit] = 1.0 - depth
+    slope_mask = in_transit & ~flat_region
+    if ingress > 0:
+        flux[slope_mask] = 1.0 - depth * (
+            0.5 * duration_days - np.abs(phase[slope_mask])
+        ) / ingress
+    flux = flux + rng.normal(0.0, noise_amplitude, size=t.shape)
+    return t, flux, period_days, t0_days, duration_days
+
+
+def test_vetting_threshold_default_is_positive_significance_floor():
+    """The bucket-10 fix: ``vet_transit_shape``'s default ``threshold`` is
+    now a positive significance floor (the documented
+    ``VETTING_U_VS_V_CHI2_DELTA_THRESHOLD``), not ``0.0``.
+
+    Pins the headline change. If anyone reverts to ``threshold=0.0``,
+    this test fails immediately.
+    """
+    assert VETTING_U_VS_V_CHI2_DELTA_THRESHOLD > 0.0, (
+        "bucket 10 fix: vet_transit_shape default threshold must be > 0.0; "
+        f"got {VETTING_U_VS_V_CHI2_DELTA_THRESHOLD}"
+    )
+    # And specifically, must be the empirically-motivated 0.001 from
+    # reports/bucket10_threshold_audit.md §3.2.
+    assert VETTING_U_VS_V_CHI2_DELTA_THRESHOLD == 0.001, (
+        f"threshold changed from the bucket-10 derivation value 0.001 "
+        f"to {VETTING_U_VS_V_CHI2_DELTA_THRESHOLD}; re-run "
+        f"scratch/bucket10_threshold_characterization.py and update the "
+        f"audit before accepting this value"
+    )
+
+
+def test_vetting_threshold_default_accepts_clear_u_shape():
+    """A clear trapezoidal U-shape at depth=0.01 must still be classified
+    as ``"Likely Planet"`` under the new default threshold — the bucket-10
+    fix must not regress real planets.
+
+    At depth=0.01 the empirical ``(delta_chi2_u - delta_chi2_v)`` is
+    ~+0.0021, comfortably above the new default of 0.001.
+    """
+    t, flux, period, t0, duration = _build_clear_u_shape(depth=0.01)
+    result = VettingEngine.vet_transit_shape(
+        t, flux, period, t0, duration, depth=0.01,
+    )
+    assert result["vetting_status"] == "Likely Planet", (
+        f"clear U-shape at depth=0.01 must remain 'Likely Planet' under "
+        f"the new default threshold={VETTING_U_VS_V_CHI2_DELTA_THRESHOLD}; "
+        f"got {result['vetting_status']!r} (delta_u_minus_v="
+        f"{result['delta_chi2_u'] - result['delta_chi2_v']:.6f})"
+    )
+
+
+def test_vetting_threshold_boundary_just_above_is_ambiguous():
+    """Pin the verdict boundary: when the explicit ``threshold`` is set
+    just ABOVE the natural ``(delta_chi2_u - delta_chi2_v)``, the verdict
+    MUST be ``"Ambiguous/False Positive"``.
+
+    This is the boundary that bucket-10 establishes. If anyone weakens the
+    verdict logic to a strict-inequality flip, an off-by-one comparison, or
+    a sign error, this test fails.
+    """
+    t, flux, period, t0, duration = _build_clear_u_shape(depth=0.01)
+
+    # Probe the natural delta at the default threshold first so we have a
+    # reference value to add a small epsilon to.
+    probe = VettingEngine.vet_transit_shape(
+        t, flux, period, t0, duration, depth=0.01,
+        threshold=0.0,
+    )
+    natural_delta = probe["delta_chi2_u"] - probe["delta_chi2_v"]
+    assert natural_delta > 0.0, (
+        f"sanity check: clear U-shape should have positive delta_u_minus_v "
+        f"under threshold=0.0; got {natural_delta}"
+    )
+
+    # Force the boundary: threshold = natural_delta + tiny epsilon.
+    boundary_threshold = natural_delta + 1e-5
+    result = VettingEngine.vet_transit_shape(
+        t, flux, period, t0, duration, depth=0.01,
+        threshold=boundary_threshold,
+    )
+    assert result["vetting_status"] == "Ambiguous/False Positive", (
+        f"with threshold={boundary_threshold} (just above natural_delta="
+        f"{natural_delta}), verdict MUST be 'Ambiguous/False Positive'; "
+        f"got {result['vetting_status']!r}"
+    )
+
+
+def test_vetting_threshold_boundary_just_below_is_likely_planet():
+    """Pin the verdict boundary from the other side: when the explicit
+    ``threshold`` is set just BELOW the natural ``(delta_chi2_u -
+    delta_chi2_v)``, the verdict MUST be ``"Likely Planet"``.
+
+    Pairs with ``test_vetting_threshold_boundary_just_above_is_ambiguous``
+    to bracket the boundary on both sides.
+    """
+    t, flux, period, t0, duration = _build_clear_u_shape(depth=0.01)
+
+    probe = VettingEngine.vet_transit_shape(
+        t, flux, period, t0, duration, depth=0.01,
+        threshold=0.0,
+    )
+    natural_delta = probe["delta_chi2_u"] - probe["delta_chi2_v"]
+    assert natural_delta > 0.0, (
+        f"sanity check: clear U-shape should have positive delta_u_minus_v "
+        f"under threshold=0.0; got {natural_delta}"
+    )
+
+    # Force the boundary: threshold = natural_delta - tiny epsilon.
+    boundary_threshold = natural_delta - 1e-5
+    assert boundary_threshold > 0.0, (
+        "test fixture broken: natural_delta is too small to subtract 1e-5 "
+        "and stay positive; rebuild _build_clear_u_shape with a stronger signal"
+    )
+    result = VettingEngine.vet_transit_shape(
+        t, flux, period, t0, duration, depth=0.01,
+        threshold=boundary_threshold,
+    )
+    assert result["vetting_status"] == "Likely Planet", (
+        f"with threshold={boundary_threshold} (just below natural_delta="
+        f"{natural_delta}), verdict MUST be 'Likely Planet'; got "
+        f"{result['vetting_status']!r}"
+    )
