@@ -5,35 +5,75 @@ import pandas as pd
 from streamlit.testing.v1 import AppTest
 from astraeus.analysis.detection import detect_transit_candidate
 
-@pytest.mark.xfail(
-    reason=(
-        "BLS false-positive in pure white noise: "
-        "detect_transit_candidate returns candidate_found=True with "
-        "confidence_score ~4.09 for seeded white noise at "
-        "snr_threshold=5.0. This is a real signal-detection issue, not "
-        "a test artifact. Per Bucket 5 §1.4, left red by design. "
-        "Tracked for a future signal-detection tuning bucket. "
-        "strict=True: if this test ever PASSES (the underlying bug is "
-        "fixed), the gate turns RED with XPASS — which is exactly the "
-        "signal the future bucket's author wants."
-    ),
-    strict=True,
-)
 def test_noise_injection():
     """
     Feed the backend a lightcurve with non-periodic noise.
     Assert that candidate_found (or is_candidate) is False.
+
+    Bucket 9.1 guardrail. Pre-fix this test was red by design (BLS
+    false-positive on seeded white noise at snr_threshold=5.0). After
+    bucket 9.1's fix (DETECTION_CONFIDENCE_FLOOR=7.0 + raised SNR
+    default), the detector genuinely rejects this noise realization.
+    See reports/bucket9.1_signal_detection_audit.md for the data
+    that justifies the fix.
     """
     time = np.linspace(0, 10, 500)
     # Random noise with no periodic signal
     np.random.seed(42)
     flux = 1.0 + np.random.normal(0, 0.01, 500)
-    
+
     results = detect_transit_candidate(time, flux, snr_threshold=5.0)
-    
+
     # The prompt refers to 'candidate_found', backend uses 'is_candidate'
     # We will assert that the candidate was not found.
     assert results.get('is_candidate', results.get('candidate_found')) is False, "Expected no candidate to be found for pure noise"
+
+
+# ---------------------------------------------------------------------------
+# Bucket 9.1: multi-seed noise-rejection guardrail.
+#
+# The single-seed test_noise_injection above guards the exact (seed=42,
+# sigma=0.01, n=500, T=10d, snr_threshold=5.0) fixture. Pre-fix, BLS
+# tripped candidate_found=True with confidence_score ~4.09 on this
+# realization — but Phase 1.3's 50-realization sweep showed that 68%
+# of pure-noise runs at the same parameters trip the detector. So a
+# single-seed test could be "passing" by accident if the fix is overfit
+# to that one seed.
+#
+# This test runs the detector on 10 independent noise realizations
+# (different seeds, identical other parameters) and asserts that NONE
+# of them trip candidate_found=True. This guards against a seed-
+# specific overfit.
+#
+# The 10 seeds were chosen from scratch/bucket9.1_fp_characterization.json
+# — pre-fix, 9 of the 10 were false positives at snr_threshold=5.0. If
+# the fix is correctly rejecting noise, all 10 must now be rejected.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "seed",
+    [42, 100, 101, 105, 109, 120, 122, 126, 129, 134],
+)
+def test_noise_injection_rejects_multiple_seeds(seed):
+    """
+    Phase 1.3 of bucket 9.1 swept 50 noise realizations and observed a
+    68% false-positive rate at snr_threshold=5.0. This parametrized
+    test pins 10 of those seeds (including the original test_noise_injection
+    seed=42). If any of them trips candidate_found=True after the fix,
+    the gate goes red — that's the signal that the fix is overfit to a
+    specific noise realization.
+    """
+    time = np.linspace(0, 10, 500)
+    np.random.seed(seed)
+    flux = 1.0 + np.random.normal(0, 0.01, 500)
+
+    results = detect_transit_candidate(time, flux, snr_threshold=5.0)
+
+    assert results.get('is_candidate', results.get('candidate_found')) is False, (
+        f"Expected no candidate for noise seed={seed}, "
+        f"got candidate_found={results.get('candidate_found')}, "
+        f"confidence_score={results.get('confidence_score'):.3f}, "
+        f"snr={results.get('snr'):.3f}"
+    )
 
 
 def test_signal_recovery():
