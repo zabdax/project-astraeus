@@ -1384,6 +1384,520 @@ HARD CONSTRAINTS
 
 ---
 
+## Bucket 8 — Test debt: fix the 3 file_uploader mock bugs (post-MVP quality)
+
+**Why this matters:** Bucket 5's `conftest.py` fix for the `DeltaGeneratorSingleton` pollution unmasked 3 previously-hidden test bugs. These tests were "failing" in the baseline only in the sense that they crashed on infrastructure before reaching their actual assertions — now they reach their assertions and fail on a real bug. The bug: their `file_uploader` mocks return a plain string path, not a real Streamlit `UploadedFile`, so the upload branch in `ui/pages/detective.py` never executes and the "Analyze Telemetry & Verify Harmonics" button never renders.
+
+These 3 are the only remaining red tests in the fast gate (excluding the intentionally-red noise test from Bucket 5's Decision 3). Fixing them brings the fast gate to a clean state.
+
+**Position in the order:** after Bucket 5. Independent of the science-layer buckets (9, 10, 3, 4) — pure test infrastructure.
+
+### AGENT PROMPT START
+
+```
+You are fixing 3 pre-existing AppTest test bugs that Bucket 5's
+conftest.py fix unmasked. All 3 fail because their file_uploader mocks
+return a string instead of a real Streamlit UploadedFile, so the upload
+branch never executes and the "Analyze Telemetry & Verify Harmonics"
+button never renders in ui/pages/detective.py.
+
+THE 3 FAILING TESTS (confirmed by Bucket 5's audit):
+  tests/test_agent_detective.py::test_panel_routing
+  tests/test_ui_flow.py::test_ui_flow
+  tests/test_workbench_navigation.py::test_workbench_navigation_persistence
+
+All use one of these broken patterns:
+  - at.file_uploader(...)               # attribute that doesn't exist
+  - at.file_uploader[0].value = "..."   # returns a string, not UploadedFile
+  - mock that yields a filesystem path string
+
+The detective page (ui/pages/detective.py:327 and :464) reads the
+uploaded file via st.file_uploader and expects a BytesIO-like / file-like
+UploadedFile object (per Streamlit's contract), not a path string.
+
+============================================================
+PHASE 0 — SAFETY SETUP
+============================================================
+1. Confirm clean git working tree. If not, stop and ask the user.
+2. Branch: `git checkout -b fix/test-file-uploader-mocks`
+3. Baseline (fast gate only, since these are fast tests):
+       python -m pytest tests/ -m "not network and not slow" -v \
+         > reports/bucket8_pretest_baseline.txt 2>&1
+   Expected: 4 failures (the 3 file_uploader bugs + the intentionally-red
+   test_noise_injection). The 3 you're fixing are the only ones in scope.
+   Do NOT touch test_noise_injection — it's red by design per Bucket 5
+   Decision 3 (tracked for a future signal-detection tuning bucket).
+4. Read-only phase otherwise. No changes yet.
+
+============================================================
+PHASE 1 — DISCOVERY
+============================================================
+Produce reports/bucket8_mock_audit.md covering:
+
+1. For each of the 3 failing tests, read the full test function and
+   document:
+   - Exactly how it currently mocks file_uploader (the broken pattern)
+   - What the test is trying to verify at its end assertion
+   - Whether the end assertion is still valid (i.e. once the upload
+     branch executes, will the test's downstream expectations hold? If
+     not, the test also needs its downstream assertions updated — not
+     just the mock)
+
+2. Read ui/pages/detective.py:320-345 and :460-470 to confirm exactly
+   what the upload branch expects:
+   - What key does st.file_uploader return under?
+   - What type does it read into session_state as?
+   - What processing happens before the Analyze button renders?
+   This is the contract the mock must satisfy.
+
+3. Read streamlit's AppTest documentation / source for the correct way
+   to mock a file_uploader widget. Specifically: AppTest provides
+   `.file_uploader[0].upload_file(...)` or the modern equivalent —
+   verify what the installed streamlit version (1.41.1) supports. If
+   AppTest's API doesn't support uploading real BytesIO objects in this
+   version, document that and propose an alternative (e.g. monkeypatch
+   the session_state key directly, or use streamlit.testing's
+   UploadedFile class).
+
+4. Cross-check: are there any OTHER tests in the suite (outside these 3)
+   that mock file_uploader correctly? If so, use their pattern as the
+   reference — don't invent a new one.
+
+============================================================
+PHASE 2 — IMPLEMENT
+============================================================
+For each of the 3 tests:
+
+1. Fix the file_uploader mock to produce a real UploadedFile (or
+   BytesIO) object that satisfies the detective page's contract from
+   Phase 1.2. Prefer the pattern already used elsewhere in the suite
+   (per Phase 1.4) over a new invention.
+
+2. If Phase 1.1 found that the test's downstream assertions are also
+   stale (they'd fail even with a correct mock), update them too. Do
+   NOT loosen assertions to make a test pass — if a downstream check
+   would expose a real app bug, document it and flag for the user
+   rather than weakening the test.
+
+3. Do NOT change ui/pages/detective.py or any other app code. If the
+   test reveals an actual app bug, STOP and document it — don't fix the
+   app inline in a test-hygiene bucket.
+
+4. Commit each test fix as its own commit, referencing the finding.
+
+After each commit, run the single test:
+    python -m pytest tests/<test_file>::<test_name> -v
+Confirm it passes. Then run the full fast gate to confirm no collateral
+breakage:
+    python -m pytest tests/ -m "not network and not slow" -v
+
+============================================================
+PHASE 3 — VERIFY & REPORT
+============================================================
+1. Run the full fast gate:
+       python -m pytest tests/ -m "not network and not slow" -v \
+         > reports/bucket8_posttest.txt 2>&1
+   Expected: 1 failure remaining (test_noise_injection — red by design).
+   If you have more than 1 failure, investigate — the 3 file_uploader
+   fixes should have turned all 3 green.
+
+2. Write reports/bucket8_summary.md with:
+   - The exact broken pattern in each of the 3 tests (before)
+   - The corrected pattern (after)
+   - Whether any downstream assertions also needed updating
+   - Whether any of the 3 tests then revealed a real app bug (should be
+     no, but verify and state it)
+   - The final fast-gate failure count (target: 1, the intentional noise
+     test)
+   - Verification commands
+
+============================================================
+HARD CONSTRAINTS
+============================================================
+- Do NOT touch test_noise_injection. It is intentionally red per Bucket
+  5 Decision 3 — that's a signal-detection tuning concern, not a mock
+  bug.
+- Do NOT change any app code (astraeus/, ui/, app.py, route.py). This
+  bucket is test-only. If an app bug surfaces, document and flag.
+- Do NOT loosen test assertions to make a test pass. Weaker assertions
+  create false confidence — the opposite of what this bucket is for.
+- Prefer the file_uploader mock pattern already used elsewhere in the
+  suite over inventing a new one.
+```
+
+### AGENT PROMPT END
+
+---
+
+## Bucket 9 — Signal-detection tuning: BLS false-positive in pure noise
+
+**Why this matters:** Bucket 5 confirmed `test_noise_injection` is a *real* signal-detection issue, not a test artifact: `detect_transit_candidate` returns `candidate_found: True, confidence_score: 4.086` when run on seeded (`np.random.seed(42)`, sigma=0.01, 500 samples) pure white noise with `snr_threshold=5.0`. BLS is finding a spurious peak that crosses the SNR gate. This is the exact false-positive behavior that erodes trust in real detections on marginal targets.
+
+This bucket is to *tune* the detection logic — raise the confidence floor, raise the SNR threshold, or add a secondary confirmation step — so that pure noise no longer triggers a candidate, while not regressing the real-signal recoveries verified by `tests/test_pipeline_smoke.py` and `tests/test_vetting_threshold_hardening.py`.
+
+**Position in the order:** before Buckets 3 and 4, which both measure the detection pipeline empirically. If the pipeline has a known false-positive issue, the completeness map (Bucket 3) and TTV validation (Bucket 4) would be calibrated against an unstable baseline. Stabilize detection first.
+
+### AGENT PROMPT START
+
+```
+You are tuning ASTRAEUS's transit-detection pipeline so it no longer
+reports a candidate on pure white noise, WITHOUT regressing its known
+correct recoveries on real/synthetic transit signals.
+
+THE PROBLEM (confirmed by Bucket 5):
+  detect_transit_candidate on seeded pure noise
+  (np.random.seed(42), sigma=0.01, 500 samples, snr_threshold=5.0)
+  returns:
+    candidate_found: True, confidence_score: 4.086
+  This is a real false-positive. The BLS search finds a spurious peak
+  that crosses the SNR gate. tests/test_agent_detective.py::
+  test_noise_injection is red by design to expose this.
+
+THE GUARDRAILS — must keep passing:
+  tests/test_pipeline_smoke.py            (synthetic planet recovery)
+  tests/test_vetting_threshold_hardening.py  (Bucket 2's 9 tests:
+    includes hot-Jupiter, M-dwarf, Earth-Sun analog, fallback paths)
+  tests/test_bulletproof_detector.py::test_mathematical_aliasing_stress_test
+    and test_state_binding_safety_verification  (already fixed in Bucket 5)
+
+Any tuning that breaks a real-signal recovery is WRONG, even if it makes
+the noise test pass. The goal is to reject noise WITHOUT rejecting real
+planets.
+
+============================================================
+PHASE 0 — SAFETY SETUP
+============================================================
+1. Confirm clean git working tree. If not, stop and ask the user.
+2. Branch: `git checkout -b fix/bls-noise-false-positive`
+3. Baseline:
+       python -m pytest tests/ -m "not network and not slow" -v \
+         > reports/bucket9_pretest_baseline.txt 2>&1
+   Expected: 1 failure (test_noise_injection, the target of this bucket).
+   All real-signal recovery tests must be green. If anything else is
+   red, STOP — that's a regression from a prior bucket and must be
+   investigated before tuning.
+4. Read-only phase otherwise.
+
+============================================================
+PHASE 1 — DISCOVERY (read-only)
+============================================================
+Produce reports/bucket9_signal_detection_audit.md covering:
+
+1. Read astraeus/analysis/detection.py in full. Document:
+   - The exact decision path from BLS output to candidate_found=True
+   - Where confidence_score is computed and what its units/meaning are
+   - The SNR threshold gate (snr_threshold=5.0 default) and how it's
+     applied
+   - Every constant in the candidate-emission path (NOT the vetting
+     thresholds that Bucket 2 already extracted — those are downstream)
+
+2. Read astraeus/analysis/bls_search.py's BLSSearchEngine.search() in
+   full. Document:
+   - How it computes the periodogram and picks the best peak
+   - How confidence_score / snr are derived from the periodogram
+   - Whether there's any existing "secondary peak ratio" or "false alarm
+     probability" check, or whether the first peak above SNR threshold
+     is always returned
+
+3. CHARACTERIZE the false positive empirically. Run a small experiment
+   (as a throwaway script in scratch/, not in tests/):
+   - Generate 20-50 independent pure-noise realizations (different
+     seeds) at the same parameters as test_noise_injection.
+   - For each, run detect_transit_candidate and record: candidate_found,
+     confidence_score, snr, period.
+   - Report the false-positive RATE: what fraction of pure-noise
+     realizations trigger a candidate? What's the distribution of
+     confidence_score and snr on the spurious peaks?
+   This data tells you whether the issue is "a 1-in-20 fluke on this
+   specific seed" or "every noise realization triggers a candidate."
+   The fix differs accordingly.
+
+4. Read tests/test_pipeline_smoke.py and
+   tests/test_vetting_threshold_hardening.py to extract the EXACT
+   recovered parameters they assert on synthetic planets — these are
+   your "must-not-regress" fixtures. Note the confidence_score and snr
+   values those tests see on REAL signals, so the fix has a clear
+   target: the new threshold must sit BELOW the real-signal values and
+   ABOVE the noise values.
+
+5. Propose candidate fixes, ranked:
+   (a) Raise the default snr_threshold (currently 5.0) — simplest, but
+       may reject real marginal planets.
+   (b) Raise the confidence_score floor — requires defining one; the
+       current code emits any confidence_score > 0.
+   (c) Add a secondary confirmation: require the periodogram's best
+       peak to be at least N× the median peak (a false-alarm-probability
+       analogue), or require the BLS-detected period to reproduce in a
+       folded-and-binned chi-squared test against a flat (no-transit)
+       model.
+   (d) Require a minimum number of in-transit data points or a minimum
+       transit coverage fraction.
+   Pick the option whose data support it from Phase 1.3 and Phase 1.4.
+   Do not pick (a) if the noise SNR distribution overlaps the real-signal
+   SNR distribution — that would be an unfixable overlap.
+
+============================================================
+PHASE 2 — IMPLEMENT
+============================================================
+1. Implement the chosen fix in the smallest possible change:
+   - If (a) or (b): add a named constant in astraeus/core/constants.py
+     (following Bucket 2's convention) and reference it from
+     detection.py. Document the value's derivation (from Phase 1.3
+     data) in a comment.
+   - If (c) or (d): add a new small, separately-testable function (e.g.
+     bls_search.py's _meets_secondary_confirmation or
+     detection.py's _confirm_against_flat_model) and call it in the
+     candidate-emission path. Document the physics of the check.
+
+2. Run tests/test_agent_detective.py::test_noise_injection. It must now
+   PASS (candidate_found: False on the noise fixture). If it doesn't,
+   the fix is insufficient — return to Phase 1.3 and reconsider.
+
+3. Run the guardrail tests:
+       python -m pytest tests/test_pipeline_smoke.py \
+         tests/test_vetting_threshold_hardening.py \
+         tests/test_bulletproof_detector.py -v
+   ALL must still pass. If any real-signal recovery regresses, the fix
+   is too aggressive — either pick a different option or tune the
+   threshold value using the Phase 1.3/1.4 data until both noise is
+   rejected AND real signals pass.
+
+4. Commit the fix with a message referencing the Phase 1.3 data:
+       fix(detection): reject BLS false-positives in pure noise via <method>
+       (FP rate was X% across N noise realizations; real-signal SNR
+       floor is Y, noise ceiling is Z)
+
+============================================================
+PHASE 3 — TEST
+============================================================
+1. Add a new test to tests/test_agent_detective.py (or a new
+   tests/test_noise_rejection.py) that:
+   - Runs detect_transit_candidate on 5-10 independent pure-noise
+     realizations (different seeds, same parameters as the original
+     test_noise_injection).
+   - Asserts candidate_found is False for ALL of them.
+   This guards against the fix being seed-specific (overfit to
+   seed=42).
+
+2. Keep the original test_noise_injection — it should now pass. Remove
+   the @pytest.mark.slow marker Bucket 5 added (the test is no longer
+   red by design; it's a passing guardrail).
+
+3. Run the full fast gate:
+       python -m pytest tests/ -m "not network and not slow" -v
+   Target: 0 failures. If anything is red, investigate.
+
+============================================================
+PHASE 4 — REPORT
+============================================================
+Write reports/bucket9_summary.md with:
+- The Phase 1.3 false-positive rate data (table or summary stats)
+- The real-signal vs noise confidence_score/SNR distributions
+- The fix chosen and WHY (with the data justification)
+- The exact threshold/parameter values set and their derivation
+- Confirmation that all guardrail tests still pass (with the actual
+  confidence_score/SNR values they now see)
+- The new noise-rejection test and its coverage
+- Whether any real-signal recovery got marginally closer to the new
+  threshold (i.e. how much headroom remains)
+- Verification commands
+
+============================================================
+HARD CONSTRAINTS
+============================================================
+- MUST NOT regress tests/test_pipeline_smoke.py or
+  tests/test_vetting_threshold_hardening.py. A fix that rejects noise
+  by also rejecting real planets is a failure, not a success.
+- Do NOT change the vetting STATUS LABELS or the VettingEngine
+  behavior (Bucket 2's scope). This bucket tunes the candidate-
+  EMISSION decision, not the candidate-VETTING decision.
+- Do NOT silence test_noise_injection by weakening its assertion or
+  marking it xfail. The test must genuinely pass because the detector
+  genuinely rejects noise.
+- If Phase 1.3 shows the false-positive rate is so high that no
+  threshold separates noise from real signals, STOP and document —
+  that indicates a deeper BLS-implementation issue requiring a
+  redesign, not a tuning pass. Do not ship a half-fix.
+- Keep the fix minimal and well-justified by data. Do not add multiple
+  unrelated checks "for robustness" — each check must be motivated by
+  specific Phase 1.3 evidence.
+```
+
+### AGENT PROMPT END
+
+---
+
+## Bucket 10 — VettingEngine threshold=0.0 cleanup
+
+**Why this matters:** Bucket 2 flagged `VettingEngine.vet_transit_shape(threshold: float = 0.0)` as a category-(c) "uncertain" magic number and explicitly left it alone (the hard constraint forbade touching `vetting.py`). The default `0.0` means a U-shape transit needs only an *infinitesimally* better χ² than a V-shape to be labeled "Likely Planet" — there's no detection-significance floor. A V-shape that's only marginally worse than U-shape still loses, even when neither is a statistically significant improvement over the flat (no-transit) model.
+
+Bucket 2 is done, so the constraint is lifted. This bucket introduces a positive χ²-delta threshold tied to a detection-significance rationale, while not regressing the 9 tests in `tests/test_vetting_threshold_hardening.py` that exercise the current `threshold=0.0` behavior.
+
+**Position in the order:** after Bucket 9 (signal-detection tuning) since both touch `detection.py`'s decision path; before Buckets 3 and 4 (empirical measures that need stable vetting). Small, tightly scoped.
+
+### AGENT PROMPT START
+
+```
+You are replacing VettingEngine.vet_transit_shape's default
+threshold=0.0 with a positive, detection-significance-grounded value,
+without regressing the existing vetting-threshold-hardening tests.
+
+THE PROBLEM (flagged by Bucket 2 section 1, category c):
+  astraeus/analysis/vetting.py:6 declares:
+      def vet_transit_shape(..., threshold: float = 0.0):
+  At line 112:
+      if delta_chi2_u > delta_chi2_v + threshold:
+          vetting_status = "Likely Planet"
+  With threshold=0.0, U-shape wins if it's even infinitesimally better
+  than V-shape (delta_chi2_u > delta_chi2_v by any positive amount).
+  There's no significance floor — a U-shape that's 0.001 better than
+  V-shape, both of which are themselves negligible improvements over
+  the flat model, is still labeled "Likely Planet".
+
+THE GUARDRAILS — must keep passing:
+  tests/test_vetting_threshold_hardening.py (Bucket 2's 9 tests)
+  tests/test_pipeline_smoke.py
+  tests/test_bulletproof_detector.py (after Bucket 9's fix)
+  tests/test_agent_detective.py (after Bucket 9's fix)
+
+============================================================
+PHASE 0 — SAFETY SETUP
+============================================================
+1. Confirm clean git working tree. If not, stop and ask the user.
+2. Branch: `git checkout -b fix/vetting-threshold-significance`
+3. Baseline:
+       python -m pytest tests/ -m "not network and not slow" -v \
+         > reports/bucket10_pretest_baseline.txt 2>&1
+   Expected: 0 failures (assuming Buckets 8 and 9 are done). If anything
+   is red, STOP — finish the prior bucket first.
+4. Read-only phase otherwise.
+
+============================================================
+PHASE 1 — DISCOVERY
+============================================================
+Produce reports/bucket10_threshold_audit.md covering:
+
+1. Read astraeus/analysis/vetting.py in full. Document:
+   - The full vet_transit_shape logic, including how delta_chi2_u,
+     delta_chi2_v, u_shape_chi2, v_shape_chi2 are computed
+   - Every branch that sets vetting_status and what threshold governs it
+   - The full return dict schema
+
+2. CHARACTERIZE the current threshold=0.0 behavior empirically. Run a
+   throwaway script (in scratch/) that:
+   - Generates a range of synthetic transit shapes: clear U-shape
+     (high-SNR real planet), clear V-shape (grazing binary),
+     ambiguous (low-SNR marginal), and flat (no transit).
+   - For each, calls vet_transit_shape and records: delta_chi2_u,
+     delta_chi2_v, vetting_status, vetting_confidence.
+   - Reports the distribution of (delta_chi2_u - delta_chi2_v) for each
+     class. This shows the natural separation between real U-shape
+     transits and ambiguous/no-transit cases — the new threshold should
+     sit in the gap.
+
+3. Determine the statistically-motivated threshold value:
+   - The chi-squared-delta (chi2_flat - chi2_model) is asymptotically
+     chi-squared distributed; a 3-sigma detection corresponds to
+     delta_chi2 ~ 9 (for 1 model parameter), 3-sigma for 2 params ~ 11.8.
+   - BUT the threshold here is on (delta_chi2_u - delta_chi2_v), not on
+     delta_chi2_u alone. The right rationale: require the U-shape to
+     beat the V-shape by MORE than the noise scatter in that
+     difference. Compute the scatter from the Phase 1.2 ambiguous-case
+     distribution and set the threshold to e.g. 3x that scatter, or to
+     a fixed chi-squared-delta corresponding to a stated significance.
+   - Document the chosen value and its derivation explicitly. Do NOT
+     pick a number by trial-and-error until tests pass — that's
+     overfitting.
+
+4. Check the 9 tests in tests/test_vetting_threshold_hardening.py:
+   - Which of them rely on threshold=0.0 behavior implicitly?
+   - Which have delta_chi2_u - delta_chi2_v values close to 0 (i.e.
+     would be affected by a positive threshold)?
+   - For any that WOULD regress, determine whether the test fixture is
+     realistic (a real near-ambiguous case that should now be labeled
+     "Ambiguous") or whether the test is asserting on a behavior that
+     the new threshold correctly changes.
+
+============================================================
+PHASE 2 — IMPLEMENT
+============================================================
+1. Change the default threshold in vet_transit_shape from 0.0 to the
+   Phase 1.3 value. Add a comment citing the derivation.
+
+2. Add the threshold value as a named constant in
+   astraeus/core/constants.py (following Bucket 2's convention), e.g.:
+       VETTING_U_VS_V_CHI2_DELTA_THRESHOLD = <value>
+   Reference it from vet_transit_shape's default.
+
+3. Run the guardrail tests:
+       python -m pytest tests/test_vetting_threshold_hardening.py \
+         tests/test_pipeline_smoke.py tests/test_bulletproof_detector.py \
+         tests/test_agent_detective.py -v
+   If any regresses:
+   - If the regression is a test asserting on an old threshold=0.0
+     behavior that the new threshold correctly changes (per Phase 1.4),
+     update the test's expected vetting_status to the new (correct)
+     label. Document why in the test comment.
+   - If the regression is a real-signal case that's now misclassified,
+     the threshold is too high — return to Phase 1.3 and reconsider
+     the value.
+
+4. Commit:
+       fix(vetting): set positive chi2-delta significance floor for
+       U-vs-V shape classification
+       (was 0.0; now <value> per <derivation>)
+
+============================================================
+PHASE 3 — TEST
+============================================================
+1. Add a new test case to tests/test_vetting_threshold_hardening.py
+   that specifically exercises the threshold boundary:
+   - Construct a synthetic case where delta_chi2_u - delta_chi2_v is
+     just BELOW the new threshold, and assert vetting_status is
+     "Ambiguous/False Positive" (NOT "Likely Planet").
+   - Construct one just ABOVE the threshold, and assert "Likely Planet".
+   This pins the boundary so future changes can't silently move it.
+
+2. Run the full fast gate:
+       python -m pytest tests/ -m "not network and not slow" -v
+   Target: 0 failures.
+
+============================================================
+PHASE 4 — REPORT
+============================================================
+Write reports/bucket10_summary.md with:
+- The Phase 1.2 distribution data (delta_chi2_u - delta_chi2_v by class)
+- The new threshold value and its explicit statistical derivation
+- Which existing tests were affected and how each was resolved
+   (updated expected label vs. threshold reconsidered)
+- The new boundary test and what it pins
+- The final fast-gate failure count (target: 0)
+- Verification commands
+
+============================================================
+HARD CONSTRAINTS
+============================================================
+- MUST NOT regress tests/test_pipeline_smoke.py. A real-signal
+  recovery that flips to "Ambiguous" is a failure.
+- Do NOT pick the threshold by trial-and-error until tests pass. The
+  value must be motivated by the Phase 1.2/1.3 data and a stated
+  significance rationale.
+- Do NOT change the vetting STATUS LABELS or add new ones. Only the
+  threshold value changes.
+- Do NOT touch detection.py, geometric_validation.py, or any other
+  module. Scope is strictly vetting.py + constants.py + the affected
+  tests.
+- If Phase 1.2 shows no clean separation between U-shape-real and
+  ambiguous cases (i.e. no threshold can both accept real planets and
+  reject ambiguous ones), STOP and document — that indicates the U-vs-V
+  chi-squared metric itself is insufficient, which is a deeper redesign,
+  not a threshold tweak.
+```
+
+### AGENT PROMPT END
+
+---
+
 ## Summary
 
 | # | Bucket | Risk if skipped | Estimated relative effort |
@@ -1396,8 +1910,17 @@ HARD CONSTRAINTS
 | 5 | Test suite CI-readiness | Diagnostic scripts keep silently rotting, collection hangs, fresh clones can't install, no CI gate exists | Medium |
 | 6 | End-to-end smoke test (optional but recommended) | No fast, single-command pipeline health check | Small |
 | 7 | Root-directory hygiene | MVP ships with 5 MB of scratch dumps and 25 stray files at the root, hiding the real entry points | Small |
+| 8 | Test debt: file_uploader mocks | Fast gate stays at 4 failures; 3 tests that should guard the upload-to-analyze flow keep silently broken | Small-Medium |
+| 9 | Signal-detection tuning (BLS noise FP) | The detector keeps emitting candidates on pure noise; completeness map (Bucket 3) and TTV validation (Bucket 4) would be calibrated against an unstable baseline | Medium |
+| 10 | VettingEngine threshold=0.0 cleanup | U-vs-V shape classification has no significance floor; near-ambiguous cases get labeled "Likely Planet" with no statistical justification | Small-Medium |
 
-**Suggested MVP-freeze sequence:** 0 → 6 → 1 → 7 → 2 → 5, with 3 and 4 as stretch goals after the MVP cut (they are the publishable-research features, not the product-stability features). Each bucket's prompt is fully self-contained — copy everything between its `AGENT PROMPT START` and `AGENT PROMPT END` markers into a fresh agent session, and do not start the next bucket until the current one's `reports/bucketN_summary.md` exists and its test suite run shows no regression against the baseline it recorded in Phase 0.
+**MVP-freeze sequence (done):** 0 -> 6 -> 1 -> 7 -> 2 -> 5.
+
+**Quality-polish sequence (in order):** finish Bucket 5's outstanding network-test consolidation -> 8 -> 9 -> 10. Buckets 9 and 10 both tune `detection.py` / `vetting.py`; do them before Buckets 3 and 4 so the empirical measures use a stable pipeline.
+
+**Research-features sequence (in order):** 3 -> 4. Both depend on the science layer being stable (Buckets 9, 10).
+
+Each bucket's prompt is fully self-contained — copy everything between its `AGENT PROMPT START` and `AGENT PROMPT END` markers into a fresh agent session, and do not start the next bucket until the current one's `reports/bucketN_summary.md` exists and its test suite run shows no regression against the baseline it recorded in Phase 0.
 
 ---
 
