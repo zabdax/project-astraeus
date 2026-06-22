@@ -12,6 +12,7 @@ from astraeus.core.nbody_solver import (
     check_system_stability,
     estimate_mass_from_radius,
     run_stability_analysis,
+    run_stability_integration,
 )
 
 
@@ -156,3 +157,56 @@ def test_empty_planets():
     )
     assert result.is_stable is True
     assert result.survival_time_years == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Tests 9-11: Kepler-90b N-body scenarios via the low-level
+# run_stability_integration entry point. Ported from
+# scripts/manual_tests/test_engine.py (Bucket 7 handoff) per the
+# consolidation directive in the bucket5 plan. The original script
+# was a single driver that printed pass/fail banners and exited via
+# sys.exit(0 if all_passed else 1) — that pattern kills pytest, so
+# each scenario is wrapped in its own test function with explicit
+# assertions.
+# ---------------------------------------------------------------------------
+
+
+def test_earth_sun_circular_via_state_vectors():
+    """Earth-Sun analog at 1 AU, 1000 steps at dt=0.001 yr; must survive."""
+    positions = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+    velocities = np.array([[0.0, 0.0, 0.0], [0.0, 2.0 * np.pi, 0.0]])
+    masses = np.array([1.0, 3.0e-6])
+    result = run_stability_integration(
+        positions, velocities, masses, n_steps=1000, dt=0.001
+    )
+    assert result.is_stable
+    assert result.survival_time_years > 0.99
+
+
+def test_kepler90b_high_resolution_stability():
+    """Kepler-90b at a=0.074 AU, dt=1e-5 yr, 5000 steps; must be stable."""
+    positions = np.array([[0.0, 0.0, 0.0], [0.074, 0.0, 0.0]])
+    velocities = np.array([[0.0, 0.0, 0.0], [0.0, 25.32, 0.0]])
+    masses = np.array([1.2, 9.0e-6])
+    result = run_stability_integration(
+        positions, velocities, masses, n_steps=5000, dt=1e-5
+    )
+    assert result.is_stable
+
+
+def test_kepler90b_oversized_dt_forces_blowup():
+    """Kepler-90b with dt=0.01 yr (100x oversized) must fail with a
+    recognized termination reason within 1000 steps."""
+    positions = np.array([[0.0, 0.0, 0.0], [0.074, 0.0, 0.0]])
+    velocities = np.array([[0.0, 0.0, 0.0], [0.0, 25.32, 0.0]])
+    masses = np.array([1.2, 9.0e-6])
+    result = run_stability_integration(
+        positions, velocities, masses, n_steps=1000, dt=0.01
+    )
+    assert not result.is_stable
+    assert result.termination_reason in (
+        "Physical Boundary Breach",
+        "ejection",
+        "energy_divergence",
+        "collision",
+    )
