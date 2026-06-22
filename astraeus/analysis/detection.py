@@ -12,9 +12,11 @@ from astraeus.core.constants import (
     VETTING_SECONDARY_ECLIPSE_FALLBACK_PPM,
     VETTING_ULTRA_SHORT_PERIOD_DAYS,
     VETTING_VSHAPE_LOW_SNR_GATE,
+    DETECTION_CONFIDENCE_FLOOR,
+    DETECTION_SNR_THRESHOLD_DEFAULT,
 )
 
-def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=5.0):
+def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=DETECTION_SNR_THRESHOLD_DEFAULT):
     time = np.asarray(time)
     flux = np.asarray(flux)
     
@@ -36,8 +38,18 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         best_depth = search_results['depth']
         transit_time = search_results['t0']
         duration = search_results['duration']
-        
-        is_valid = best_snr > snr_threshold
+        best_confidence = search_results['confidence_score']
+
+        # Emission gate. The SNR threshold is caller-tunable and a
+        # secondary check; the confidence_score floor is the load-bearing
+        # noise-rejection gate (unconditional, applies regardless of the
+        # caller-supplied snr_threshold). Both values are documented in
+        # astraeus/core/constants.py and justified empirically in
+        # reports/bucket9.1_signal_detection_audit.md §3 and §4.
+        is_valid = (
+            best_snr > snr_threshold
+            and best_confidence >= DETECTION_CONFIDENCE_FLOOR
+        )
         
         global_payload = metadata or {}
         archive_metadata = global_payload.get('metadata', global_payload)

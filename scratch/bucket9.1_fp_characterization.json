@@ -1,0 +1,543 @@
+{
+  "noise_parameters": {
+    "sigma": 0.01,
+    "n_samples": 500,
+    "duration_days": 10.0,
+    "snr_threshold": 5.0
+  },
+  "summary": {
+    "n_total": 50,
+    "n_false_positives": 0,
+    "false_positive_rate": 0.0,
+    "snr_all": {
+      "min": 2.7539240372789577,
+      "max": 10.673883047350717,
+      "mean": 5.716584111625988,
+      "median": 5.375978087788361,
+      "stdev": 1.5786632435535768
+    },
+    "snr_false_positives": {
+      "n": 0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "median": null
+    },
+    "confidence_score_all": {
+      "min": 1.795248113993799,
+      "max": 5.95590268396023,
+      "mean": 3.147151891162833,
+      "median": 2.8737236738565812
+    },
+    "confidence_score_false_positives": {
+      "n": 0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "median": null
+    },
+    "elapsed_seconds": 38.168516874313354
+  },
+  "rows": [
+    {
+      "seed": 42,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 4.086090680685773,
+      "snr": 7.592057176458764,
+      "period": 0.5954190838167633,
+      "transit_depth": 0.003827086376234745,
+      "duration": 0.4
+    },
+    {
+      "seed": 100,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.6186102504249247,
+      "snr": 5.360686138045502,
+      "period": 0.5585117023404681,
+      "transit_depth": 0.0029957186674481884,
+      "duration": 0.4
+    },
+    {
+      "seed": 101,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.174737310157214,
+      "snr": 7.111211785737125,
+      "period": 0.5720144028805761,
+      "transit_depth": 0.0035075813856273452,
+      "duration": 0.4
+    },
+    {
+      "seed": 102,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 1.8939189283518107,
+      "snr": 3.9613895220840574,
+      "period": 0.5468093618723745,
+      "transit_depth": 0.0020490756976108138,
+      "duration": 0.4
+    },
+    {
+      "seed": 103,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.2402117812812934,
+      "snr": 4.683838028811994,
+      "period": 1.000500100020004,
+      "transit_depth": 0.014620613641930569,
+      "duration": 0.02
+    },
+    {
+      "seed": 104,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.4951801090677175,
+      "snr": 3.986141929196604,
+      "period": 0.5387077415483097,
+      "transit_depth": 0.0019440335729516978,
+      "duration": 0.4
+    },
+    {
+      "seed": 105,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 5.056575262801506,
+      "snr": 10.673883047350717,
+      "period": 0.5567113422684536,
+      "transit_depth": 0.005194895478252359,
+      "duration": 0.4
+    },
+    {
+      "seed": 106,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.4612956711524823,
+      "snr": 5.333429329943331,
+      "period": 0.6458291658331666,
+      "transit_depth": 0.0030598944562051367,
+      "duration": 0.4
+    },
+    {
+      "seed": 107,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.911438560341037,
+      "snr": 6.878139716220709,
+      "period": 0.9725945189037808,
+      "transit_depth": 0.009742245027880791,
+      "duration": 0.1
+    },
+    {
+      "seed": 108,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.8128627648017686,
+      "snr": 7.518317353681532,
+      "period": 0.5009001800360072,
+      "transit_depth": 0.003321708934515555,
+      "duration": 0.4
+    },
+    {
+      "seed": 109,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 4.354778759526691,
+      "snr": 7.13386773056202,
+      "period": 0.5099019803960793,
+      "transit_depth": 0.0036431827303538,
+      "duration": 0.4
+    },
+    {
+      "seed": 110,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.3387351628515,
+      "snr": 6.019525631881563,
+      "period": 0.9167833566713343,
+      "transit_depth": 0.02365017721745255,
+      "duration": 0.01
+    },
+    {
+      "seed": 111,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.8070044351935084,
+      "snr": 2.7539240372789577,
+      "period": 0.504500900180036,
+      "transit_depth": 0.0014500409310316265,
+      "duration": 0.4
+    },
+    {
+      "seed": 112,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 4.392756082557498,
+      "snr": 4.943814965522131,
+      "period": 0.5126025205041008,
+      "transit_depth": 0.00257310463757332,
+      "duration": 0.4
+    },
+    {
+      "seed": 113,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.3720314037110035,
+      "snr": 5.412446846307758,
+      "period": 1.974494898979796,
+      "transit_depth": 0.022361419006000305,
+      "duration": 0.02
+    },
+    {
+      "seed": 114,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.549791499762028,
+      "snr": 5.095628867759001,
+      "period": 0.32426485297059415,
+      "transit_depth": 0.003272649850091902,
+      "duration": 0.15
+    },
+    {
+      "seed": 115,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.2622005831787333,
+      "snr": 4.7677758012889875,
+      "period": 0.6170234046809362,
+      "transit_depth": 0.002636063328522509,
+      "duration": 0.4
+    },
+    {
+      "seed": 116,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.149736134142657,
+      "snr": 5.08469145842229,
+      "period": 1.7278455691138228,
+      "transit_depth": 0.014095206548975447,
+      "duration": 0.05
+    },
+    {
+      "seed": 117,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.3567991505486203,
+      "snr": 4.646272612479182,
+      "period": 0.6026205241048209,
+      "transit_depth": 0.002652762331272873,
+      "duration": 0.4
+    },
+    {
+      "seed": 118,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.286435164812576,
+      "snr": 6.1292225632531165,
+      "period": 0.5180036007201441,
+      "transit_depth": 0.0031532224666734887,
+      "duration": 0.4
+    },
+    {
+      "seed": 119,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.0873838634492565,
+      "snr": 6.283225321564593,
+      "period": 0.5639127825565113,
+      "transit_depth": 0.003175496927008359,
+      "duration": 0.4
+    },
+    {
+      "seed": 120,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 4.412574315298048,
+      "snr": 6.828876680325548,
+      "period": 0.5054010802160432,
+      "transit_depth": 0.004192426829503937,
+      "duration": 0.3
+    },
+    {
+      "seed": 121,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.4199626712789226,
+      "snr": 3.844889122697425,
+      "period": 0.5495099019803961,
+      "transit_depth": 0.0017924826695474572,
+      "duration": 0.4
+    },
+    {
+      "seed": 122,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 4.614280262872806,
+      "snr": 8.165637749826455,
+      "period": 0.5603120624124825,
+      "transit_depth": 0.004500683833785324,
+      "duration": 0.4
+    },
+    {
+      "seed": 123,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.3138914826723282,
+      "snr": 5.310202576492767,
+      "period": 1.8907781556311263,
+      "transit_depth": 0.029522238214224727,
+      "duration": 0.01
+    },
+    {
+      "seed": 124,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.2764588981253886,
+      "snr": 5.036570198324773,
+      "period": 2.077115423084617,
+      "transit_depth": 0.023997691755479722,
+      "duration": 0.02
+    },
+    {
+      "seed": 125,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.4150141954755515,
+      "snr": 5.029208392342811,
+      "period": 0.6053210642128426,
+      "transit_depth": 0.0024451184524454384,
+      "duration": 0.4
+    },
+    {
+      "seed": 126,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.863600659371942,
+      "snr": 9.556065811223855,
+      "period": 0.5279055811162232,
+      "transit_depth": 0.004229163170605399,
+      "duration": 0.4
+    },
+    {
+      "seed": 127,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.383424389635279,
+      "snr": 4.863358321747307,
+      "period": 4.920784156831366,
+      "transit_depth": 0.022560316700493077,
+      "duration": 0.05
+    },
+    {
+      "seed": 128,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.1572573039250766,
+      "snr": 5.519246798976067,
+      "period": 0.5036007201440288,
+      "transit_depth": 0.002641435328853081,
+      "duration": 0.4
+    },
+    {
+      "seed": 129,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 5.139278737727333,
+      "snr": 5.3600196293947135,
+      "period": 0.5549109821964393,
+      "transit_depth": 0.002983518098222282,
+      "duration": 0.4
+    },
+    {
+      "seed": 130,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.1971718076640854,
+      "snr": 7.9891837477566785,
+      "period": 0.36387277455491096,
+      "transit_depth": 0.0034597286824652462,
+      "duration": 0.3
+    },
+    {
+      "seed": 131,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.658169627045032,
+      "snr": 6.293495369527211,
+      "period": 0.5369073814762952,
+      "transit_depth": 0.0031953890807188134,
+      "duration": 0.4
+    },
+    {
+      "seed": 132,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.8360087873721254,
+      "snr": 6.753247188103435,
+      "period": 0.625125025005001,
+      "transit_depth": 0.003949431403565962,
+      "duration": 0.4
+    },
+    {
+      "seed": 133,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 1.795248113993799,
+      "snr": 4.426574669731847,
+      "period": 1.6288257651530307,
+      "transit_depth": 0.024839917663932787,
+      "duration": 0.01
+    },
+    {
+      "seed": 134,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 5.95590268396023,
+      "snr": 5.391270037531221,
+      "period": 0.5216043208641729,
+      "transit_depth": 0.0024550822652240623,
+      "duration": 0.4
+    },
+    {
+      "seed": 135,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.5314017184504145,
+      "snr": 7.102095375728036,
+      "period": 1.75125025005001,
+      "transit_depth": 0.016798217433473317,
+      "duration": 0.05
+    },
+    {
+      "seed": 136,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 4.629279569701286,
+      "snr": 5.979417854119314,
+      "period": 0.5225045009001801,
+      "transit_depth": 0.002867406832124164,
+      "duration": 0.4
+    },
+    {
+      "seed": 137,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 4.392707270833547,
+      "snr": 6.779362185246866,
+      "period": 0.5333066613322665,
+      "transit_depth": 0.00387165422617608,
+      "duration": 0.4
+    },
+    {
+      "seed": 138,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.466098792236055,
+      "snr": 5.0624934658675835,
+      "period": 1.5118023604720945,
+      "transit_depth": 0.024047758092027083,
+      "duration": 0.01
+    },
+    {
+      "seed": 139,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.5818057604523315,
+      "snr": 3.65870050525793,
+      "period": 0.6197239447889578,
+      "transit_depth": 0.0018925364979375248,
+      "duration": 0.4
+    },
+    {
+      "seed": 140,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.465618116991517,
+      "snr": 4.377623863491072,
+      "period": 0.5819163832766553,
+      "transit_depth": 0.002383656952707369,
+      "duration": 0.4
+    },
+    {
+      "seed": 141,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.1180360787554453,
+      "snr": 3.825551166126158,
+      "period": 0.5432086417283457,
+      "transit_depth": 0.002201318217829429,
+      "duration": 0.3
+    },
+    {
+      "seed": 142,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.0666640788940844,
+      "snr": 3.9192894483164604,
+      "period": 2.9803960792158435,
+      "transit_depth": 0.029197797705865502,
+      "duration": 0.01
+    },
+    {
+      "seed": 143,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.3850109246903037,
+      "snr": 5.722893764308404,
+      "period": 0.5288057611522304,
+      "transit_depth": 0.002863736687227947,
+      "duration": 0.4
+    },
+    {
+      "seed": 144,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.5834431172744217,
+      "snr": 6.519801037949632,
+      "period": 0.5243048609721944,
+      "transit_depth": 0.0033227180877400952,
+      "duration": 0.4
+    },
+    {
+      "seed": 145,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 2.643159701469822,
+      "snr": 4.880232485561326,
+      "period": 1.411882376475295,
+      "transit_depth": 0.017220132586047487,
+      "duration": 0.02
+    },
+    {
+      "seed": 146,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.201107621792483,
+      "snr": 2.776048239427042,
+      "period": 0.504500900180036,
+      "transit_depth": 0.0013689550448452437,
+      "duration": 0.4
+    },
+    {
+      "seed": 147,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.298906863631752,
+      "snr": 7.407423200273529,
+      "period": 0.5486097219443888,
+      "transit_depth": 0.0038907494701031498,
+      "duration": 0.4
+    },
+    {
+      "seed": 148,
+      "candidate_found": false,
+      "is_candidate": false,
+      "confidence_score": 3.8475374477506366,
+      "snr": 6.080936831773962,
+      "period": 0.5288057611522304,
+      "transit_depth": 0.003173612188382524,
+      "duration": 0.4
+    }
+  ]
+}
