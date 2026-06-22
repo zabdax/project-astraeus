@@ -1,0 +1,254 @@
+{
+  "threshold_default": "0.0 (current, the bug)",
+  "n_repeats_per_scenario": 5,
+  "scenarios": [
+    {
+      "label": "u_shape_clear",
+      "n_repeats": 5,
+      "results": [
+        {
+          "delta_chi2_u": 0.011274039401195125,
+          "delta_chi2_v": 0.009155564539459399,
+          "delta_u_minus_v": 0.0021184748617357266,
+          "vetting_status": "Likely Planet",
+          "vetting_confidence": 0.9162372644508896,
+          "u_shape_chi2": 0.00019367172292141484,
+          "v_shape_chi2": 0.0023121465846571414
+        },
+        {
+          "delta_chi2_u": 0.011306071587401751,
+          "delta_chi2_v": 0.0091897033379011,
+          "delta_u_minus_v": 0.0021163682495006515,
+          "vetting_status": "Likely Planet",
+          "vetting_confidence": 0.9144412551592229,
+          "u_shape_chi2": 0.00019801579382660233,
+          "v_shape_chi2": 0.0023143840433272537
+        },
+        {
+          "delta_chi2_u": 0.011330338971858778,
+          "delta_chi2_v": 0.009207914749923902,
+          "delta_u_minus_v": 0.0021224242219348762,
+          "vetting_status": "Likely Planet",
+          "vetting_confidence": 0.9145843558649243,
+          "u_shape_chi2": 0.0001982192576134868,
+          "v_shape_chi2": 0.0023206434795483627
+        },
+        {
+          "delta_chi2_u": 0.011303725426826408,
+          "delta_chi2_v": 0.009186252063992612,
+          "delta_u_minus_v": 0.002117473362833796,
+          "vetting_status": "Likely Planet",
+          "vetting_confidence": 0.914504796308399,
+          "u_shape_chi2": 0.00019795830180202204,
+          "v_shape_chi2": 0.0023154316646358188
+        },
+        {
+          "delta_chi2_u": 0.011329630895890059,
+          "delta_chi2_v": 0.009203696058701935,
+          "delta_u_minus_v": 0.002125934837188124,
+          "vetting_status": "Likely Planet",
+          "vetting_confidence": 0.9119495230043817,
+          "u_shape_chi2": 0.00020526308940798353,
+          "v_shape_chi2": 0.0023311979265961077
+        }
+      ]
+    },
+    {
+      "label": "v_shape_clear",
+      "n_repeats": 5,
+      "results": [
+        {
+          "delta_chi2_u": 0.003462743946499607,
+          "delta_chi2_v": 0.0041121672515054,
+          "delta_u_minus_v": -0.0006494233050057929,
+          "vetting_status": "Ambiguous/False Positive",
+          "vetting_confidence": 1.0,
+          "u_shape_chi2": 0.0006541549716224853,
+          "v_shape_chi2": 4.731666616692603e-06
+        },
+        {
+          "delta_chi2_u": 0.0034210748185434935,
+          "delta_chi2_v": 0.004082848845275663,
+          "delta_u_minus_v": -0.0006617740267321694,
+          "vetting_status": "Ambiguous/False Positive",
+          "vetting_confidence": 1.0,
+          "u_shape_chi2": 0.0006672349335261693,
+          "v_shape_chi2": 5.4609067939998284e-06
+        },
+        {
+          "delta_chi2_u": 0.003405842740224192,
+          "delta_chi2_v": 0.004070265726030407,
+          "delta_u_minus_v": -0.0006644229858062149,
+          "vetting_status": "Ambiguous/False Positive",
+          "vetting_confidence": 1.0,
+          "u_shape_chi2": 0.0006693595762270368,
+          "v_shape_chi2": 4.93659042082229e-06
+        },
+        {
+          "delta_chi2_u": 0.0034138765651954466,
+          "delta_chi2_v": 0.004073445867234588,
+          "delta_u_minus_v": -0.0006595693020391416,
+          "vetting_status": "Ambiguous/False Positive",
+          "vetting_confidence": 1.0,
+          "u_shape_chi2": 0.0006652285054407963,
+          "v_shape_chi2": 5.659203401655153e-06
+        },
+        {
+          "delta_chi2_u": 0.003378122137429015,
+          "delta_chi2_v": 0.004040022708798911,
+          "delta_u_minus_v": -0.0006619005713698958,
+          "vetting_status": "Ambiguous/False Positive",
+          "vetting_confidence": 1.0,
+          "u_shape_chi2": 0.0006681135578781759,
+          "v_shape_chi2": 6.212986508280004e-06
+        }
+      ]
+    },
+    {
+      "label": "u_shape_marginal",
+      "n_repeats": 5,
+      "results": [
+        {
+          "delta_chi2_u": -2.441781273704313e-10,
+          "delta_chi2_v": -1.940927106536261e-10,
+          "delta_u_minus_v": -5.008541671680522e-11,
+          "vetting_status": "Ambiguous/False Positive",
+          "vetting_confidence": 1.0,
+          "u_shape_chi2": 0.010700133942682249,
+          "v_shape_chi2": 0.010700133892596832
+        },
+        {
+          "delta_chi2_u": 7.190157158388014e-05,
+          "delta_chi2_v": 0.00011052367644325337,
+          "delta_u_minus_v": -3.862210485937323e-05,
+          "vetting_status": "Ambiguous/False Positive",
+          "vetting_confidence": 1.0,
+          "u_shape_chi2": 0.010583891825440846,
+          "v_shape_chi2": 0.010545269720581472
+        },
+        {
+          "delta_chi2_u": -1.1659032636904265e-08,
+          "delta_chi2_v": 3.622339445477282e-05,
+          "delta_u_minus_v": -3.623505348740973e-05,
+          "vetting_status": "Ambiguous/False Positive",
+          "vetting_confidence": 1.0,
+          "u_shape_chi2": 0.009976587990360166,
+          "v_shape_chi2": 0.009940352936872756
+        },
+        {
+          "delta_chi2_u": 7.657106398314961e-06,
+          "delta_chi2_v": -5.94154188349183e-09,
+          "delta_u_minus_v": 7.663047940198453e-06,
+          "vetting_status": "Likely Planet",
+          "vetting_confidence": 0.0009152283905264902,
+          "u_shape_chi2": 0.00836516281664045,
+          "v_shape_chi2": 0.008372825864580649
+        },
+        {
+          "delta_chi2_u": -6.731244502761191e-10,
+          "delta_chi2_v": 1.0891848530123621e-06,
+          "delta_u_minus_v": -1.0898579774626382e-06,
+          "vetting_status": "Ambiguous/False Positive",
+          "vetting_confidence": 1.0,
+          "u_shape_chi2": 0.009701291102147134,
+          "v_shape_chi2": 0.009700201244169671
+        }
+      ]
+    },
+    {
+      "label": "flat",
+      "n_repeats": 5,
+      "results": [
+        {
+          "delta_chi2_u": 5.371843317894022e-09,
+          "delta_chi2_v": 8.015578460866539e-09,
+          "delta_u_minus_v": -2.6437351429725162e-09,
+          "vetting_status": "Ambiguous/False Positive",
+          "vetting_confidence": 1.0,
+          "u_shape_chi2": 3.778181075744697e-06,
+          "v_shape_chi2": 3.7755373406017246e-06
+        },
+        {
+          "delta_chi2_u": -1.5515020929531796e-08,
+          "delta_chi2_v": -5.36135795339264e-09,
+          "delta_u_minus_v": -1.0153662976139156e-08,
+          "vetting_status": "Ambiguous/False Positive",
+          "vetting_confidence": 1.0,
+          "u_shape_chi2": 3.2354202081856184e-06,
+          "v_shape_chi2": 3.2252665452094792e-06
+        },
+        {
+          "delta_chi2_u": 7.154433164850288e-09,
+          "delta_chi2_v": 3.414596291962779e-09,
+          "delta_u_minus_v": 3.739836872887509e-09,
+          "vetting_status": "Likely Planet",
+          "vetting_confidence": 0.0010407035874032688,
+          "u_shape_chi2": 3.5898260143019927e-06,
+          "v_shape_chi2": 3.5935658511748802e-06
+        },
+        {
+          "delta_chi2_u": 2.3843654674149553e-08,
+          "delta_chi2_v": 2.030636534765763e-08,
+          "delta_u_minus_v": 3.5372893264919233e-09,
+          "vetting_status": "Likely Planet",
+          "vetting_confidence": 0.0010216326944986198,
+          "u_shape_chi2": 3.4588512437928685e-06,
+          "v_shape_chi2": 3.4623885331193604e-06
+        },
+        {
+          "delta_chi2_u": -2.5047487484851578e-09,
+          "delta_chi2_v": -4.592383950790174e-09,
+          "delta_u_minus_v": 2.0876352023050163e-09,
+          "vetting_status": "Likely Planet",
+          "vetting_confidence": 0.0005235449765419453,
+          "u_shape_chi2": 3.985411616713216e-06,
+          "v_shape_chi2": 3.987499251915521e-06
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "u_shape_clear": {
+      "delta_u_minus_v_min": 0.0021163682495006515,
+      "delta_u_minus_v_median": 0.0021184748617357266,
+      "delta_u_minus_v_max": 0.002125934837188124,
+      "delta_u_minus_v_std": 3.5470390244362933e-06,
+      "statuses_observed": [
+        "Likely Planet"
+      ],
+      "n_runs_with_likely_planet": 5
+    },
+    "v_shape_clear": {
+      "delta_u_minus_v_min": -0.0006644229858062149,
+      "delta_u_minus_v_median": -0.0006617740267321694,
+      "delta_u_minus_v_max": -0.0006494233050057929,
+      "delta_u_minus_v_std": 5.228397953804219e-06,
+      "statuses_observed": [
+        "Ambiguous/False Positive"
+      ],
+      "n_runs_with_likely_planet": 0
+    },
+    "u_shape_marginal": {
+      "delta_u_minus_v_min": -3.862210485937323e-05,
+      "delta_u_minus_v_median": -1.0898579774626382e-06,
+      "delta_u_minus_v_max": 7.663047940198453e-06,
+      "delta_u_minus_v_std": 1.96571348038496e-05,
+      "statuses_observed": [
+        "Ambiguous/False Positive",
+        "Likely Planet"
+      ],
+      "n_runs_with_likely_planet": 1
+    },
+    "flat": {
+      "delta_u_minus_v_min": -1.0153662976139156e-08,
+      "delta_u_minus_v_median": 2.0876352023050163e-09,
+      "delta_u_minus_v_max": 3.739836872887509e-09,
+      "delta_u_minus_v_std": 5.264724583973351e-09,
+      "statuses_observed": [
+        "Ambiguous/False Positive",
+        "Likely Planet"
+      ],
+      "n_runs_with_likely_planet": 3
+    }
+  }
+}

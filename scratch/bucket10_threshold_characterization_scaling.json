@@ -1,0 +1,118 @@
+{
+  "threshold_default": "0.0 (current, the bug)",
+  "rows": [
+    {
+      "depth": 0.02,
+      "noise_std": 0.0001,
+      "n_repeats": 5,
+      "delta_u_minus_v_median": 0.008549898698548483,
+      "delta_u_minus_v_min": 0.008529421139439504,
+      "delta_u_minus_v_max": 0.008581487421086047,
+      "delta_u_minus_v_std": 1.7207991455075174e-05,
+      "statuses_observed": [
+        "Likely Planet"
+      ],
+      "n_likely_planet": 5,
+      "label": "u_2pct_clean"
+    },
+    {
+      "depth": 0.01,
+      "noise_std": 0.0001,
+      "n_repeats": 5,
+      "delta_u_minus_v_median": 0.00212157799346944,
+      "delta_u_minus_v_min": 0.0021113291443129803,
+      "delta_u_minus_v_max": 0.002137447908436358,
+      "delta_u_minus_v_std": 8.635356775388332e-06,
+      "statuses_observed": [
+        "Likely Planet"
+      ],
+      "n_likely_planet": 5,
+      "label": "u_1pct_clean"
+    },
+    {
+      "depth": 0.005,
+      "noise_std": 0.0001,
+      "n_repeats": 5,
+      "delta_u_minus_v_median": 0.0005224898150199978,
+      "delta_u_minus_v_min": 0.0005173948981396391,
+      "delta_u_minus_v_max": 0.0005304108033629242,
+      "delta_u_minus_v_std": 4.299807654746422e-06,
+      "statuses_observed": [
+        "Likely Planet"
+      ],
+      "n_likely_planet": 5,
+      "label": "u_0p5pct_clean"
+    },
+    {
+      "depth": 0.002,
+      "noise_std": 0.0001,
+      "n_repeats": 5,
+      "delta_u_minus_v_median": 7.986000350302433e-05,
+      "delta_u_minus_v_min": 7.78701108804285e-05,
+      "delta_u_minus_v_max": 8.299881474546031e-05,
+      "delta_u_minus_v_std": 1.6940565975706993e-06,
+      "statuses_observed": [
+        "Likely Planet"
+      ],
+      "n_likely_planet": 5,
+      "label": "u_0p2pct_clean"
+    },
+    {
+      "depth": 0.001,
+      "noise_std": 0.0001,
+      "n_repeats": 5,
+      "delta_u_minus_v_median": 1.8453915823234083e-05,
+      "delta_u_minus_v_min": 1.7501141858775764e-05,
+      "delta_u_minus_v_max": 1.9993557023302832e-05,
+      "delta_u_minus_v_std": 8.516536487486352e-07,
+      "statuses_observed": [
+        "Likely Planet"
+      ],
+      "n_likely_planet": 5,
+      "label": "u_0p1pct_clean"
+    },
+    {
+      "depth": 0.01,
+      "noise_std": 0.0003,
+      "n_repeats": 5,
+      "delta_u_minus_v_median": 0.002059080602800377,
+      "delta_u_minus_v_min": 0.002028832891202389,
+      "delta_u_minus_v_max": 0.0021064188459521925,
+      "delta_u_minus_v_std": 2.56166251229585e-05,
+      "statuses_observed": [
+        "Likely Planet"
+      ],
+      "n_likely_planet": 5,
+      "label": "u_1pct_noisy"
+    },
+    {
+      "depth": 0.01,
+      "noise_std": 0.001,
+      "n_repeats": 5,
+      "delta_u_minus_v_median": 0.0018474390970722922,
+      "delta_u_minus_v_min": 0.0017524426950398398,
+      "delta_u_minus_v_max": 0.002000557831178461,
+      "delta_u_minus_v_std": 8.47713331679392e-05,
+      "statuses_observed": [
+        "Likely Planet"
+      ],
+      "n_likely_planet": 5,
+      "label": "u_1pct_very_noisy"
+    },
+    {
+      "depth": 0.0005,
+      "noise_std": 0.005,
+      "n_repeats": 5,
+      "delta_u_minus_v_median": 2.2026765710593532e-06,
+      "delta_u_minus_v_min": -6.7714140764355e-06,
+      "delta_u_minus_v_max": 2.6816507563283756e-05,
+      "delta_u_minus_v_std": 1.1750893111095753e-05,
+      "statuses_observed": [
+        "Ambiguous/False Positive",
+        "Likely Planet"
+      ],
+      "n_likely_planet": 3,
+      "label": "u_marginal"
+    }
+  ]
+}
