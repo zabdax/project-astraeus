@@ -1,13 +1,24 @@
 import numpy as np
 from scipy.optimize import curve_fit
 
+from astraeus.core.constants import VETTING_U_VS_V_CHI2_DELTA_THRESHOLD
+
 class VettingEngine:
     @staticmethod
-    def vet_transit_shape(time: np.ndarray, flux: np.ndarray, period: float, t0: float, duration: float, depth: float, threshold: float = 0.0) -> dict:
+    def vet_transit_shape(time: np.ndarray, flux: np.ndarray, period: float, t0: float, duration: float, depth: float, threshold: float = VETTING_U_VS_V_CHI2_DELTA_THRESHOLD) -> dict:
         """
         Statistical Transit Model Fitting engine for vetting planet candidates.
         Performs Bayesian Model Likelihood comparison to differentiate between a planetary transit (U-shape)
         and a grazing/eclipsing binary (V-shape).
+
+        ``threshold`` (default ``VETTING_U_VS_V_CHI2_DELTA_THRESHOLD``) is the minimum
+        ``(delta_chi2_u - delta_chi2_v)`` required to label the fit as
+        ``"Likely Planet"`` rather than ``"Ambiguous/False Positive"``. See
+        ``astraeus/core/constants.py`` and ``reports/bucket10_threshold_audit.md``
+        §3 for the empirical derivation. The previous default of 0.0 was a
+        category-(c) magic-number flagged in bucket 2 — it required only an
+        infinitesimal U-shape advantage over V-shape, with no significance
+        floor on the fit itself.
         """
         time = np.asarray(time)
         flux = np.asarray(flux)

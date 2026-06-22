@@ -56,6 +56,30 @@ VETTING_ULTRA_SHORT_PERIOD_DAYS = 1.5
 # PhysicalPropertiesEngine.expected_occultation_depth_ppm.
 VETTING_SECONDARY_ECLIPSE_FALLBACK_PPM = 800.0
 
+# Minimum (delta_chi2_u - delta_chi2_v) required to label a transit as
+# "Likely Planet" rather than "Ambiguous/False Positive" in
+# VettingEngine.vet_transit_shape.
+#
+# Bucket 10 (threshold-significance fix). The previous default of 0.0 meant
+# any infinitesimal U-shape advantage over V-shape won, regardless of
+# whether either fit was itself a statistically-significant improvement
+# over the flat (no-transit) model. Empirical characterization at
+# scratch/bucket10_threshold_characterization.py shows a clean gap in the
+# observed (delta_chi2_u - delta_chi2_v) distribution:
+#
+#   real U-shape (depth 0.01): +0.0021   (well above the threshold)
+#   V-shape (eclipsing binary): -0.0007 (well below)
+#   marginal / pure noise:      ~0       (well below)
+#
+# 0.001 sits in the middle of that gap — half the typical real-planet
+# U-shape advantage, well above the noise-floor scatter, and well below
+# every realistic transit signal. It is NOT motivated by trial-and-error
+# against the test suite; the value was selected from the empirical
+# distribution before any non-zero threshold was tested in CI. See
+# reports/bucket10_threshold_audit.md §3 for the full derivation and
+# candidate-value comparison.
+VETTING_U_VS_V_CHI2_DELTA_THRESHOLD = 0.001
+
 # ---------------------------------------------------------------------------
 # GeometricValidator secondary-eclipse detection parameters (bucket 2).
 # ---------------------------------------------------------------------------
