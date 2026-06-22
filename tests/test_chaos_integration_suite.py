@@ -6,7 +6,11 @@ pillars:
     1. ``astraeus.core.nbody_solver``        -- Suite B (mathematical singularities)
     2. ``astraeus.simulation.synthetic``     -- Suite C (payload scaling / memory)
     3. ``astraeus.analysis.reporting``       -- Suite A & C (PDF handshake / canvas)
-    4. ``astraeus.ui.dashboard``             -- Suite A (UI lifecycle / idempotency)
+    4. ``app`` (the live Streamlit entry)   -- Suite A (UI lifecycle / idempotency)
+       (Previously exercised ``astraeus.ui.dashboard``, which was deprecated
+       in Bucket 1; see ``deprecated/astraeus_ui_dashboard/DEPRECATED.md`` and
+       ``reports/bucket1_orphan_investigation.md``. The symbols under test are
+       identical and now live in ``app``.)
 
 Every vector is enforced by a hard programmatic assertion (no soft "logged"
 passes). Run with::
@@ -155,7 +159,7 @@ def vector_b2_hyperbolic_escape() -> None:
 # dormant unless explicitly invoked.
 
 import pandas as pd  # noqa: E402
-from astraeus.ui.dashboard import (  # noqa: E402
+from app import (  # noqa: E402
     BASELINE_PAYLOAD,
     _build_adapted_metrics_payload,
 )
@@ -172,9 +176,10 @@ class _DormancySentinel:
 
     def __enter__(self) -> "_DormancySentinel":
         self._orig = generate_academic_report
-        # Re-bind the name in the dashboard module so the *dashboard's* call
-        # site goes through us.
-        import astraeus.ui.dashboard as dash_mod
+        # Re-bind the name in the app module so the *app's* call
+        # site goes through us. (Previously rebound astraeus.ui.dashboard,
+        # deprecated in Bucket 1.)
+        import app as dash_mod
 
         self._dash_mod = dash_mod
         dash_mod.generate_academic_report = self._wrap  # type: ignore[assignment]
