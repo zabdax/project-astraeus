@@ -1,7 +1,7 @@
 [
     {
-        "id": "f51a3208-15c1-4459-8011-a8e32c3d2900",
-        "timestamp": "2026-06-22T15:58:14.232736Z",
+        "id": "c7605d87-f52c-44ed-8f66-80bab560cae1",
+        "timestamp": "2026-06-22T17:07:56.585258Z",
         "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "params": {
             "target_name": "SMOKE",
@@ -15,8 +15,8 @@
         "fig_paths": []
     },
     {
-        "id": "211b5f9e-136d-4ca1-8f3d-e9d81582b468",
-        "timestamp": "2026-06-22T15:58:15.352073Z",
+        "id": "79964ec0-9d9d-4093-9e51-a85e734c257f",
+        "timestamp": "2026-06-22T17:07:57.717190Z",
         "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "params": {
             "target_name": "SMOKE",
@@ -30,8 +30,8 @@
         "fig_paths": []
     },
     {
-        "id": "4cc059e3-89a2-459b-ac2c-49952b82753f",
-        "timestamp": "2026-06-22T15:58:21.655950Z",
+        "id": "8e928bea-4c9f-4ccc-a4d9-7c894d0c79a4",
+        "timestamp": "2026-06-22T17:08:04.218805Z",
         "dataset_hash": "7c562fe3845790b95a9d6e1c852aba6507e6ec40fd1a92678419f3b7357f96bc",
         "params": {
             "target_name": "Synthetic-Benchmark",
@@ -50,8 +50,8 @@
         "fig_paths": []
     },
     {
-        "id": "794ee17b-bb34-4627-b1b1-eff3b90d5a00",
-        "timestamp": "2026-06-22T15:58:23.663687Z",
+        "id": "bd2f5c6a-2040-4982-a034-5250ce5d7362",
+        "timestamp": "2026-06-22T17:08:06.208643Z",
         "dataset_hash": "7c562fe3845790b95a9d6e1c852aba6507e6ec40fd1a92678419f3b7357f96bc",
         "params": {
             "target_name": "Synthetic-Benchmark",
@@ -70,8 +70,8 @@
         "fig_paths": []
     },
     {
-        "id": "ac8790a1-513c-4aa5-a95e-b7c5ba249e05",
-        "timestamp": "2026-06-22T15:58:27.130843Z",
+        "id": "5647c9e7-10fa-4e37-b9d2-c32ee704dd0c",
+        "timestamp": "2026-06-22T17:08:10.007282Z",
         "dataset_hash": "79870e8308a459537b6ad44c16a7146bc861d6ba83917275f3d37ecb2af89b12",
         "params": {
             "target_name": "Unknown",
@@ -90,8 +90,8 @@
         "fig_paths": []
     },
     {
-        "id": "3146501d-7b02-47a5-8612-2c19dc63a2f4",
-        "timestamp": "2026-06-22T15:58:28.715695Z",
+        "id": "11d6b749-82dd-44a7-98d6-a015a095cf9a",
+        "timestamp": "2026-06-22T17:08:11.609816Z",
         "dataset_hash": "79870e8308a459537b6ad44c16a7146bc861d6ba83917275f3d37ecb2af89b12",
         "params": {
             "target_name": "Unknown",
@@ -110,8 +110,8 @@
         "fig_paths": []
     },
     {
-        "id": "2a98c6bb-52e6-481d-a398-136a4abcdfde",
-        "timestamp": "2026-06-22T15:58:30.552439Z",
+        "id": "8ccb311a-6050-40c8-a0d2-403e29cfe67a",
+        "timestamp": "2026-06-22T17:08:13.377277Z",
         "dataset_hash": "79870e8308a459537b6ad44c16a7146bc861d6ba83917275f3d37ecb2af89b12",
         "params": {
             "target_name": "Unknown",
@@ -130,8 +130,8 @@
         "fig_paths": []
     },
     {
-        "id": "7a2f5470-6113-44a2-93d5-1e64bede9912",
-        "timestamp": "2026-06-22T15:58:32.277591Z",
+        "id": "199c5a0a-8f5c-44dd-b316-f37ac5d8ff93",
+        "timestamp": "2026-06-22T17:08:15.067391Z",
         "dataset_hash": "3f29063ba593b6b9e02e34064e0c936ac7ea7c2effa1e3473c7584209876addd",
         "params": {
             "target_name": "Unknown",
@@ -147,8 +147,8 @@
         "fig_paths": []
     },
     {
-        "id": "756e3828-dfc4-4288-9bf2-c0754ad90369",
-        "timestamp": "2026-06-22T15:58:33.933592Z",
+        "id": "e70c071d-2c97-42ec-a2fd-775283162d4c",
+        "timestamp": "2026-06-22T17:08:16.800300Z",
         "dataset_hash": "3f29063ba593b6b9e02e34064e0c936ac7ea7c2effa1e3473c7584209876addd",
         "params": {
             "target_name": "Unknown",
@@ -164,8 +164,8 @@
         "fig_paths": []
     },
     {
-        "id": "2a573fc5-5e57-447a-93f5-f8a02a7ce97f",
-        "timestamp": "2026-06-22T15:58:36.155172Z",
+        "id": "5b7430ff-e978-4288-8af1-8cc1e30e4407",
+        "timestamp": "2026-06-22T17:08:18.676406Z",
         "dataset_hash": "3f29063ba593b6b9e02e34064e0c936ac7ea7c2effa1e3473c7584209876addd",
         "params": {
             "target_name": "Unknown",
@@ -181,8 +181,8 @@
         "fig_paths": []
     },
     {
-        "id": "c308921e-3973-490b-a2a4-300d6d8b8f22",
-        "timestamp": "2026-06-22T15:58:37.449025Z",
+        "id": "7c8b9a86-ec4f-4357-a63b-ca3c47cf81a7",
+        "timestamp": "2026-06-22T17:08:19.901965Z",
         "dataset_hash": "79870e8308a459537b6ad44c16a7146bc861d6ba83917275f3d37ecb2af89b12",
         "params": {
             "target_name": "Unknown",
@@ -201,8 +201,8 @@
         "fig_paths": []
     },
     {
-        "id": "d884b57e-ad87-4cd3-95ff-9ffb229ab5d2",
-        "timestamp": "2026-06-22T15:58:39.306433Z",
+        "id": "54528978-99a3-47bc-97d8-1bb9430b2f10",
+        "timestamp": "2026-06-22T17:08:21.633555Z",
         "dataset_hash": "4e7e637450de8031c86c6183ff89d5041c3cc5865a651488ed136efdb3c16099",
         "params": {
             "target_name": "Unknown",
@@ -221,8 +221,8 @@
         "fig_paths": []
     },
     {
-        "id": "d7054d6b-e6bd-4d8d-a8fc-564c2275d047",
-        "timestamp": "2026-06-22T15:58:41.486398Z",
+        "id": "f7a77b46-f4ec-402f-af7e-9327729d1b88",
+        "timestamp": "2026-06-22T17:08:23.625902Z",
         "dataset_hash": "4e7e637450de8031c86c6183ff89d5041c3cc5865a651488ed136efdb3c16099",
         "params": {
             "target_name": "Unknown",
@@ -238,36 +238,6 @@
             "st_mass": 1.0,
             "sy_jmag": 10.0
         },
-        "fig_paths": []
-    },
-    {
-        "id": "54c632aa-5a6f-49ab-b5e5-5f0e2a574d82",
-        "timestamp": "2026-06-22T16:01:43.845279Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "Uploaded Asset",
-            "period": 2.496599319863973,
-            "stellar_rotation_period_days": 2.5,
-            "snr": 39.29429837542278,
-            "data_source": "Local Upload",
-            "is_valid_candidate": true
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "e04719f7-ec4f-4336-aef0-7b3eae57fe1b",
-        "timestamp": "2026-06-22T16:01:44.337822Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "Uploaded Asset",
-            "period": 0.5,
-            "stellar_rotation_period_days": 2.5,
-            "snr": 0.0,
-            "data_source": "Local Upload",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
         "fig_paths": []
     }
 ]
