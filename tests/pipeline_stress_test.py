@@ -55,7 +55,7 @@ class TimeoutEnforcer:
         print(
             f"\n{'='*72}\n"
             f"[FAIL-SAFE TIMEOUT] {self.label} exceeded {self.timeout:.1f}s!\n"
-            f"Dumping active interpreter thread stacks…\n"
+            f"Dumping active interpreter thread stacks...\n"
             f"{'='*72}",
             file=sys.stderr, flush=True,
         )
@@ -97,7 +97,7 @@ def _banner(title: str):
 
 
 def _layer_enter(n: int, name: str):
-    print(f"[{_ts()}] [LAYER {n} ENTERING] {name}…", file=sys.__stdout__)
+    print(f"[{_ts()}] [LAYER {n} ENTERING] {name}...", file=sys.__stdout__)
 
 
 def _layer_ok(n: int, name: str, elapsed: float, detail: str = ""):
@@ -208,31 +208,48 @@ def run_pipeline(target_name: str, run_label: str, mission_profile: str):
     if not candidates:
         _layer_ok(2, "Detrending", elapsed_analysis, "completed (no candidates found)")
         _layer_ok(3, "BLS Search", 0.0, "no signal above threshold")
-        _layer_ok(4, "Vetting", 0.0, "skipped — no candidates")
-        _layer_ok(5, "Physical Sizing", 0.0, "skipped — no candidates")
-        _layer_ok(6, "TTV Engine", 0.0, "skipped — no candidates")
+        _layer_ok(4, "Vetting", 0.0, "skipped -- no candidates")
+        _layer_ok(5, "Physical Sizing", 0.0, "skipped -- no candidates")
+        _layer_ok(6, "TTV Engine", 0.0, "skipped -- no candidates")
         return
 
-    for idx, entry in enumerate(candidates):
-        cand = entry.get(f"candidate_{idx+1}", {})
-        label = f"Candidate {idx+1}"
-        print(f"\n{'─'*60}")
-        print(f"  {label}")
-        print(f"{'─'*60}")
+    # detect_transit_candidate returns a flat dict for the best candidate.
+    # Wrap it into a list for uniform iteration.
+    if isinstance(candidates, dict) and candidates:
+        candidate_list = [candidates]
+    elif isinstance(candidates, list):
+        # Legacy path: list of {candidate_N: {...}} dicts
+        candidate_list = []
+        for entry in candidates:
+            if isinstance(entry, dict):
+                for v in entry.values():
+                    if isinstance(v, dict):
+                        candidate_list.append(v)
+                        break
+                else:
+                    candidate_list.append(entry)
+    else:
+        candidate_list = []
 
-        # LAYER 2 — detrending produced cleaned flux (implicit if we got here)
+    for idx, cand in enumerate(candidate_list):
+        label = f"Candidate {idx+1}"
+        print(f"\n{'-'*60}")
+        print(f"  {label}")
+        print(f"{'-'*60}")
+
+        # LAYER 2 -- detrending produced cleaned flux (implicit if we got here)
         rot_period = cand.get("stellar_rotation_period_days", 0)
         _layer_ok(2, "Lomb-Scargle Detrending", elapsed_analysis,
-                  f"stellar rotation ≈ {rot_period:.4f} d")
+                  f"stellar rotation ~= {rot_period:.4f} d")
 
-        # LAYER 3 — BLS period detection
+        # LAYER 3 -- BLS period detection
         period = cand.get("period_days", 0)
         depth  = cand.get("transit_depth", 0)
         snr    = cand.get("snr", 0)
         _layer_ok(3, "BLS Multi-Planet Search", 0.0,
                   f"P={period:.5f} d | depth={depth:.6f} | SNR={snr:.2f}")
 
-        # LAYER 4 — geometric vetting
+        # LAYER 4 -- geometric vetting
         v_shape = cand.get("v_shape_metric", 0)
         flat_frac = cand.get("flat_bottom_fraction", 0)
         sec_det = cand.get("secondary_eclipse_detected", False)
@@ -243,14 +260,14 @@ def run_pipeline(target_name: str, run_label: str, mission_profile: str):
                   f"secEcl={'YES' if sec_det else 'NO'} (SNR {sec_snr:.2f}) | "
                   f"status='{vet_status}'")
 
-        # LAYER 5 — physical sizing & TSM
+        # LAYER 5 -- physical sizing & TSM
         rp = cand.get("planet_radius_earth", 0)
         teq = cand.get("equilibrium_temp_k", 0)
         tsm = cand.get("jwst_tsm_score", 0)
         _layer_ok(5, "Mandel-Agol + JWST TSM", 0.0,
-                  f"Rp={rp:.4f} R⊕ | Teq={teq:.1f} K | TSM={tsm:.4f}")
+                  f"Rp={rp:.4f} Re | Teq={teq:.1f} K | TSM={tsm:.4f}")
 
-        # LAYER 6 — TTV
+        # LAYER 6 -- TTV
         ttv = cand.get("ttv_data", [])
         if ttv:
             residuals = [e["ttv_residual_min"] for e in ttv]
@@ -260,7 +277,7 @@ def run_pipeline(target_name: str, run_label: str, mission_profile: str):
         else:
             _layer_ok(6, "TTV Wobble Engine", 0.0, "0 epochs (data gaps)")
 
-    print(f"\n[{_ts()}] ✔ Full 6-layer sweep for {run_label} completed in "
+    print(f"\n[{_ts()}] [OK] Full 6-layer sweep for {run_label} completed in "
           f"{elapsed_l1 + elapsed_analysis:.2f}s total "
           f"(L1={elapsed_l1:.2f}s  L2-6={elapsed_analysis:.2f}s)")
 
@@ -269,7 +286,7 @@ def run_pipeline(target_name: str, run_label: str, mission_profile: str):
 #  Main entry
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    print(f"[{_ts()}] Pipeline Stress Test initialising…")
+    print(f"[{_ts()}] Pipeline Stress Test initialising...")
     print(f"[{_ts()}] faulthandler: enabled")
     print(f"[{_ts()}] Python {sys.version}")
 

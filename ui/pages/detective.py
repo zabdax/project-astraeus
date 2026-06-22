@@ -265,6 +265,17 @@ def render(main_panel, right_panel) -> None:
             multi_planet_mode = st.toggle("Multi-Planet Search Deep-Dive", value=False)
         with col_depth:
             max_depth = st.slider("Max Planetary Scan Depth", min_value=1, max_value=5, value=2, disabled=not multi_planet_mode)
+            # FIX 2: Expose the SNR floor so users can force detection of planets buried
+            # in the noise floor (~5.0-6.5 SNR). The orchestrator's default of 7.1 would
+            # otherwise halt the loop and ignore these marginal candidates.
+            snr_cutoff = st.slider(
+                "Signal-to-Noise (SNR) Floor Cutoff",
+                min_value=3.0,
+                max_value=12.0,
+                value=7.1,
+                step=0.1,
+                disabled=not multi_planet_mode,
+            )
         st.markdown("<br>", unsafe_allow_html=True)
 
         def run_analysis(data_time, data_flux, t_name, d_source, metadata):
@@ -278,7 +289,7 @@ def render(main_panel, right_panel) -> None:
                             'data_source': d_source,
                             'metadata': metadata
                         }
-                        results = run_multi_planet_search(raw_lc, max_signals=max_depth)
+                        results = run_multi_planet_search(raw_lc, max_signals=max_depth, snr_floor=snr_cutoff)
                         st.session_state['detective_results_list'] = results
                         if results:
                             best_candidate = dict(results[0])
@@ -368,6 +379,17 @@ def render(main_panel, right_panel) -> None:
                             if mission == "NASA Exoplanet Archive":
                                 st.session_state["active_metadata"] = res.get("metadata", {})
                                 st.session_state['fetched_target_data'] = res
+                                # FIX 1.3: custom warning. The Archive returned
+                                # metadata but the TESS/Kepler bridge found no
+                                # high-cadence coverage — surface the reason
+                                # rather than silently rerunning.
+                                reason = res.get("reason", "Target not observed")
+                                resolved_target = res.get("resolved_target") or target
+                                SVG_WARN_CIRCLE = "<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg>"
+                                st.markdown(
+                                    f"<div style='color: #F59E0B; display: flex; gap: 8px;'>{SVG_WARN_CIRCLE} <span>Metadata retrieved, but no high-cadence time-series data available in Kepler/TESS archives for <b>{resolved_target}</b>. <em>(Reason: {reason})</em></span></div>",
+                                    unsafe_allow_html=True,
+                                )
                                 st.rerun()
                             else:
                                 st.markdown(
@@ -507,10 +529,13 @@ def render(main_panel, right_panel) -> None:
             col_bot_l, col_bot_r = st.columns([2, 1])
             
             with col_bot_l:
-                ttv_data = res.get('ttv_data', [])
-                if ttv_data:
-                    epochs = [int(d['epoch']) for d in ttv_data]
-                    residuals = [float(d['ttv_residual_min']) for d in ttv_data]
+                # FIX 1: Empty-state guardrail. A TTV O-C diagram is mathematically
+                # undefined for fewer than 2 transit events; rendering it produces a
+                # confusing empty/degenerate chart. Require >= 2 transits.
+                ttv_points = res.get('ttv_data', [])
+                if len(ttv_points) >= 2:
+                    epochs = [int(d.get('epoch', 0)) for d in ttv_points]
+                    residuals = [float(d.get('ttv_residual_min', 0.0)) for d in ttv_points]
                     
                     fig_ttv = go.Figure()
                     fig_ttv.add_trace(go.Scatter(
@@ -532,7 +557,11 @@ def render(main_panel, right_panel) -> None:
                     )
                     st.plotly_chart(fig_ttv, use_container_width=True)
                 else:
-                    st.markdown("<div style='padding: 24px; text-align: center; color: #8b949e; border: 1px solid #2a313e; border-radius: 6px;'>No TTV data available or insufficient transits.</div>", unsafe_allow_html=True)
+                    st.warning(
+                        "TTV O-C Diagram Unavailable: The current data baseline contains only "
+                        "a single isolated transit event. At least 2 transits are required to "
+                        "map timing variations."
+                    )
             
             with col_bot_r:
                 v_shape = float(res.get('v_shape_metric', 0.0))

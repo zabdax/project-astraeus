@@ -1,0 +1,5 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.3, pluggy-1.6.0 -- C:\Users\MIT\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+rootdir: F:\solo_leveling_assistant\project-astraeus
+collecting ... 

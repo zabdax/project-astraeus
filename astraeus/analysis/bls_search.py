@@ -32,8 +32,11 @@ class BLSSearchEngine:
         T_baseline = float(np.max(time) - np.min(time))
         
         # Dynamically bound the search space (require at least 2 transits within the baseline)
+        # FIX 3: Upper boundary expanded 350.0 -> 450.0d so extreme outer giants
+        # (e.g. Kepler-90 h at ~331d) resolve cleanly instead of clipping the edge
+        # and aliasing to half-period harmonics (~29.84d half-harmonic trap).
         p_min = 0.5
-        p_max = min(350.0, T_baseline / 2.0)
+        p_max = min(450.0, T_baseline / 2.0)
         
         if p_max <= 20.0:
             # Short baseline dataset (e.g., TESS single sector) - use a clean localized grid
@@ -42,8 +45,11 @@ class BLSSearchEngine:
             # Long baseline dataset (e.g., Kepler/PLATO) - use a balanced dual-zone layout
             # Zone 1: High-density linear tracking for rapid inner planets
             grid_inner = np.linspace(p_min, 20.0, 4000)
-            # Zone 2: Physics-matched resolution for long-period outer giants
-            grid_outer = np.linspace(20.0, p_max, 6000)
+            # Zone 2: Physics-matched resolution for long-period outer giants.
+            # FIX 3: Densified (6000 -> 10000 nodes) across the 20-to-450d zone so the
+            # narrow, infrequent transit dips of extreme cold giants are not skipped by
+            # coarse grid spacing, breaking out of the ~29.84d half-harmonic alias trap.
+            grid_outer = np.linspace(20.0, p_max, 10000)
             
             # Merge and ensure unique, sorted periods
             periods = np.unique(np.concatenate([grid_inner, grid_outer]))

@@ -6,6 +6,7 @@ from astraeus.analysis.geometric_validation import GeometricValidator
 from astraeus.analysis.physical_properties import PhysicalPropertiesEngine
 from astraeus.analysis.ttv_analysis import TTVAnalyzer
 from astraeus.analysis.logging import save_experiment_log
+from astraeus.analysis.vetting import VettingEngine
 
 def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=5.0):
     time = np.asarray(time)
@@ -67,6 +68,13 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         geom_metrics = GeometricValidator.validate(active_time, active_flux, best_period, transit_time, duration, transit_depth_fraction)
         result.update(geom_metrics)
 
+        # Statistical Transit Shape Vetting
+        vetting_metrics = VettingEngine.vet_transit_shape(active_time, active_flux, best_period, transit_time, duration, transit_depth_fraction)
+        result.update(vetting_metrics)
+        
+        # Override v_shape_metric key with the inverse of the U-shape confidence for backwards compatibility
+        result['v_shape_metric'] = 1.0 - vetting_metrics['vetting_confidence']
+
         # False-Positive Cross-Vetting
         if is_valid:
             is_ultra_short_period = float(best_period) < 1.5
@@ -74,7 +82,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
 
             if transit_depth_fraction < 0.03:
                 result['vetting_status'] = "Verified Planet Candidate"
-            elif (geom_metrics['v_shape_metric'] > 0.85
+            elif (vetting_metrics['vetting_status'] == "Ambiguous/False Positive"
                   and geom_metrics['secondary_eclipse_detected']
                   and (best_snr <= 20.0 or sec_depth >= 0.0008)):
                 # Both V-shaped AND secondary eclipse → binary, but only
@@ -84,7 +92,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
             elif (
                 best_snr <= 20.0
                 and not is_ultra_short_period
-                and (geom_metrics['v_shape_metric'] > 0.8 or geom_metrics['flat_bottom_fraction'] < 0.05)
+                and vetting_metrics['vetting_status'] == "Ambiguous/False Positive"
             ):
                 # V-shape / low flat-bottom only vetoes when SNR is NOT
                 # overwhelmingly high (oblate-star gravity-darkening
@@ -97,6 +105,8 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
                     result['vetting_status'] = "Verified Planet Candidate (Atmospheric Occultation Detected)"
                 else:
                     result['vetting_status'] = "Eclipsing Binary Detected (Secondary Eclipse at Phase 0.5)"
+            elif vetting_metrics['vetting_status'] == "Likely Planet":
+                result['vetting_status'] = "Verified Planet Candidate"
 
         # Physical Properties
         st_teff = float(archive_metadata.get('st_teff', 5778.0))
