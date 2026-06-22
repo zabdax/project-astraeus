@@ -36,10 +36,16 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         global_payload = metadata or {}
         archive_metadata = global_payload.get('metadata', global_payload)
         st_rad = float(archive_metadata.get('st_rad') or archive_metadata.get('stellar_radius') or 1.0)
-        
+        # Hoisted out of the Physical Properties block below so that any
+        # future (or current) physical-input-dependent vetting branch can
+        # reference them without re-reading the archive dict.
+        st_teff = float(archive_metadata.get('st_teff', 5778.0))
+        st_mass = float(archive_metadata.get('st_mass', 1.0))
+        sy_jmag = float(archive_metadata.get('sy_jmag', 10.0))
+
         raw_depth = float(best_depth)
         transit_depth_fraction = raw_depth / 100.0 if raw_depth > 0.1 else raw_depth
-        
+
         archive_depth_percent = float(archive_metadata.get('pl_trandep', 0.0))
         if archive_depth_percent > 0:
             archive_depth_fraction = archive_depth_percent / 100.0
@@ -71,9 +77,16 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         # Statistical Transit Shape Vetting
         vetting_metrics = VettingEngine.vet_transit_shape(active_time, active_flux, best_period, transit_time, duration, transit_depth_fraction)
         result.update(vetting_metrics)
-        
+
         # Override v_shape_metric key with the inverse of the U-shape confidence for backwards compatibility
         result['v_shape_metric'] = 1.0 - vetting_metrics['vetting_confidence']
+
+        # Physical Properties — derived BEFORE the false-positive cross-vetting
+        # so the secondary-eclipse branch can use equilibrium_temp_k and
+        # planet_radius_earth as a physically-grounded threshold instead of a
+        # flat 800 ppm constant. See bucket2_threshold_audit.md §4.
+        phys_props = PhysicalPropertiesEngine.derive(best_period, transit_depth_fraction, st_rad, st_teff, st_mass, sy_jmag)
+        result.update(phys_props)
 
         # False-Positive Cross-Vetting
         if is_valid:
@@ -107,13 +120,6 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
                     result['vetting_status'] = "Eclipsing Binary Detected (Secondary Eclipse at Phase 0.5)"
             elif vetting_metrics['vetting_status'] == "Likely Planet":
                 result['vetting_status'] = "Verified Planet Candidate"
-
-        # Physical Properties
-        st_teff = float(archive_metadata.get('st_teff', 5778.0))
-        st_mass = float(archive_metadata.get('st_mass', 1.0))
-        sy_jmag = float(archive_metadata.get('sy_jmag', 10.0))
-        phys_props = PhysicalPropertiesEngine.derive(best_period, transit_depth_fraction, st_rad, st_teff, st_mass, sy_jmag)
-        result.update(phys_props)
 
         # TTV Analysis
         result['ttv_data'] = TTVAnalyzer.calculate(active_time, active_flux, best_period, transit_time, duration)
