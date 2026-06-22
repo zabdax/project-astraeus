@@ -329,12 +329,35 @@ def render(main_panel, right_panel) -> None:
             else:
                 st.markdown("<div style='color: #0ea5e9; display: flex; align-items: center; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='12' y1='16' x2='12' y2='12'></line><line x1='12' y1='8' x2='12.01' y2='8'></line></svg> Invalid parsed data format detected.</div>", unsafe_allow_html=True)
         elif target:
-            if 'last_target' not in st.session_state or st.session_state['last_target'] != target:
+            # Invalidate any results keyed to a previous target OR data route.
+            # The physics functions (detect_transit_candidate /
+            # run_multi_planet_search) are stateless, so stale UI output can
+            # only come from session_state left over from a previous run. The
+            # list below must cover every key this module writes on fetch /
+            # analysis; leaving any out lets the old target's results bleed
+            # into the new one until a new run overwrites them.
+            # Keys written by this module:
+            #   fetched_target_data (fetch), active_metadata (fetch + analyze),
+            #   detective_results / detective_results_list (analyze),
+            #   detective_plot_data / active_time / active_flux (analyze),
+            #   stability_detective_results[_config_hash] (stability button).
+            invalidate = (
+                'last_target' not in st.session_state
+                or st.session_state['last_target'] != target
+                or st.session_state.get('last_route') != route
+            )
+            if invalidate:
                 st.session_state['last_target'] = target
-                for key in ['detective_plot_data', 'detective_results', 'fetched_target_data', 'active_time', 'active_flux']:
-                    if key in st.session_state:
-                        del st.session_state[key]
-            
+                st.session_state['last_route'] = route
+                for key in [
+                    'detective_plot_data', 'detective_results',
+                    'detective_results_list', 'fetched_target_data',
+                    'active_metadata', 'active_time', 'active_flux',
+                    'stability_detective_results',
+                    'stability_detective_config_hash',
+                ]:
+                    st.session_state.pop(key, None)
+
             if 'fetched_target_data' not in st.session_state:
                 if st.button("Fetch Target Metadata", type="primary", use_container_width=True):
                     SVG_QUERY = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>"""
