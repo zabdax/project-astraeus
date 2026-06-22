@@ -1,0 +1,439 @@
+{
+  "noise_parameters": {
+    "sigma": 0.01,
+    "n_samples": 500,
+    "duration_days": 10.0,
+    "snr_floor": 7.1,
+    "max_signals": 5
+  },
+  "summary": {
+    "n_total": 50,
+    "n_runs_with_any_candidate": 0,
+    "false_positive_rate_any": 0.0,
+    "total_false_candidates": 0,
+    "n_candidates_per_fp_run": {
+      "n": 0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "median": null
+    },
+    "snr_first_fp_candidate": {
+      "n": 0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "median": null
+    },
+    "confidence_score_first_fp_candidate": {
+      "n": 0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "median": null
+    },
+    "elapsed_seconds": 61.448272943496704
+  },
+  "rows": [
+    {
+      "seed": 42,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 100,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 101,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 102,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 103,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 104,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 105,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 106,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 107,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 108,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 109,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 110,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 111,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 112,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 113,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 114,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 115,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 116,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 117,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 118,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 119,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 120,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 121,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 122,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 123,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 124,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 125,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 126,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 127,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 128,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 129,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 130,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 131,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 132,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 133,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 134,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 135,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 136,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 137,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 138,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 139,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 140,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 141,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 142,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 143,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 144,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 145,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 146,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 147,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    },
+    {
+      "seed": 148,
+      "candidate_found": false,
+      "n_candidates_found": 0,
+      "confidence_score": 0.0,
+      "snr": 0.0,
+      "period": 0.0
+    }
+  ]
+}
