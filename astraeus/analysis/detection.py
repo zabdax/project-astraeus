@@ -7,7 +7,12 @@ from astraeus.analysis.physical_properties import PhysicalPropertiesEngine
 from astraeus.analysis.ttv_analysis import TTVAnalyzer
 from astraeus.analysis.logging import save_experiment_log
 from astraeus.analysis.vetting import VettingEngine
-from astraeus.core.constants import VETTING_SECONDARY_ECLIPSE_FALLBACK_PPM
+from astraeus.core.constants import (
+    VETTING_PLANET_CANDIDATE_MAX_DEPTH_FRACTION,
+    VETTING_SECONDARY_ECLIPSE_FALLBACK_PPM,
+    VETTING_ULTRA_SHORT_PERIOD_DAYS,
+    VETTING_VSHAPE_LOW_SNR_GATE,
+)
 
 def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=5.0):
     time = np.asarray(time)
@@ -116,21 +121,21 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
 
         # False-Positive Cross-Vetting
         if is_valid:
-            is_ultra_short_period = float(best_period) < 1.5
+            is_ultra_short_period = float(best_period) < VETTING_ULTRA_SHORT_PERIOD_DAYS
             sec_depth = geom_metrics.get('secondary_eclipse_depth', 0.0)
 
-            if transit_depth_fraction < 0.03:
+            if transit_depth_fraction < VETTING_PLANET_CANDIDATE_MAX_DEPTH_FRACTION:
                 result['vetting_status'] = "Verified Planet Candidate"
             elif (vetting_metrics['vetting_status'] == "Ambiguous/False Positive"
                   and geom_metrics['secondary_eclipse_detected']
-                  and (best_snr <= 20.0 or sec_depth >= sec_eclipse_threshold_fraction)):
+                  and (best_snr <= VETTING_VSHAPE_LOW_SNR_GATE or sec_depth >= sec_eclipse_threshold_fraction)):
                 # Both V-shaped AND secondary eclipse → binary, but only
                 # when SNR is low OR the eclipse is deep enough to rule
                 # out a planetary occultation. The eclipse-depth comparison
                 # uses the physically-derived threshold (or fallback).
                 result['vetting_status'] = "Eclipsing Binary Detected"
             elif (
-                best_snr <= 20.0
+                best_snr <= VETTING_VSHAPE_LOW_SNR_GATE
                 and not is_ultra_short_period
                 and vetting_metrics['vetting_status'] == "Ambiguous/False Positive"
             ):
