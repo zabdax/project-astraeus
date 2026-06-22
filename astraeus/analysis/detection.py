@@ -7,6 +7,7 @@ from astraeus.analysis.physical_properties import PhysicalPropertiesEngine
 from astraeus.analysis.ttv_analysis import TTVAnalyzer
 from astraeus.analysis.logging import save_experiment_log
 from astraeus.analysis.vetting import VettingEngine
+from astraeus.core.constants import VETTING_SECONDARY_ECLIPSE_FALLBACK_PPM
 
 def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=5.0):
     time = np.asarray(time)
@@ -88,6 +89,31 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         phys_props = PhysicalPropertiesEngine.derive(best_period, transit_depth_fraction, st_rad, st_teff, st_mass, sy_jmag)
         result.update(phys_props)
 
+        # Physically-derived secondary-eclipse depth threshold (bucket 2
+        # headline fix). When the physical inputs are available this adapts
+        # the threshold to the star/planet system under analysis; when they
+        # are missing or non-positive the function returns None and we fall
+        # back to the historical 800 ppm constant. Either way the result
+        # dict carries the value actually used and the mode flag so callers
+        # can audit the decision.
+        expected_occultation_ppm = PhysicalPropertiesEngine.expected_occultation_depth_ppm(
+            planet_radius_earth=phys_props.get('planet_radius_earth', 0.0),
+            stellar_radius_solar=st_rad,
+            planet_equilibrium_temp_k=phys_props.get('equilibrium_temp_k', 0.0),
+            stellar_teff_k=st_teff,
+        )
+        if expected_occultation_ppm is None:
+            sec_eclipse_threshold_ppm = VETTING_SECONDARY_ECLIPSE_FALLBACK_PPM
+            sec_eclipse_threshold_mode = "fallback_fixed"
+        else:
+            sec_eclipse_threshold_ppm = expected_occultation_ppm
+            sec_eclipse_threshold_mode = "physical"
+        result['secondary_eclipse_threshold_ppm'] = sec_eclipse_threshold_ppm
+        result['secondary_eclipse_threshold_mode'] = sec_eclipse_threshold_mode
+        # The cross-vetting branches below compare against a fractional
+        # depth; convert the ppm threshold once.
+        sec_eclipse_threshold_fraction = sec_eclipse_threshold_ppm / 1.0e6
+
         # False-Positive Cross-Vetting
         if is_valid:
             is_ultra_short_period = float(best_period) < 1.5
@@ -97,10 +123,11 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
                 result['vetting_status'] = "Verified Planet Candidate"
             elif (vetting_metrics['vetting_status'] == "Ambiguous/False Positive"
                   and geom_metrics['secondary_eclipse_detected']
-                  and (best_snr <= 20.0 or sec_depth >= 0.0008)):
+                  and (best_snr <= 20.0 or sec_depth >= sec_eclipse_threshold_fraction)):
                 # Both V-shaped AND secondary eclipse → binary, but only
                 # when SNR is low OR the eclipse is deep enough to rule
-                # out a planetary occultation.
+                # out a planetary occultation. The eclipse-depth comparison
+                # uses the physically-derived threshold (or fallback).
                 result['vetting_status'] = "Eclipsing Binary Detected"
             elif (
                 best_snr <= 20.0
@@ -112,9 +139,12 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
                 # produces V-shaped transits even for real planets).
                 result['vetting_status'] = "V-Shaped False Positive Risk (Potential Grazing Binary)"
             elif geom_metrics['secondary_eclipse_detected']:
-                if sec_depth < 0.0008:
-                    # Shallow occultation (<800 ppm) = planetary thermal
-                    # emission being occulted, NOT a binary eclipse.
+                if sec_depth < sec_eclipse_threshold_fraction:
+                    # Shallow occultation (below the physically-derived
+                    # threshold) = planetary thermal emission being
+                    # occulted, NOT a binary eclipse. The threshold adapts
+                    # to the system so a hot, large planet around a cool
+                    # star is not falsely flagged as a binary.
                     result['vetting_status'] = "Verified Planet Candidate (Atmospheric Occultation Detected)"
                 else:
                     result['vetting_status'] = "Eclipsing Binary Detected (Secondary Eclipse at Phase 0.5)"
