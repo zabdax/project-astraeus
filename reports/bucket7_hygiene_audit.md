@@ -213,7 +213,19 @@ These were noticed during discovery but are **explicitly out of scope** for buck
 
 ---
 
-## 8. Verification commands
+## 9. Verification results (filled in during Phase 3)
+
+| Gate | Method | Result |
+|---|---|---|
+| Pretest baseline | `python -m pytest tests/ -v` | 10 failed, 50 passed in 60 tests (63.37 s) |
+| Posttest | `python -m pytest tests/ -v` | 10 failed, 50 passed in 60 tests (51.70 s) |
+| Failure-set invariant | `diff` of `grep -E "FAILED\|PASSED"` lines | **BYTE-IDENTICAL** — no regression |
+| App entry import | `python -c "from app import BASELINE_PAYLOAD, _build_adapted_metrics_payload; from route import render_route; print('imports ok')"` | **imports ok** |
+| Working tree | `git status` | clean (post-commit) |
+
+See [`reports/bucket7_summary.md`](bucket7_summary.md) for the full report.
+
+## 10. Verification commands
 
 ```bash
 # Clean tree
