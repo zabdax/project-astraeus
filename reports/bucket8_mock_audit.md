@@ -257,12 +257,32 @@ ndarrays, exactly what the page's line-325 `isinstance` check needs.
 
 | Test | Plan |
 | --- | --- |
-| `test_agent_detective.py::test_panel_routing` | Replace `return_value=test_csv` with a `MagicMock` whose `.getvalue()` returns the CSV bytes and `.name` is the test CSV path. Read the bytes once at the top of the test. |
-| `tests/test_ui_flow.py::test_ui_flow` | Move the `AppTest.from_file(...).run()` call *inside* a `with patch("ui.pages.detective.st.file_uploader", return_value=MagicMock(getvalue=..., name=test_csv)):` block. Delete the dead `at.file_uploader` block. |
+| `test_agent_detective.py::test_panel_routing` | Replace `return_value=test_csv` with a `MagicMock` whose `.getvalue()` returns the CSV bytes and `.name` is the test CSV path. Read the bytes once at the top of the test. **One downstream assertion also gets updated** (see below). |
+| `tests/test_ui_flow.py::test_ui_flow` | Move the `AppTest.from_file(...).run()` call *inside* a `with patch("ui.pages.detective.st.file_uploader", return_value=MagicMock(getvalue=..., name=test_csv)):` block. Delete the dead `at.file_uploader` block. **Three downstream `at.session_state.keys()` call sites are also updated** to the streamlit 1.41.1 `SafeSessionState.filtered_state.keys()` API (see below). |
 | `tests/test_workbench_navigation.py::test_workbench_navigation_persistence` | Same as test_panel_routing: replace `return_value=test_csv` with a `MagicMock`. |
 
-No downstream assertions change. No app code is touched. The
-intentionally-red `test_noise_injection` is not modified.
+One downstream assertion in `test_panel_routing` and three downstream
+calls in `test_ui_flow` are stale relative to the current app and
+current streamlit API respectively. They are updated — not loosened
+— in the same pass as the mock fix, with the same justification
+recorded in `reports/bucket8_summary.md` §3.1 (for
+`test_panel_routing`) and §3.2 (for `test_ui_flow`).
+
+- `test_panel_routing`: the `"BLS Periodogram"` subheader check is
+  replaced with a `"Phase-Folded Light Curve"` markdown-element
+  check, because the page now renders the center panel title as
+  an `<h3>` via `st.markdown` (see `ui/pages/detective.py:522`),
+  not as `st.subheader`. The `plotly_chart` count check is retained
+  unchanged. The test still verifies the center panel plot is
+  rendered — just by the current title.
+- `test_ui_flow`: the three `at.session_state.keys()` call sites
+  are updated to `at.session_state.filtered_state.keys()`, because
+  streamlit 1.41.1's `SafeSessionState` does not expose a `keys()`
+  method on the proxy itself. Same intent (asserting session_state
+  population), updated to the current streamlit API.
+
+No app code is touched. The intentionally-red `test_noise_injection`
+is not modified.
 
 ---
 
