@@ -55,12 +55,16 @@ confidence_score = float(best_power / np.median(res.power))
 `np.median(res.power)` = the median power across the whole periodogram grid.
 
 **Units:** dimensionless ratio. Interpretation: "how many times the
-background noise level does the best peak stand above?" This is a
-**false-alarm-probability analogue** in the sense of Horne & Baliunas
-(1986) / Schwarzenberg-Czerny (1997) — a peak that is many times the
-median periodogram power is unlikely to be a noise fluctuation. The
-code does NOT compute a formal false-alarm probability; it only
-emits the ratio.
+background noise level does the best peak stand above?" The statistic
+itself — peak BLS power divided by the median periodogram power — is
+**analogous to** the peak-height statistics discussed in Horne &
+Baliunas (1986) and Schwarzenberg-Czerny (1997). However, those
+papers describe how to compute a FORMAL false-alarm probability from
+the periodogram via chi-squared statistics; they do NOT bless any
+specific "peak/median ratio" threshold value. The code does NOT
+compute a formal false-alarm probability; it only emits the ratio.
+Whether any particular threshold on the ratio is "significant" is an
+empirical question, addressed in §3 and §4 below.
 
 ### 1.2 The SNR threshold gate
 
@@ -274,13 +278,19 @@ Five real-signal scenarios, 5 repeats each. All call
 
 The **minimum** SNR across all real-signal runs is **16.42**
 (`pipeline_smoke`). Noise SNR maxes at **10.674**. There is a clean
-**~6 SNR-unit gap** between noise and real signals.
+**~6 SNR-unit gap** between noise and real signals **as measured on
+this synthetic fixture set**. Whether the same gap holds for real
+Kepler/TESS marginal detections (shallow transits, grazing geometries,
+noisy giant-star photometry) is **not characterized** in this audit —
+see `reports/bucket9.1_summary.md` §6 ("Known limitation").
 
 ### 4.2 confidence_score floor on real signals
 
 The **minimum** confidence_score across all real-signal runs is
 **9.02** (`pipeline_smoke`). Noise confidence_score maxes at **5.956**.
-There is a clean **~3-unit gap** between noise and real signals.
+There is a clean **~3-unit gap** between noise and real signals **on
+this synthetic fixture set**. As with §4.1, real-curve generalization
+is uncharacterized — see the same "Known limitation" note.
 
 ### 4.3 Vetting status on real signals
 
@@ -290,9 +300,12 @@ injected period is accurate to within ~1% in every scenario.
 
 ### 4.4 Key conclusion
 
-**There IS a clean threshold that separates noise from real signals.**
-The bucket protocol's "STOP if no threshold separates them" condition
-is NOT met. A tuning fix is appropriate.
+**Within the synthetic fixtures tested, there IS a clean threshold
+that separates noise from real signals.** The bucket protocol's "STOP
+if no threshold separates them" condition is NOT met for these
+fixtures. A tuning fix is appropriate **with the caveat** that the
+gap was measured against synthetic data only; real-curve
+generalization is uncharacterized and would be a follow-up bucket.
 
 ---
 
@@ -404,15 +417,29 @@ python -m pytest tests/ -m "not network and not slow" -v
 ## 7. What remains uncertain or deferred
 
 - **Optimal value of `DETECTION_CONFIDENCE_FLOOR`.** We picked 7.0
-  from data (above noise max 5.956, below real min 9.02). A more
-  principled value would come from a chi-squared FAP calculation on
-  the periodogram (Horne & Baliunas 1986), but that is out of scope
-  for this bucket (a redesign-level change).
+  empirically (above noise max 5.956, below real min 9.02). The
+  statistic itself is analogous to peak-height FAP discussions in
+  Horne & Baliunas (1986) / Schwarzenberg-Czerny (1997), but those
+  papers describe a formal chi-squared FAP calculation, not a
+  peak/median-ratio threshold. Bucket 9.2 explicitly softened the
+  constant's comment to make this clear. A principled value would
+  come from a chi-squared FAP calculation on the periodogram, but
+  that is out of scope for this bucket (a redesign-level change).
 - **Real-planet recovery at very low SNR.** We have not tested real
-  signals with SNR < 12 in this audit. If such cases exist in
-  production, raising the default would suppress them. The guardrail
-  tests all produce SNR > 16, so this risk is theoretical here.
+  signals with SNR < 12 in this audit. Bucket 9.2 reverted the
+  SNR default to 5.0 (because the confidence floor alone catches all
+  50 noise realizations), so this concern is now less acute — but
+  real-curve characterization is still uncharacterized, see
+  `reports/bucket9.1_summary.md` §6 ("Known limitation") and the
+  optional stub at `scratch/bucket9.2_real_curve_characterization_template.py`.
 - **The 68% FP rate implies the algorithm has very little
   noise-rejection beyond the single SNR gate.** A future bucket
   could pursue formal false-alarm probability estimation or MC
   permutation testing for stronger noise rejection.
+- **Synthetic-only basis for the 7.0 threshold.** The Phase 1.4
+  real-signal fixtures are all synthetic (test_pipeline_smoke.py,
+  test_vetting_threshold_hardening.py, test_agent_detective.py::test_signal_recovery).
+  Bucket 9.2 Item 4 added a "Known limitation" subsection to the
+  summary documenting that the 7.0 threshold's real-world rejection
+  rate on marginal Kepler/TESS detections is uncharacterized. A
+  follow-up bucket with real-curve ingestion would characterize it.

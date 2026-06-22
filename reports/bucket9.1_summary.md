@@ -76,19 +76,28 @@ hot_planet_around_m_dwarf, earth_sun_analog), 5 repeats each. Output:
 
 **Real-signal floors:** SNR = 16.42, confidence_score = 9.02.
 
-### 1.3 The clean gap
+### 1.3 The gap (as measured on synthetic fixtures)
 
-The two distributions do **not** overlap. There is a clean gap on both
-axes:
+Within the synthetic fixtures tested (50 noise realizations + 5
+real-signal guardrail scenarios), the two distributions do **not**
+overlap. There is a gap on both axes:
 
-| Metric | Noise max | Real min | Gap | Chosen threshold | Headroom (above noise) | Headroom (below real) |
+| Metric | Noise max | Real min | Gap | Threshold (current) | Headroom (above noise) | Headroom (below real) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| **SNR** | 10.67 | 16.42 | ~5.75 | **12.0** | **1.33** (12.0 - 10.67) | **4.42** (16.42 - 12.0) |
-| **confidence_score** | 5.96 | 9.02 | ~3.06 | **7.0** | **1.04** (7.0 - 5.96) | **2.02** (9.02 - 7.0) |
+| **SNR** | 10.67 | 16.42 | ~5.75 | **5.0** (default; reverted in bucket 9.2 Item 2) | — (caller-tunable) | — |
+| **confidence_score** | 5.96 | 9.02 | ~3.06 | **7.0** (load-bearing) | **1.04** | **2.02** |
 
-Both thresholds sit comfortably inside the noise-vs-signal gap. This
-is **not** the "no threshold separates them" case the bucket protocol
-warns about — a tuning fix is appropriate.
+**Important caveat:** these gaps were measured against SYNTHETIC
+fixtures only. Real Kepler/TESS marginal detections (shallow transits,
+grazing geometries, noisy giant-star photometry) can legitimately land
+at lower SNR / confidence_score than the synthetic floor and would be
+silently rejected by the 7.0 floor. The real-world rejection rate is
+UNCHARACTERIZED — see §6 ("Known limitation") below.
+
+The bucket-9.2 SNR revert (5.0 default) does NOT reintroduce the
+single-planet FP problem because the confidence_score floor is
+unconditional; on its own it catches all 50 noise realizations from
+the Phase 1.3 sweep.
 
 ### 1.4 The fix
 
@@ -191,8 +200,8 @@ python -m pytest tests/test_pipeline_smoke.py \
 
 | Gate | Threshold | Real value | Headroom (real - threshold) |
 | --- | ---: | ---: | ---: |
-| SNR default | 12.0 | 16.42 | **4.42 SNR units** |
-| confidence_score floor | 7.0 | 9.02 | **2.02 confidence units** |
+| SNR default | 5.0 (default; reverted in bucket 9.2 Item 2 — caller-tunable secondary check) | 16.42 | 11.42 SNR units (not load-bearing) |
+| confidence_score floor | 7.0 (load-bearing noise-rejection gate) | 9.02 | **2.02 confidence units** |
 
 The closest-real-signal case still has comfortable headroom above
 both new thresholds. Any regression that brings the pipeline_smoke SNR
@@ -258,25 +267,63 @@ c555f63  docs(bucket9.1): Phase 3 posttest result (81 passed, 1 skipped, 33 dese
 ## 6. What remains uncertain or deferred
 
 - **Formal false-alarm probability (FAP).** The `confidence_score` is
-  a peak-to-median ratio (Horne & Baliunas 1986 / Schwarzenberg-Czerny
-  1997 analogue) but is not a formal FAP. A future bucket could add
-  chi-squared FAP or MC permutation testing for stronger noise
-  rejection. Out of scope for this bucket.
-- **Marginal-planet recovery.** Real signals with SNR < 12 (between
-  noise max 10.67 and threshold 12.0) would now be rejected. None
-  of the guardrail tests exercise this regime, but real-world marginal
-  planets could be affected. A future empirical sweep (Bucket 3-style)
-  on known Kepler/TESS marginal detections would characterize the
-  impact.
+  a peak-to-median ratio. The statistic itself is analogous to the
+  peak-height statistics discussed in Horne & Baliunas (1986) and
+  Schwarzenberg-Czerny (1997), but those papers describe how to
+  compute a FORMAL FAP from the periodogram via chi-squared
+  statistics; they do NOT bless "peak/median ratio of 7" as a
+  threshold. A future bucket could add chi-squared FAP or MC
+  permutation testing for stronger, first-principles noise rejection.
+  Out of scope here. See `astraeus/core/constants.py` `DETECTION_CONFIDENCE_FLOOR`
+  docstring for the precise framing.
+- **Marginal-planet recovery (synthetic-only basis).** Real signals
+  with SNR in the [5, 12] band or `confidence_score` in the [6, 9]
+  band could be affected. None of the guardrail tests exercise that
+  regime — they all produce SNR > 16 and confidence_score > 9. See
+  §6.5 ("Known limitation") below for what is NOT measured.
 - **Period-domain restriction.** Noise FPs cluster at 0.3d–0.7d. A
   minimum-period gate would also catch them. Not added here — the
   confidence_score floor already catches all 50 noise realizations
-  and the SNR default catches them at the default threshold, so a
-  third check would be redundant.
+  on its own (no SNR-default raised required), so a third check
+  would be redundant.
 - **Headroom tracking.** The closest real-signal case
-  (`pipeline_smoke`) sits at SNR=16.42, confidence=9.02 — 4.42 SNR
-  units and 2.02 confidence units above the new thresholds. A
-  monitoring/alerting bucket could track these as regression canaries.
+  (`pipeline_smoke`) sits at SNR=16.42, confidence=9.02 — 11.42 SNR
+  units above the (caller-tunable) 5.0 default and 2.02 confidence
+  units above the load-bearing 7.0 floor. A monitoring/alerting
+  bucket could track these as regression canaries.
+
+### 6.5 Known limitation — synthetic-only basis for the 7.0 threshold
+
+**Status:** UNCHARACTERIZED. The Phase 1.4 real-signal fixtures are
+all SYNTHETIC — they come from `tests/test_pipeline_smoke.py`,
+`tests/test_vetting_threshold_hardening.py`, and
+`tests/test_agent_detective.py::test_signal_recovery`. Bucket 9.1
+explicitly acknowledges this in §3 ("CHARACTERIZE the false positive
+empirically") but the audit's noise-vs-signal gap analysis (§4) was
+performed against these synthetic fixtures only.
+
+**What this means:** real Kepler/TESS marginal detections (shallow
+transits, grazing geometries, noisy giant-star photometry,
+non-Gaussian noise, instrument systematics) can legitimately produce
+SNR / confidence_score values below the synthetic floor and would be
+silently rejected by `DETECTION_CONFIDENCE_FLOOR = 7.0`. The
+rejection rate on real marginal detections is unknown.
+
+**Recommended follow-up:** a future bucket should sweep a curated set
+of known Kepler/TESS marginal detections (e.g. the Kepler
+"Earth-like candidate" working list, or the TESS TOI catalog at
+the low-confidence end) and characterize the rejection rate at the
+7.0 floor. If the rejection rate is high, the floor may need to be
+lowered; if low, the current value is empirically validated for real
+data too. Bucket 9.2 Item 4 added
+`scratch/bucket9.2_real_curve_characterization_template.py` as a
+stub for that work — see its docstring for the planned structure.
+
+**Bucket 9.2 Item 2 SNR revert connection:** because the SNR default
+was reverted to 5.0 (the confidence floor is the only load-bearing
+gate), lowering the confidence floor in the future to admit more
+real marginal detections would be a one-line change with no other
+knobs to turn.
 
 ---
 
