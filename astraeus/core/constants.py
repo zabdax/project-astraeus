@@ -98,15 +98,23 @@ GEOMETRIC_SECONDARY_ECLIPSE_MIN_SAMPLES = 3
 
 # Default SNR threshold for emitting a candidate.
 #
-# Empirical distribution (Phase 1.3 / Phase 1.4 of bucket 9.1):
-#   noise SNR          : min=2.75, median=5.38, max=10.67 (50 realizations)
-#   real-signal SNR    : floor=16.42 (pipeline_smoke), 61.59 (test_signal_recovery),
-#                        ~1630 (hot_jupiter_clean), etc.
-# A threshold of 12.0 sits cleanly inside the gap (noise max 10.67,
-# real floor 16.42) with ~6 SNR units of headroom on each side.
+# Historical default value (5.0). The SNR threshold is a caller-tunable
+# secondary check; the load-bearing noise-rejection gate is the
+# confidence_score floor below (DETECTION_CONFIDENCE_FLOOR = 7.0).
+#
+# Bucket 9.1 briefly raised this to 12.0 on the rationale that noise
+# SNR maxes at ~10.67 in the bucket-9.1 sweep. Bucket 9.2 reverted
+# it to 5.0: the raised SNR was redundant with the confidence floor
+# (which alone catches all 50 noise realizations) and only cost
+# real-signal sensitivity at the default threshold for callers that
+# do not pass an explicit ``snr_threshold``. See
+# reports/bucket9.1_signal_detection_audit.md §3 and §4 for the
+# underlying data; reports/bucket9.2_summary.md §Item 2 for the
+# revert rationale and stop-guard verification.
+#
 # Callers may still pass an explicit ``snr_threshold`` to override this
-# default, but the confidence_score floor below is unconditional.
-DETECTION_SNR_THRESHOLD_DEFAULT = 12.0
+# default. The confidence_score floor below is unconditional.
+DETECTION_SNR_THRESHOLD_DEFAULT = 5.0
 
 # Minimum confidence_score (best BLS periodogram power divided by the
 # median periodogram power) for emitting a candidate.
