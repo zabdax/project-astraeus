@@ -40,7 +40,9 @@ Bucket 5 is the test-infra bucket that fixes it.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
+from unittest.mock import patch
 
 import pytest
 
@@ -63,6 +65,87 @@ def _reset_streamlit_delta_generator_singleton():
         yield
     finally:
         DeltaGeneratorSingleton.__init__ = original_init
+
+
+# ---------------------------------------------------------------------------
+# save_experiment_log isolation fixture (bucket 9.2 Item 5)
+# ---------------------------------------------------------------------------
+# The detector's ``save_experiment_log`` (called from
+# ``astraeus.analysis.detection.detect_transit_candidate``) appends a
+# record to ``logs/experiments.json`` on every invocation. During a
+# full fast-gate run, the file is mutated dozens of times — Bucket 9.1
+# normalized this by committing the churn as ``chore(...)`` commits,
+# which is undesirable (it dirties the repo on every CI run and makes
+# test results non-hermetic).
+#
+# Two-part fix:
+#
+# 1. Function-scoped autouse fixture that patches
+#    ``astraeus.analysis.detection.save_experiment_log`` to a no-op for
+#    every test. This stops the detector's per-call mutation. Patched at
+#    the detection.py call site (not the logging.py defining module)
+#    because detection imports the symbol by name:
+#        ``from astraeus.analysis.logging import save_experiment_log``
+#    so the binding lives on ``astraeus.analysis.detection`` as
+#    ``save_experiment_log``.
+#
+# 2. Session-scoped fixture that backs up ``logs/experiments.json`` at
+#    session start and restores it at session end. This is needed
+#    because ``tests/test_experiment_history.py::test_experiment_history_cycle``
+#    imports ``save_experiment_log`` directly from the logging module
+#    and calls it explicitly to test the save/load cycle (with explicit
+#    file removal at start and cleanup at end). That test is a legitimate
+#    exerciser of the production save/load cycle; we don't want to
+#    change it. But we do want the file restored to its pre-session state
+#    so the repo is not dirtied by the run.
+#
+# Why patch at the call site AND back up the file: the call-site patch
+# eliminates the dominant source of churn (every detect_transit_candidate
+# call writes), and the session backup handles the residual writes from
+# the one test that legitimately exercises the save path.
+@pytest.fixture(autouse=True)
+def _suppress_save_experiment_log_during_tests():
+    """Patch astraeus.analysis.detection.save_experiment_log to a no-op.
+
+    This stops the test suite from mutating logs/experiments.json on
+    every detector invocation, so the repo stays clean across CI runs.
+    Verified: running the full fast gate twice in succession leaves
+    ``git status --porcelain logs/experiments.json`` empty.
+    """
+    with patch(
+        "astraeus.analysis.detection.save_experiment_log",
+        lambda *args, **kwargs: None,
+    ):
+        yield
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _backup_and_restore_experiments_json():
+    """Session-scoped backup/restore of logs/experiments.json.
+
+    At session start: if logs/experiments.json exists, record its bytes.
+    At session end: restore the recorded bytes (or remove the file if it
+    didn't exist at start). This makes the test suite hermetic w.r.t.
+    the file regardless of which tests write to or delete it.
+    """
+    log_path = os.path.join("logs", "experiments.json")
+    backup_bytes: bytes | None = None
+    backup_existed = os.path.exists(log_path)
+    if backup_existed:
+        with open(log_path, "rb") as f:
+            backup_bytes = f.read()
+    try:
+        yield
+    finally:
+        # Restore: if the file existed at start, write the backup back;
+        # otherwise ensure the file is removed.
+        if backup_existed and backup_bytes is not None:
+            os.makedirs(os.path.dirname(log_path) or ".", exist_ok=True)
+            with open(log_path, "wb") as f:
+                f.write(backup_bytes)
+        else:
+            if os.path.exists(log_path):
+                os.remove(log_path)
 
 
 # ---------------------------------------------------------------------------
