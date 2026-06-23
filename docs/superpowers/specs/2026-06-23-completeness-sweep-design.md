@@ -112,12 +112,12 @@ The simulation package's `__init__.py` re-exports `CompletenessSweepConfig`,
 |-------|---------|---------|
 | `period_min_days` | `0.5` | Smallest period swept (log-spaced grid). |
 | `period_max_days` | `30.0` | Largest period swept. |
-| `period_count` | `8` | Number of period grid points (log-spaced via `np.geomspace`). |
+| `period_count` | `4` | Number of period grid points (log-spaced via `np.geomspace`). Reduced from initial draft `8` after Phase 1 cost measurement (per-injection BLS cost ~5.7 s at 90 d × 4000 samples). |
 | `radius_ratio_min` | `0.005` | Smallest planet/star radius ratio swept. |
 | `radius_ratio_max` | `0.10` | Largest radius ratio (hot-Jupiter class). |
-| `radius_ratio_count` | `6` | Number of depth grid points (log-spaced). |
-| `snr_values` | `(5.0, 10.0, 20.0, 50.0, 100.0)` | SNR enumeration; `len == 1` ⇒ 2D sweep. **Controls the Gaussian noise level of synthetic generation (higher SNR = less noise).** This is **NOT** the BLS-output SNR — it is the injection-level signal quality parameter forwarded to `SyntheticTransitScenario.snr`. |
-| `n_injections` | `10` | Noisy realizations per cell. |
+| `radius_ratio_count` | `3` | Number of depth grid points (log-spaced). Reduced from initial draft `6` per the same cost finding. |
+| `snr_values` | `(10.0, 30.0, 100.0)` | SNR enumeration; `len == 1` ⇒ 2D sweep. **Controls the Gaussian noise level of synthetic generation (higher SNR = less noise).** This is **NOT** the BLS-output SNR — it is the injection-level signal quality parameter forwarded to `SyntheticTransitScenario.snr`. Reduced from initial draft 5-value list per the same cost finding. |
+| `n_injections` | `5` | Noisy realizations per cell. Reduced from initial draft `10` per the cost measurement. |
 | `seed` | `1729` | Master RNG seed. Per-injection seed = `seed + cell_index * 1000 + i`. |
 | `use_full_pipeline` | `False` | `False` → `run_injection_recovery` (BLS-only); `True` → `detect_transit_candidate`. |
 | `duration_days` | `90.0` | Synthetic baseline. **Validation gate:** must satisfy `>= 2 * period_max_days` so every cell has ≥ 2 transits (BLS requires ≥ 2 for reliable detection; 90 d ≈ 3 × period_max_days yields ≥ 3 transits for the longest-period cells — statistically meaningful). Enforced in `__post_init__`. |
@@ -143,10 +143,14 @@ This prevents future users from silently creating broken configs (a 30-day basel
 `period_max=30` would yield at most one transit per cell and BLS would return near-zero
 recovery rates regardless of depth or SNR — a misleading completeness map).
 
-**Defaults are deliberately conservative.** With period_count=8, radius_ratio_count=6,
-snr_values length=5, n_injections=10, the default grid is **8 × 6 × 5 = 240 cells × 10
-injections = 2 400 BLS runs**. Phase 1 will time a single cell and may revise the defaults
-to fit a "few minutes" budget — but the *contract* above is what the implementation honors.
+**Defaults are deliberately conservative** (revised after Phase 1 cost measurement).
+With period_count=4, radius_ratio_count=3, snr_values length=3, n_injections=5, the
+default grid is **4 × 3 × 3 = 36 cells × 5 injections = 180 BLS runs** — measured
+at ~5.7 s/injection ⇒ **~17 minutes** wall-clock. The original draft (8 × 6 × 5 × 10
+= 2 400 runs ⇒ ~3.8 hours) was over-budget per the bucket's "do not ship a default
+that takes hours to run" constraint. The smaller defaults trade a coarser grid for
+fast iteration; users wanting higher resolution can configure a larger sweep
+explicitly.
 
 **Grid spacing:** period and radius_ratio use `np.geomspace` (log-spaced) because
 completeness varies over orders of magnitude in those parameters. SNR is enumerated as a
