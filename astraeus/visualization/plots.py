@@ -145,7 +145,7 @@ def plot_real_retrieval(
 
     # Sort the theoretical curve so it plots smoothly
     sort_mask = np.argsort(time_arr)
-    
+
     ax.scatter(
         time_arr,
         observed,
@@ -162,7 +162,7 @@ def plot_real_retrieval(
         linewidth=2.5,
         label="Best-fit model (Quadratic LD)",
     )
-    
+
     ax.set_xlabel("Phase [days]")
     ax.set_ylabel("Relative Flux")
     ax.set_title("Exoplanet Parameter Retrieval Validation")
@@ -173,3 +173,111 @@ def plot_real_retrieval(
     plt.close(fig)
 
     return output
+
+
+def plot_completeness_map(
+    result,
+    output_dir,
+) -> tuple:
+    """Render a 2D heatmap of recovery rate plus an SNR-slope line plot.
+
+    Args:
+        result: CompletenessSweepResult. The duck-typed access (no import) avoids
+            a circular import with astraeus.simulation.completeness.
+        output_dir: Directory to write the two PNGs into.
+
+    Returns:
+        (heatmap_path, snr_slope_path): Paths to the two PNGs.
+    """
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+
+    mode = "full_pipeline" if result.config.use_full_pipeline else "bls_only"
+
+    if result.snrs.size == 1:
+        fig, ax = plt.subplots(figsize=(8.0, 6.0), constrained_layout=True)
+        im = ax.imshow(
+            result.recovery_rate[:, :, 0],
+            origin="lower",
+            aspect="auto",
+            extent=(
+                np.log10(result.periods_days[0]),
+                np.log10(result.periods_days[-1]),
+                np.log10(result.radius_ratios[0]),
+                np.log10(result.radius_ratios[-1]),
+            ),
+            cmap="viridis",
+            vmin=0.0,
+            vmax=1.0,
+        )
+        ax.set_xlabel("log10(period [days])")
+        ax.set_ylabel("log10(radius_ratio)")
+        ax.set_title(
+            f"Completeness (mode={mode}, n_inj={result.config.n_injections}, "
+            f"SNR={result.snrs[0]:.1f})"
+        )
+        fig.colorbar(im, ax=ax, label="Recovery rate")
+        heatmap_path = output / "heatmap.png"
+        fig.savefig(heatmap_path, dpi=200)
+        plt.close(fig)
+    else:
+        n = result.snrs.size
+        fig, axes = plt.subplots(
+            1, n, figsize=(4.0 * n, 5.0), constrained_layout=True, sharey=True
+        )
+        if n == 1:
+            axes = [axes]
+        for idx, (ax_i, snr) in enumerate(zip(axes, result.snrs)):
+            im = ax_i.imshow(
+                result.recovery_rate[:, :, idx],
+                origin="lower",
+                aspect="auto",
+                extent=(
+                    np.log10(result.periods_days[0]),
+                    np.log10(result.periods_days[-1]),
+                    np.log10(result.radius_ratios[0]),
+                    np.log10(result.radius_ratios[-1]),
+                ),
+                cmap="viridis",
+                vmin=0.0,
+                vmax=1.0,
+            )
+            ax_i.set_title(f"SNR={snr:.1f}")
+            if idx == 0:
+                ax_i.set_ylabel("log10(radius_ratio)")
+            ax_i.set_xlabel("log10(period [days])")
+        fig.colorbar(im, ax=axes, label="Recovery rate")
+        fig.suptitle(f"Completeness ({mode}, n_inj={result.config.n_injections})")
+        heatmap_path = output / "heatmap.png"
+        fig.savefig(heatmap_path, dpi=200)
+        plt.close(fig)
+
+    # SNR-slope plot: pick a reference grid (every other period × middle depth,
+    # max 6 lines).
+    fig2, ax2 = plt.subplots(figsize=(8.0, 5.0), constrained_layout=True)
+    p_step = max(1, result.periods_days.size // 3)
+    p_refs = list(range(0, result.periods_days.size, p_step))[:3]
+    d_ref = result.radius_ratios.size // 2
+    plotted = 0
+    for i in p_refs:
+        if plotted >= 6:
+            break
+        ax2.plot(
+            result.snrs,
+            result.recovery_rate[i, d_ref, :],
+            marker="o",
+            label=f"P={result.periods_days[i]:.2f}d, D={result.radius_ratios[d_ref]:.4f}",
+        )
+        plotted += 1
+    ax2.axhline(0.5, color="0.5", linestyle="--", linewidth=1.0, label="50% reference")
+    ax2.set_xlabel("Injection SNR")
+    ax2.set_ylabel("Recovery rate")
+    ax2.set_title("Recovery vs SNR (reference period / depth cells)")
+    ax2.set_ylim(-0.02, 1.02)
+    ax2.legend(loc="best", fontsize=8)
+    ax2.grid(alpha=0.25)
+    snr_path = output / "snr_slope.png"
+    fig2.savefig(snr_path, dpi=200)
+    plt.close(fig2)
+
+    return heatmap_path, snr_path
