@@ -1,0 +1,22 @@
+{
+  "period_min_days": 0.5,
+  "period_max_days": 30.0,
+  "period_count": 3,
+  "radius_ratio_min": 0.005,
+  "radius_ratio_max": 0.1,
+  "radius_ratio_count": 3,
+  "snr_values": [
+    10.0,
+    50.0
+  ],
+  "n_injections": 3,
+  "seed": 42,
+  "use_full_pipeline": false,
+  "duration_days": 90.0,
+  "samples": 4000,
+  "impact_parameter": 0.3,
+  "transit_epoch_fraction": 0.5,
+  "cache_dir": "outputs/completeness_sweeps/integration_demo",
+  "known_planets": null,
+  "metadata": null
+}

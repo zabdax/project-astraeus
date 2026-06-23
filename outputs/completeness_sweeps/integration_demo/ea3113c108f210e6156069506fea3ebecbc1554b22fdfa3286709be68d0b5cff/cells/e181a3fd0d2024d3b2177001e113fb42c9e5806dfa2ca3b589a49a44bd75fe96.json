@@ -1,0 +1,47 @@
+{
+  "cell": {
+    "period_days": 0.5,
+    "radius_ratio": 0.005,
+    "snr": 50.0,
+    "n_injections": 3,
+    "mode": "bls_only"
+  },
+  "result": {
+    "recovery_rate": 0.3333333333333333,
+    "period_err_median": 0.003778778778778802,
+    "period_err_std": NaN,
+    "depth_err_median": 0.002072828398321622,
+    "depth_err_std": NaN,
+    "n_recovered": 1,
+    "runtime_seconds": 15.50585530000535,
+    "injection_records": [
+      {
+        "seed": 1042,
+        "recovered": false,
+        "recovered_period": 0.49186686686686687,
+        "recovered_depth": 0.012107858605188704,
+        "recovered_snr": 5.492574933363609,
+        "vetting_status": "n/a"
+      },
+      {
+        "seed": 1043,
+        "recovered": true,
+        "recovered_period": 0.4962212212212212,
+        "recovered_depth": 0.0020978283983216217,
+        "recovered_snr": 5.2733467855786245,
+        "vetting_status": "n/a"
+      },
+      {
+        "seed": 1044,
+        "recovered": false,
+        "recovered_period": 0.5115365365365365,
+        "recovered_depth": 0.00201746463744068,
+        "recovered_snr": 4.925738380409055,
+        "vetting_status": "n/a"
+      }
+    ]
+  },
+  "schema_version": 1,
+  "written_at_iso": "2026-06-23T06:40:27.712138+00:00",
+  "config_hash": "ea3113c108f210e6156069506fea3ebecbc1554b22fdfa3286709be68d0b5cff"
+}
