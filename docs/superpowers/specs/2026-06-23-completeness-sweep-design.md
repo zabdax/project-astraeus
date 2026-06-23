@@ -40,7 +40,7 @@ This spec covers Phase 1–4 of the bucket:
 
 | File | Role | Modified? |
 |------|------|-----------|
-| `astraeus/simulation/synthetic.py` | Existing primitive | **Unchanged** |
+| `astraeus/simulation/synthetic.py` | Existing primitive | **Additive (one dict key)** — `run_injection_recovery` return dict gains `recovered_depth: float`. No signature change; no existing caller breaks (return is a dict, not a dataclass; no test destructures it). |
 | `astraeus/simulation/completeness.py` | New sweep orchestrator (dataclasses + runner + cell caching) | **New** |
 | `astraeus/simulation/__init__.py` | Re-export new public types | Additive |
 | `astraeus/visualization/plots.py` | Append `plot_completeness_map` | Additive |
@@ -78,6 +78,8 @@ run_completeness_sweep(config)
         │                 result = run_injection_recovery(curve.time_days, curve.observed_flux,
         │                                                period, radius_ratio, b, t0, ...)
         │                 recovered = result["signal_recovered"]  # existing 1% tolerance
+        │                 # recovered_period / recovered_depth / recovered_snr all logged
+        │                 # for per-cell depth_err_median / period_err_median aggregation.
         │     4. aggregate per-cell recovery rate + period/depth error stats + per-injection records
         │     5. atomic write cells/<cell_hash>.json  (temp + os.replace)
         │     6. update manifest.json  (atomic, every cell)
@@ -114,17 +116,32 @@ The simulation package's `__init__.py` re-exports `CompletenessSweepConfig`,
 | `radius_ratio_min` | `0.005` | Smallest planet/star radius ratio swept. |
 | `radius_ratio_max` | `0.10` | Largest radius ratio (hot-Jupiter class). |
 | `radius_ratio_count` | `6` | Number of depth grid points (log-spaced). |
-| `snr_values` | `(5.0, 10.0, 20.0, 50.0, 100.0)` | SNR enumeration; `len == 1` ⇒ 2D sweep. |
+| `snr_values` | `(5.0, 10.0, 20.0, 50.0, 100.0)` | SNR enumeration; `len == 1` ⇒ 2D sweep. **Controls the Gaussian noise level of synthetic generation (higher SNR = less noise).** This is **NOT** the BLS-output SNR — it is the injection-level signal quality parameter forwarded to `SyntheticTransitScenario.snr`. |
 | `n_injections` | `10` | Noisy realizations per cell. |
 | `seed` | `1729` | Master RNG seed. Per-injection seed = `seed + cell_index * 1000 + i`. |
 | `use_full_pipeline` | `False` | `False` → `run_injection_recovery` (BLS-only); `True` → `detect_transit_candidate`. |
-| `duration_days` | `30.0` | Synthetic baseline (matches `SyntheticTransitScenario.duration`). |
+| `duration_days` | `90.0` | Synthetic baseline. **Validation gate:** must satisfy `>= 2 * period_max_days` so every cell has ≥ 2 transits (BLS requires ≥ 2 for reliable detection; 90 d ≈ 3 × period_max_days yields ≥ 3 transits for the longest-period cells — statistically meaningful). Enforced in `__post_init__`. |
 | `samples` | `4_000` | Samples per light curve (matches scenario default). |
 | `impact_parameter` | `0.3` | Injected transit geometry, fixed across the grid. |
 | `transit_epoch_fraction` | `0.5` | Injected epoch, as a fraction of `duration_days`. |
 | `cache_dir` | `"outputs/completeness_sweeps"` | Parent dir; per-sweep subdir = `<cache_dir>/<config_hash>/`. |
 | `known_planets` | `None` | Forwarded to `run_injection_recovery` in BLS-only mode. |
 | `metadata` | `None` | Forwarded to `run_injection_recovery` (limb darkening, etc.). |
+
+**Validation gate (in `__post_init__`):**
+
+```python
+def __post_init__(self) -> None:
+    if self.duration_days < 2 * self.period_max_days:
+        raise ValueError(
+            f"duration_days ({self.duration_days}) must be >= 2 * period_max_days "
+            f"({2 * self.period_max_days}) to ensure >= 2 transits per period cell"
+        )
+```
+
+This prevents future users from silently creating broken configs (a 30-day baseline at
+`period_max=30` would yield at most one transit per cell and BLS would return near-zero
+recovery rates regardless of depth or SNR — a misleading completeness map).
 
 **Defaults are deliberately conservative.** With period_count=8, radius_ratio_count=6,
 snr_values length=5, n_injections=10, the default grid is **8 × 6 × 5 = 240 cells × 10
