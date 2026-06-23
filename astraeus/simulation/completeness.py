@@ -229,6 +229,59 @@ def _enumerate_cells(
     return out
 
 
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    """Write `payload` as JSON atomically (temp + os.replace)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+    os.replace(tmp, path)
+
+
+def _is_valid_cache_hit(path: Path, expected_config_hash: str) -> bool:
+    """True if `path` exists and its stored config_hash matches."""
+    if not path.exists():
+        return False
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return False
+    return data.get("config_hash") == expected_config_hash
+
+
+def _load_cell_data(path: Path) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _load_or_init_manifest(
+    sweep_dir: Path, config_hash: str, total_cells: int
+) -> dict:
+    manifest_path = sweep_dir / "manifest.json"
+    if manifest_path.exists():
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                m = json.load(f)
+            if m.get("config_hash") == config_hash:
+                return m
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {
+        "config_hash": config_hash,
+        "total_cells": total_cells,
+        "completed_cells": [],
+        "in_progress_cells": [],
+        "started_at_iso": datetime.now(timezone.utc).isoformat(),
+        "last_updated_iso": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def _atomic_write_manifest(sweep_dir: Path, manifest: dict) -> None:
+    manifest["last_updated_iso"] = datetime.now(timezone.utc).isoformat()
+    _atomic_write_json(sweep_dir / "manifest.json", manifest)
+
+
 def _compute_cell_hash(
     period: float,
     radius_ratio: float,
@@ -383,29 +436,57 @@ def run_completeness_sweep(
     *,
     progress_callback=None,
 ) -> "CompletenessSweepResult":
-    """Run the completeness sweep and aggregate into a 3D result grid.
-
-    Note: caching is added in a later task. This version re-runs every cell.
-    """
+    """Run the completeness sweep with per-cell caching and resumability."""
     config_hash = _compute_config_hash(config)
+    sweep_dir = Path(config.cache_dir) / config_hash
+    cells_dir = sweep_dir / "cells"
+    sweep_dir.mkdir(parents=True, exist_ok=True)
+    cells_dir.mkdir(parents=True, exist_ok=True)
+
+    # Persist the canonical config once (idempotent rewrite).
+    _atomic_write_json(
+        sweep_dir / "config.json",
+        {k: v for k, v in config.__dict__.items()},
+    )
+
+    manifest = _load_or_init_manifest(sweep_dir, config_hash, config.total_cells)
+
     periods = np.geomspace(config.period_min_days, config.period_max_days, config.period_count)
     depths = np.geomspace(config.radius_ratio_min, config.radius_ratio_max, config.radius_ratio_count)
     snrs = np.asarray(config.snr_values, dtype=float)
 
     shape = (config.period_count, config.radius_ratio_count, len(config.snr_values))
-    recovery_rate = np.zeros(shape, dtype=float)
+    recovery_rate = np.full(shape, np.nan, dtype=float)
     period_err_med = np.full(shape, np.nan, dtype=float)
     period_err_std = np.full(shape, np.nan, dtype=float)
     depth_err_med = np.full(shape, np.nan, dtype=float)
     depth_err_std = np.full(shape, np.nan, dtype=float)
-    n_rec = np.zeros(shape, dtype=int)
-    cell_rt = np.zeros(shape, dtype=float)
+    n_rec = np.full(shape, -1, dtype=int)  # -1 = not yet computed
+    cell_rt = np.full(shape, np.nan, dtype=float)
 
     started = time.perf_counter()
     started_iso = datetime.now(timezone.utc).isoformat()
+    cache_hits = 0
+    cache_misses = 0
 
     for cell_index, period, depth, snr in _enumerate_cells(config):
-        cell_data = _run_one_cell(config, cell_index, period, depth, snr)
+        cell_hash = _compute_cell_hash(
+            period, depth, snr, config.n_injections, config.seed, config.use_full_pipeline,
+        )
+        cell_path = cells_dir / f"{cell_hash}.json"
+
+        if _is_valid_cache_hit(cell_path, config_hash):
+            cell_data = _load_cell_data(cell_path)
+            cache_hits += 1
+        else:
+            cell_data = _run_one_cell(config, cell_index, period, depth, snr)
+            cell_data["config_hash"] = config_hash
+            _atomic_write_json(cell_path, cell_data)
+            cache_misses += 1
+
+        manifest.setdefault("completed_cells", []).append(cell_hash)
+        _atomic_write_manifest(sweep_dir, manifest)
+
         r = cell_data["result"]
         i = cell_index // (config.radius_ratio_count * len(config.snr_values))
         rem = cell_index % (config.radius_ratio_count * len(config.snr_values))
@@ -418,11 +499,12 @@ def run_completeness_sweep(
         depth_err_std[i, j, k] = r["depth_err_std"]
         n_rec[i, j, k] = r["n_recovered"]
         cell_rt[i, j, k] = r["runtime_seconds"]
+
         if progress_callback is not None:
             progress_callback(cell_index + 1, config.total_cells, cell_data)
 
     finished_iso = datetime.now(timezone.utc).isoformat()
-    return CompletenessSweepResult(
+    result = CompletenessSweepResult(
         config=config,
         config_hash=config_hash,
         periods_days=periods,
@@ -436,8 +518,10 @@ def run_completeness_sweep(
         n_recovered=n_rec,
         cell_runtime_seconds=cell_rt,
         total_runtime_seconds=time.perf_counter() - started,
-        cache_hits=0,
-        cache_misses=config.total_cells,
+        cache_hits=cache_hits,
+        cache_misses=cache_misses,
         started_at_iso=started_iso,
         finished_at_iso=finished_iso,
     )
+    result.save(sweep_dir / "result.json")
+    return result
