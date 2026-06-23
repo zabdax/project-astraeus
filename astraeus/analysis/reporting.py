@@ -606,7 +606,116 @@ def generate_academic_report(metrics_payload: Dict[str, Any], figures: Dict[str,
         for stream in tracked_streams:
             stream.close()
         gc.collect()
-        
+
     # Reset pointer for reading
     out_buffer.seek(0)
     return out_buffer
+
+
+def generate_completeness_report(result, config, fig_paths):
+    """Produce a JSON-shaped summary of one completeness sweep.
+
+    Distinct from :func:`generate_academic_report`: completeness data does not
+    fit the {star_id, candidates: [...]} schema enforced by
+    :func:`_validate_schema`. This function returns a plain dict, suitable for
+    a future UI panel or a future PDF-rendering bucket.
+
+    Args:
+        result: A :class:`astraeus.simulation.completeness.CompletenessSweepResult`.
+            The duck-typed access (no import) avoids a circular import.
+        config: A :class:`astraeus.simulation.completeness.CompletenessSweepConfig`,
+            used for human-readable summary fields.
+        fig_paths: dict mapping figure names to Path objects.
+
+    Returns:
+        dict with keys: schema_version, generated_at_iso, mode, config_summary,
+        summary_stats, per_cell_table, figure_paths.
+    """
+    import numpy as _np
+
+    valid = _np.isfinite(result.recovery_rate)
+    overall_recovery = (
+        float(_np.mean(result.recovery_rate[valid])) if valid.any() else 0.0
+    )
+
+    flat = result.recovery_rate.flatten()
+    valid_flat = flat[_np.isfinite(flat)]
+    if valid_flat.size:
+        worst_idx = int(_np.argmin(flat))
+        best_idx = int(_np.argmax(flat))
+        stride_p = result.radius_ratios.size * result.snrs.size
+        stride_d = result.snrs.size
+        worst = {
+            "period_days": float(result.periods_days[worst_idx // stride_p]),
+            "radius_ratio": float(
+                result.radius_ratios[(worst_idx // stride_d) % result.radius_ratios.size]
+            ),
+            "snr": float(result.snrs[worst_idx % result.snrs.size]),
+            "recovery_rate": float(flat[worst_idx]),
+        }
+        best = {
+            "period_days": float(result.periods_days[best_idx // stride_p]),
+            "radius_ratio": float(
+                result.radius_ratios[(best_idx // stride_d) % result.radius_ratios.size]
+            ),
+            "snr": float(result.snrs[best_idx % result.snrs.size]),
+            "recovery_rate": float(flat[best_idx]),
+        }
+    else:
+        worst = best = {}
+
+    period_err_flat = result.period_err_median.flatten()
+    period_err_valid = period_err_flat[_np.isfinite(period_err_flat)]
+    mean_period_err = (
+        float(_np.mean(period_err_valid)) if period_err_valid.size else None
+    )
+
+    per_cell: list[dict] = []
+    for i, p in enumerate(result.periods_days):
+        for j, d in enumerate(result.radius_ratios):
+            for k, s in enumerate(result.snrs):
+                per_cell.append({
+                    "period_days": float(p),
+                    "radius_ratio": float(d),
+                    "snr": float(s),
+                    "recovery_rate": float(result.recovery_rate[i, j, k])
+                    if _np.isfinite(result.recovery_rate[i, j, k])
+                    else None,
+                    "n_recovered": int(result.n_recovered[i, j, k]),
+                    "period_err_median": float(result.period_err_median[i, j, k])
+                    if _np.isfinite(result.period_err_median[i, j, k])
+                    else None,
+                    "depth_err_median": float(result.depth_err_median[i, j, k])
+                    if _np.isfinite(result.depth_err_median[i, j, k])
+                    else None,
+                })
+
+    return {
+        "schema_version": 1,
+        "generated_at_iso": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "mode": "full_pipeline" if config.use_full_pipeline else "bls_only",
+        "config_summary": {
+            "period_min_days": config.period_min_days,
+            "period_max_days": config.period_max_days,
+            "period_count": config.period_count,
+            "radius_ratio_min": config.radius_ratio_min,
+            "radius_ratio_max": config.radius_ratio_max,
+            "radius_ratio_count": config.radius_ratio_count,
+            "snr_values": list(config.snr_values),
+            "n_injections": config.n_injections,
+            "duration_days": config.duration_days,
+            "samples": config.samples,
+        },
+        "summary_stats": {
+            "total_cells": int(result.shape[0] * result.shape[1] * result.shape[2]),
+            "overall_recovery_rate": overall_recovery,
+            "mean_period_err_median_across_recovered_cells": mean_period_err,
+            "worst_performing_cell": worst,
+            "best_performing_cell": best,
+            "total_runtime_seconds": result.total_runtime_seconds,
+            "cache_hits": result.cache_hits,
+            "cache_misses": result.cache_misses,
+        },
+        "per_cell_table": per_cell,
+        "figure_paths": {k: str(v) for k, v in (fig_paths or {}).items()},
+    }
