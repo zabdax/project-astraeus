@@ -263,6 +263,7 @@ def run_injection_recovery(
         "snr_attenuation": snr_attenuation,
         "recovered_period": recovered_period,
         "recovered_snr": snr,
+        "recovered_depth": float(depth),
         "injected_snr": injected_theoretical_snr
     }
     
