@@ -1,0 +1,55 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.0.3, pluggy-1.6.0
+rootdir: F:\solo_leveling_assistant\project-astraeus
+configfile: pytest.ini
+collected 125 items / 33 deselected / 92 selected
+
+tests\test_adapter.py .......                                            [  7%]
+tests\test_agent_detective.py .............                              [ 21%]
+tests\test_bulletproof_detector.py ..                                    [ 23%]
+tests\test_completeness_sweep.py ......                                  [ 30%]
+tests\test_dashboard_simulation.py ....                                  [ 34%]
+tests\test_experiment_history.py .                                       [ 35%]
+tests\test_lab_realtime.py ..                                            [ 38%]
+tests\test_loader.py ..                                                  [ 40%]
+tests\test_mcmc.py .                                                     [ 41%]
+tests\test_multi_planet_scaling.py ...                                   [ 44%]
+tests\test_nbody_solver.py ...........                                   [ 56%]
+tests\test_orbital_models.py ...                                         [ 59%]
+tests\test_physics.py ...                                                [ 63%]
+tests\test_pipeline_smoke.py ..                                          [ 65%]
+tests\test_preprocessing.py ...                                          [ 68%]
+tests\test_synthetic_simulation.py ....                                  [ 72%]
+tests\test_system_flight_bench.py .                                      [ 73%]
+tests\test_transit_model.py .........                                    [ 83%]
+tests\test_ui_flow.py s                                                  [ 84%]
+tests\test_vetting_threshold_hardening.py .............                  [ 98%]
+tests\test_workbench_navigation.py .                                     [100%]
+
+============================== warnings summary ===============================
+C:\Users\MIT\AppData\Local\Programs\Python\Python312\Lib\site-packages\reportlab\lib\rl_safe_eval.py:11
+  C:\Users\MIT\AppData\Local\Programs\Python\Python312\Lib\site-packages\reportlab\lib\rl_safe_eval.py:11: DeprecationWarning: ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead
+    haveNameConstant = hasattr(ast,'NameConstant')
+
+tests/test_agent_detective.py::test_panel_routing
+  F:\solo_leveling_assistant\project-astraeus\astraeus\analysis\bls_search.py:80: RuntimeWarning:
+  
+  invalid value encountered in scalar divide
+
+tests/test_experiment_history.py::test_experiment_history_cycle
+  F:\solo_leveling_assistant\project-astraeus\astraeus\analysis\logging.py:35: DeprecationWarning:
+  
+  datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/test_mcmc.py::test_mcmc_retrieval
+  F:\solo_leveling_assistant\project-astraeus\tests\test_mcmc.py:92: UserWarning:
+  
+  MCMC acceptance fraction is 0.527, which is poorly tuned (should be between 0.2 and 0.5). Consider adjusting step sizes or priors.
+
+tests/test_multi_planet_scaling.py::test_regression_mcmc
+  C:\Users\MIT\AppData\Local\Programs\Python\Python312\Lib\site-packages\emcee\moves\red_blue.py:99: RuntimeWarning:
+  
+  invalid value encountered in scalar subtract
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==== 91 passed, 1 skipped, 33 deselected, 5 warnings in 506.08s (0:08:26) =====

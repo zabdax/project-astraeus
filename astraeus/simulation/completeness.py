@@ -74,8 +74,8 @@ class CompletenessSweepConfig:
                 f"duration_days ({self.duration_days}) must be >= 2 * period_max_days "
                 f"({2 * self.period_max_days}) to ensure >= 2 transits per period cell"
             )
-        if self.period_count < 2 or self.radius_ratio_count < 2:
-            raise ValueError("period_count and radius_ratio_count must be >= 2")
+        if self.period_count < 1 or self.radius_ratio_count < 1:
+            raise ValueError("period_count and radius_ratio_count must be >= 1")
         if len(self.snr_values) < 1:
             raise ValueError("snr_values must contain at least one value")
         if self.n_injections < 1:
