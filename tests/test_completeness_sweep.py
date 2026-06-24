@@ -130,16 +130,38 @@ def test_result_to_dict_load_roundtrip(tmp_path: Path) -> None:
     assert result.config_hash == loaded.config_hash
 
 
-def test_progress_callback_invoked_per_cell(tmp_path: Path) -> None:
-    cfg = _tiny_config(tmp_path / "callback_test")
+def test_progress_callback_invoked_per_cell(tmp_path: Path, monkeypatch) -> None:
+    cfg = CompletenessSweepConfig(
+        period_count=2, radius_ratio_count=2, snr_values=(10.0,),
+        n_injections=1, seed=42, cache_dir=str(tmp_path / "callback_test"),
+    )
+    canned_cell = {
+        "config_hash": "fake",
+        "cell": {"period_days": 1.0, "radius_ratio": 0.05, "snr": 10.0,
+                 "n_injections": 1, "mode": "bls_only"},
+        "result": {"recovery_rate": 1.0, "period_err_median": 0.0,
+                   "period_err_std": 0.0, "depth_err_median": 0.0,
+                   "depth_err_std": 0.0, "n_recovered": 1,
+                   "runtime_seconds": 0.001,
+                   "injection_records": [{"seed": 42, "recovered": True,
+                                          "recovered_period": 1.0,
+                                          "recovered_depth": 0.0025,
+                                          "recovered_snr": 10.0,
+                                          "vetting_status": "n/a"}]},
+        "schema_version": 1,
+        "written_at_iso": "2026-06-23T00:00:00Z",
+    }
+    import astraeus.simulation.completeness as mod
+    monkeypatch.setattr(mod, "_run_one_cell", lambda *a, **kw: canned_cell)
+    
     calls: list[tuple[int, int]] = []
 
     def cb(current: int, total: int, cell_data: dict) -> None:
         calls.append((current, total))
 
-    run_completeness_sweep(cfg, progress_callback=cb)
-    assert len(calls) == cfg.total_cells
-    currents = [c for c, _ in calls]
-    assert currents == sorted(currents)
-    assert currents[0] == 1
-    assert currents[-1] == cfg.total_cells
+    result = run_completeness_sweep(cfg, progress_callback=cb)
+    
+    assert result.cache_misses == 4  # 2x2x1 = 4 cells
+    assert len(calls) == 4
+    assert all(calls[i][0] == i + 1 for i in range(4))
+    assert all(calls[i][1] == 4 for i in range(4))
