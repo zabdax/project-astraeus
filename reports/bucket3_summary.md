@@ -168,7 +168,7 @@ Streamlit wiring is explicitly out of scope for bucket 3.
 | `tests/test_synthetic_simulation.py` passes unchanged | ✅ (4 passed) |
 | `tests/test_completeness_sweep.py` (6 tests) passes | ✅ (6 passed) |
 | Full suite passed ≥ baseline, failures == 0 | ✅ **91 passed, 1 skipped, 33 deselected** (baseline was 85/1/33; +6 new) |
-| Integration run produces heatmap.png, snr_slope.png, result.json, manifest.json, cells/*.json | ✅ (committed in `e3a2d95`) |
+| Integration run produces heatmap.png, snr_slope.png, result.json, manifest.json, cells/*.json | ✅ (committed in `e3a2d95` and `ab57e0d`) |
 | Re-running same config produces `cache_hits == total_cells` | ✅ (18/18 in run 3) |
 | `reports/bucket3_summary.md` references actual artifact paths | ✅ (§5 above) |
 | No changes to `run_injection_recovery` signature | ✅ (additive dict key only) |
@@ -227,7 +227,9 @@ print(generate_completeness_report(r, cfg, {'heatmap': hm, 'snr_slope': sn})['su
 | `5abe376` | feat(visualization): plot_completeness_map (heatmap + SNR-slope) |
 | `c1fcd18` | feat(reporting): generate_completeness_report (JSON payload, schema-sibling) |
 | `a232a7d` | test(sweep): 6 tests + relax dataclass validation to count >= 1 |
-| `e3a2d95` | feat(bucket3): integration_demo artifacts (heatmap, snr_slope, 18 cached cells) |
+| `e3a2d95` | feat(bucket3): integration_demo artifacts (result.json, manifest.json, 18 cached cells) |
+| `ab57e0d` | feat(bucket3): add missing heatmap + snr_slope integration artifacts |
+| `615a9e0` | test(sweep): mock _run_one_cell to avoid timeout in callback test |
 
 ---
 
