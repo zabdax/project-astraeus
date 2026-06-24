@@ -50,3 +50,36 @@ def estimate_ttv_periodicity(epochs: list[int], ttv_residuals_min: list[float], 
         return float(1.0 / best_freq)
     except Exception:
         return None
+
+def estimate_analytic_ttv_amplitude_min(
+    known_period_days: float,
+    companion_period_days: float,
+    companion_mass_msun: float,
+    stellar_mass_msun: float
+) -> float:
+    """
+    Simplified order-of-magnitude TTV amplitude estimator (in minutes) based on Lithwick et al. 2012.
+    This acts as a fast pre-filter to reject companions that are physically incapable of producing the observed TTV.
+    """
+    if stellar_mass_msun <= 0 or known_period_days <= 0:
+        return 0.0
+        
+    mass_ratio = companion_mass_msun / stellar_mass_msun
+    period_ratio = companion_period_days / known_period_days
+    
+    # Crude approximation of resonant amplification: identify nearest first-order resonance j:j-1
+    if period_ratio > 1.0:
+        j = round(1.0 / (1.0 - 1.0/period_ratio))
+        if j < 2: j = 2
+        delta = period_ratio * (j-1)/j - 1.0
+    else:
+        j = round(1.0 / (1.0 - period_ratio))
+        if j < 2: j = 2
+        delta = (1.0/period_ratio) * (j-1)/j - 1.0
+        
+    # Prevent division by zero for exact resonance, limit maximum amplification
+    abs_delta = max(abs(delta), 0.01)
+    
+    # Expected amplitude in minutes
+    amplitude_min = known_period_days * 1440.0 * mass_ratio / abs_delta
+    return float(amplitude_min)
