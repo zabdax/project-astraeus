@@ -75,6 +75,8 @@ htmlcov/
 
 .genome/
 .github/
+reports/
+.agents/
 .windsurfrules
 AGENTS.md
 
