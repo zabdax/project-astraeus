@@ -163,6 +163,12 @@ class LightkurveClient:
         # TESSCut products are synthesized on the fly — not available on S3.
         if "TESSCut" in data_uri or "tesscut" in data_uri.lower():
             return None
+        import re
+        m = re.match(r"mast:TESS/product/(tess\d+-(s\d+)-(\d{16})-.*)", data_uri)
+        if m:
+            filename, sector, tic = m.group(1), m.group(2), m.group(3)
+            return f"tess/public/tid/{sector}/{tic[0:4]}/{tic[4:8]}/{tic[8:12]}/{tic[12:16]}/{filename}"
+
         # Anchor on the known public prefixes inside the URI.
         for prefix in (_S3_TESS_KEY_PREFIX, _S3_KEPLER_KEY_PREFIX):
             marker = f"/{prefix}/"
@@ -227,7 +233,9 @@ class LightkurveClient:
         """
         table = row.table[:1]
         data_uri = table["dataURI"][0]
-        if not data_uri or data_uri.startswith("mast:TESS"):
+        if not data_uri:
+            return None, "Empty data_uri"
+        if "tesscut" in data_uri.lower():
             # TESSCut products are synthesized on the fly by the TESSCut service,
             # not served as static files — let lightkurve's own cutout path handle them.
             return None, "TESSCut product (deferred to lightkurve cutout path)"
@@ -238,6 +246,12 @@ class LightkurveClient:
             return final_path, None
 
         os.makedirs(os.path.dirname(final_path), exist_ok=True)
+
+        s3_key = LightkurveClient._s3_key_from_uri(data_uri)
+        if s3_key:
+            if LightkurveClient._s3_download(s3_key, final_path):
+                return final_path, None
+            print(f"[LightkurveClient] S3 direct download failed, falling back to MAST HTTP for {data_uri}", file=sys.stderr)
 
         url = f"{_MAST_DOWNLOAD_URL}?uri={data_uri}"
         last_reason = None
@@ -394,98 +408,83 @@ class LightkurveClient:
         error : str | None
             Human-readable error message if *all* attempts failed.
         """
-        last_error: str | None = None
+        lc_list = []
+        last_error = None
+        cadences_seen: set[int] = set()
+        
+        row_read_timeout = 60.0
 
-        for attempt in range(_TESS_LC_MAX_RETRIES):
-            try:
-                lc_collection = LightkurveClient._call_with_timeout(
-                    search_result.download_all,
-                    kwargs={"download_dir": download_dir},
-                    timeout=_TESS_LC_DOWNLOAD_TIMEOUT,
-                    label=f"download_all(TESS/SPOC, attempt {attempt + 1}/{_TESS_LC_MAX_RETRIES})",
-                )
-
-                if lc_collection is None:
-                    last_error = "download_all() timed out"
-                    print(
-                        f"[LightkurveClient] TESS LC: download_all() timed out "
-                        f"(attempt {attempt + 1}/{_TESS_LC_MAX_RETRIES}).",
-                        file=sys.stderr,
-                    )
-                    # Exponential backoff with jitter before retry.
-                    delay = _TESS_LC_RETRY_BACKOFF * (2 ** attempt) * random.random()
-                    time.sleep(delay)
-                    continue
-
-                # --- Per-sector validation ---------------------------------
-                valid_lcs: list = []
-                cadences_seen: set[int] = set()
-
-                for idx, lc in enumerate(lc_collection):
-                    try:
-                        if lc is None or len(lc.flux) == 0:
-                            print(
-                                f"[LightkurveClient] TESS sector {idx}: "
-                                f"empty — skipped.",
-                                file=sys.stderr,
-                            )
-                            continue
-
-                        flux_arr = np.asarray(lc.flux.value, dtype=np.float64)
-                        if np.all(~np.isfinite(flux_arr)):
-                            print(
-                                f"[LightkurveClient] TESS sector {idx}: "
-                                f"all-NaN flux — skipped.",
-                                file=sys.stderr,
-                            )
-                            continue
-
-                        # Track cadence for mixed-cadence warning.
-                        if hasattr(lc, "meta") and lc.meta and "TIMEDEL" in lc.meta:
-                            cadences_seen.add(
-                                round(float(lc.meta["TIMEDEL"]) * 86400)
-                            )  # seconds
-
-                        valid_lcs.append(lc)
-                    except Exception as sec_exc:
-                        print(
-                            f"[LightkurveClient] TESS sector {idx}: "
-                            f"validation error — {sec_exc}",
-                            file=sys.stderr,
-                        )
-
-                if cadences_seen and len(cadences_seen) > 1:
-                    print(
-                        f"[LightkurveClient] TESS: mixed cadences detected "
-                        f"{cadences_seen}s — stitch() will handle resampling.",
-                        file=sys.stderr,
-                    )
-
-                if valid_lcs:
-                    print(
-                        f"[LightkurveClient] TESS: {len(valid_lcs)}/"
-                        f"{len(lc_collection)} sectors validated.",
-                        file=sys.stderr,
-                    )
-                    return valid_lcs, None
-
-                last_error = (
-                    f"All {len(lc_collection)} downloaded sectors failed validation"
-                )
-                # No retry — we got the data, it's just all bad.
-                return [], last_error
-
-            except Exception as exc:
-                last_error = str(exc)
+        for idx, row in enumerate(search_result):
+            staged_path, stage_reason = LightkurveClient._stream_mast_download(
+                row, download_dir=download_dir, read_timeout=row_read_timeout
+            )
+            
+            if staged_path is None and stage_reason not in (
+                None, "TESSCut product (deferred to lightkurve cutout path)",
+            ):
                 print(
-                    f"[LightkurveClient] TESS LC: download_all() raised "
-                    f"(attempt {attempt + 1}/{_TESS_LC_MAX_RETRIES}): {exc}",
+                    f"[LightkurveClient] TESS sector {idx}: "
+                    f"download failed — {stage_reason}",
                     file=sys.stderr,
                 )
-                if attempt < _TESS_LC_MAX_RETRIES - 1:
-                    delay = _TESS_LC_RETRY_BACKOFF * (2 ** attempt) * random.random()
-                    time.sleep(delay)
+                last_error = stage_reason
+                continue
+                
+            try:
+                # It's already in the cache layout, so download() is local.
+                lc = LightkurveClient._download_with_timeout(
+                    row, timeout=15.0, download_dir=download_dir
+                )
+                
+                if lc is None or len(lc.flux) == 0:
+                    print(
+                        f"[LightkurveClient] TESS sector {idx}: "
+                        f"empty — skipped.",
+                        file=sys.stderr,
+                    )
+                    continue
 
+                flux_arr = np.asarray(lc.flux.value, dtype=np.float64)
+                if np.all(~np.isfinite(flux_arr)):
+                    print(
+                        f"[LightkurveClient] TESS sector {idx}: "
+                        f"all-NaN flux — skipped.",
+                        file=sys.stderr,
+                    )
+                    continue
+
+                # Track cadence for mixed-cadence warning.
+                if hasattr(lc, "meta") and lc.meta and "TIMEDEL" in lc.meta:
+                    cadences_seen.add(
+                        round(float(lc.meta["TIMEDEL"]) * 86400)
+                    )  # seconds
+
+                lc_list.append(lc)
+            except Exception as sec_exc:
+                print(
+                    f"[LightkurveClient] TESS sector {idx}: "
+                    f"validation error — {sec_exc}",
+                    file=sys.stderr,
+                )
+
+        if cadences_seen and len(cadences_seen) > 1:
+            print(
+                f"[LightkurveClient] TESS: mixed cadences detected "
+                f"{cadences_seen}s — stitch() will handle resampling.",
+                file=sys.stderr,
+            )
+
+        if lc_list:
+            print(
+                f"[LightkurveClient] TESS: {len(lc_list)}/"
+                f"{len(search_result)} sectors validated.",
+                file=sys.stderr,
+            )
+            return lc_list, None
+
+        if last_error is None:
+            last_error = f"All {len(search_result)} downloaded sectors failed validation"
+            
         return [], last_error
 
     @staticmethod

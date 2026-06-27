@@ -793,5 +793,1541 @@
             }
         },
         "fig_paths": []
+    },
+    {
+        "id": "4e2d7e5f-5a57-47cc-9676-2cdf2b2147c4",
+        "timestamp": "2026-06-27T05:59:45.625298Z",
+        "dataset_hash": "256cd2e9d996dd1fba560c7707cef9c37523bbc4ea8e0be2bcf6a251f5fb9906",
+        "params": {
+            "target_name": "Kepler-11",
+            "period": 15.995329862937023,
+            "stellar_rotation_period_days": 3.7410351362389473,
+            "snr": 18.193684610860803,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-11",
+            "orbital_period": 10.3039,
+            "stellar_radius": 1.065,
+            "transit_depth": 0.03013,
+            "pl_orbper": 10.3039,
+            "st_rad": 1.065,
+            "pl_trandep": 0.03013,
+            "st_teff": 5663.0,
+            "st_mass": 0.961,
+            "sy_jmag": 12.548,
+            "raw_row_dump": {
+                "pl_name": "Kepler-11 b",
+                "pl_orbper": 10.3039,
+                "pl_orbpererr1": 0.0006,
+                "st_rad": 1.065,
+                "st_raderr1": 0.017,
+                "st_lum": 0.1202,
+                "st_teff": 5663.0,
+                "st_mass": 0.961,
+                "sy_jmag": 12.548,
+                "pl_trandep": 0.03013,
+                "pl_ratror": 0.01563
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "2899e6a2-9096-46da-9028-3327f4056d18",
+        "timestamp": "2026-06-27T06:31:27.841282Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 10.86044385636562,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 39.503824240382315,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "5190e9e2-200e-4453-b840-133e0b7b5581",
+        "timestamp": "2026-06-27T06:31:29.724723Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 3.695823434063878,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 18.889195068562945,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "0e63ad29-0206-4f1e-b35f-99ffa7f55198",
+        "timestamp": "2026-06-27T06:31:32.610318Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 15.313161262972915,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 18.98386675419302,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "978b1c91-23d9-4207-9822-6bd3d7b4c32f",
+        "timestamp": "2026-06-27T06:56:55.678069Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "HD 80606 b",
+            "period": 37.26931732933234,
+            "stellar_rotation_period_days": 2.616812307654944,
+            "snr": 62.563967820649786,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {},
+        "fig_paths": []
+    },
+    {
+        "id": "1b739f9d-b958-474f-92ea-6fce87f91ffe",
+        "timestamp": "2026-06-27T07:46:55.524621Z",
+        "dataset_hash": "256cd2e9d996dd1fba560c7707cef9c37523bbc4ea8e0be2bcf6a251f5fb9906",
+        "params": {
+            "target_name": "Kepler-11",
+            "period": 15.995329862937023,
+            "stellar_rotation_period_days": 3.7410351362389473,
+            "snr": 18.193684610860803,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-11",
+            "orbital_period": 10.3039,
+            "stellar_radius": 1.065,
+            "transit_depth": 0.03013,
+            "pl_orbper": 10.3039,
+            "st_rad": 1.065,
+            "pl_trandep": 0.03013,
+            "st_teff": 5663.0,
+            "st_mass": 0.961,
+            "sy_jmag": 12.548,
+            "raw_row_dump": {
+                "pl_name": "Kepler-11 b",
+                "pl_orbper": 10.3039,
+                "pl_orbpererr1": 0.0006,
+                "st_rad": 1.065,
+                "st_raderr1": 0.017,
+                "st_lum": 0.1202,
+                "st_teff": 5663.0,
+                "st_mass": 0.961,
+                "sy_jmag": 12.548,
+                "pl_trandep": 0.03013,
+                "pl_ratror": 0.01563
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "ae2fd964-b8d7-44a4-b213-f79b978a97e9",
+        "timestamp": "2026-06-27T08:04:36.222495Z",
+        "dataset_hash": "77d3c59fbcc207bdc9e51697bf9cf24f76b96ad84fd4cf338660c5d71166fb44",
+        "params": {
+            "target_name": "TRAPPIST-1",
+            "period": 0.7326989641708096,
+            "stellar_rotation_period_days": 3.4103025655983124,
+            "snr": 7.602231028185225,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "TRAPPIST-1",
+            "orbital_period": 18.772866,
+            "stellar_radius": 0.1192,
+            "transit_depth": 0.3375,
+            "pl_orbper": 18.772866,
+            "st_rad": 0.1192,
+            "pl_trandep": 0.3375,
+            "st_teff": 2566.0,
+            "st_mass": 0.0898,
+            "sy_jmag": 11.354,
+            "raw_row_dump": {
+                "pl_name": "TRAPPIST-1 h",
+                "pl_orbper": 18.772866,
+                "pl_orbpererr1": 0.000214,
+                "st_rad": 0.1192,
+                "st_raderr1": 0.0013,
+                "st_lum": -3.25727,
+                "st_teff": 2566.0,
+                "st_mass": 0.0898,
+                "sy_jmag": 11.354,
+                "pl_trandep": 0.3375,
+                "pl_ratror": 0.05809
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "5b687b62-b1a1-4b2e-806b-fe95067baf7c",
+        "timestamp": "2026-06-27T08:14:16.137876Z",
+        "dataset_hash": "256cd2e9d996dd1fba560c7707cef9c37523bbc4ea8e0be2bcf6a251f5fb9906",
+        "params": {
+            "target_name": "Kepler-11",
+            "period": 15.995329862937023,
+            "stellar_rotation_period_days": 3.7410351362389473,
+            "snr": 18.193684610860803,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-11",
+            "orbital_period": 10.3039,
+            "stellar_radius": 1.065,
+            "transit_depth": 0.03013,
+            "pl_orbper": 10.3039,
+            "st_rad": 1.065,
+            "pl_trandep": 0.03013,
+            "st_teff": 5663.0,
+            "st_mass": 0.961,
+            "sy_jmag": 12.548,
+            "raw_row_dump": {
+                "pl_name": "Kepler-11 b",
+                "pl_orbper": 10.3039,
+                "pl_orbpererr1": 0.0006,
+                "st_rad": 1.065,
+                "st_raderr1": 0.017,
+                "st_lum": 0.1202,
+                "st_teff": 5663.0,
+                "st_mass": 0.961,
+                "sy_jmag": 12.548,
+                "pl_trandep": 0.03013,
+                "pl_ratror": 0.01563
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "65981bad-cc7a-4f71-8825-06a5bd1a4b46",
+        "timestamp": "2026-06-27T08:27:00.948095Z",
+        "dataset_hash": "09d5bed6990edc53b12997192ef037f0b3cb96d7d3addd4fd6a984ed9683de49",
+        "params": {
+            "target_name": "WASP-12 b",
+            "period": 1.0948987246811703,
+            "stellar_rotation_period_days": 0.5457200541427516,
+            "snr": 75.74832273063902,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 0.0153777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 0.0153777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "ecdf681a-eb1a-434a-a12f-3128aea31201",
+        "timestamp": "2026-06-27T08:29:19.723012Z",
+        "dataset_hash": "09d5bed6990edc53b12997192ef037f0b3cb96d7d3addd4fd6a984ed9683de49",
+        "params": {
+            "target_name": "WASP-12 b",
+            "period": 1.0911477869467368,
+            "stellar_rotation_period_days": 0.5457200541427516,
+            "snr": 12.51845209266518,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 0.0153777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 0.0153777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "c3449960-c680-4b2d-aa2e-19e120917870",
+        "timestamp": "2026-06-27T08:41:43.980645Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 10.86044385636562,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 39.503824240382315,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "8dd435f2-9323-45a9-b185-6f69fa225d5e",
+        "timestamp": "2026-06-27T08:41:46.699718Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 3.695823434063878,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 18.889195068562945,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "cf0535f4-4f32-40f1-a849-2c4b6a86e475",
+        "timestamp": "2026-06-27T08:41:51.450385Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 15.313161262972915,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 18.98386675419302,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "50f3484a-8c3f-4751-bc34-8a5eb06546ef",
+        "timestamp": "2026-06-27T09:33:39.757256Z",
+        "dataset_hash": "a1614a22218e56bfc64f34184d8e27e4028c4ea5b89f40837ac2d556fd1745ba",
+        "params": {
+            "target_name": "Kepler-90",
+            "period": 29.84007933543144,
+            "stellar_rotation_period_days": 6.033968790919408,
+            "snr": 55.761039277754634,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "KOI-351",
+            "orbital_period": 331.60296,
+            "stellar_radius": 1.185,
+            "transit_depth": 0.83221,
+            "pl_orbper": 331.60296,
+            "st_rad": 1.185,
+            "pl_trandep": 0.83221,
+            "st_teff": 6031.13,
+            "st_mass": 1.242,
+            "sy_jmag": 12.79,
+            "raw_row_dump": {
+                "pl_name": "KOI-351 h",
+                "pl_orbper": 331.60296,
+                "pl_orbpererr1": 0.00034,
+                "st_rad": 1.185,
+                "st_raderr1": 0.031,
+                "st_lum": 0.26853,
+                "st_teff": 6031.13,
+                "st_mass": 1.242,
+                "sy_jmag": 12.79,
+                "pl_trandep": 0.83221,
+                "pl_ratror": 0.083115
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "7cdaab7d-9ecc-416e-a1a7-6aaa6835dfca",
+        "timestamp": "2026-06-27T10:02:51.878887Z",
+        "dataset_hash": "256cd2e9d996dd1fba560c7707cef9c37523bbc4ea8e0be2bcf6a251f5fb9906",
+        "params": {
+            "target_name": "Kepler-11",
+            "period": 15.995329862937023,
+            "stellar_rotation_period_days": 3.7410351362389473,
+            "snr": 18.193684610860803,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-11",
+            "orbital_period": 10.3039,
+            "stellar_radius": 1.065,
+            "transit_depth": 0.03013,
+            "pl_orbper": 10.3039,
+            "st_rad": 1.065,
+            "pl_trandep": 0.03013,
+            "st_teff": 5663.0,
+            "st_mass": 0.961,
+            "sy_jmag": 12.548,
+            "raw_row_dump": {
+                "pl_name": "Kepler-11 b",
+                "pl_orbper": 10.3039,
+                "pl_orbpererr1": 0.0006,
+                "st_rad": 1.065,
+                "st_raderr1": 0.017,
+                "st_lum": 0.1202,
+                "st_teff": 5663.0,
+                "st_mass": 0.961,
+                "sy_jmag": 12.548,
+                "pl_trandep": 0.03013,
+                "pl_ratror": 0.01563
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "f535e8fb-103d-4a61-bbb4-bd9c71a8629a",
+        "timestamp": "2026-06-27T10:33:35.098004Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 10.86044385636562,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 39.503824240382315,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "03a30686-76ce-4a4e-9c7b-2dc0da88a169",
+        "timestamp": "2026-06-27T10:33:36.811883Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 3.695823434063878,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 18.889195068562945,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "7bec6808-e666-4df9-b0d7-9c7e2d056497",
+        "timestamp": "2026-06-27T10:33:38.520629Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 15.313161262972915,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 18.98386675419302,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "1c39e2ac-4462-4a49-9070-9d80dcb33ff5",
+        "timestamp": "2026-06-27T11:24:48.484144Z",
+        "dataset_hash": "a1614a22218e56bfc64f34184d8e27e4028c4ea5b89f40837ac2d556fd1745ba",
+        "params": {
+            "target_name": "Kepler-90",
+            "period": 29.84007933543144,
+            "stellar_rotation_period_days": 6.033968790919408,
+            "snr": 55.761039277754634,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "KOI-351",
+            "orbital_period": 331.60296,
+            "stellar_radius": 1.185,
+            "transit_depth": 0.83221,
+            "pl_orbper": 331.60296,
+            "st_rad": 1.185,
+            "pl_trandep": 0.83221,
+            "st_teff": 6031.13,
+            "st_mass": 1.242,
+            "sy_jmag": 12.79,
+            "raw_row_dump": {
+                "pl_name": "KOI-351 h",
+                "pl_orbper": 331.60296,
+                "pl_orbpererr1": 0.00034,
+                "st_rad": 1.185,
+                "st_raderr1": 0.031,
+                "st_lum": 0.26853,
+                "st_teff": 6031.13,
+                "st_mass": 1.242,
+                "sy_jmag": 12.79,
+                "pl_trandep": 0.83221,
+                "pl_ratror": 0.083115
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "b20b60d9-08dd-43f5-a079-96c68bc6cb95",
+        "timestamp": "2026-06-27T12:21:15.623649Z",
+        "dataset_hash": "256cd2e9d996dd1fba560c7707cef9c37523bbc4ea8e0be2bcf6a251f5fb9906",
+        "params": {
+            "target_name": "Kepler-11",
+            "period": 15.995329862937023,
+            "stellar_rotation_period_days": 3.7410351362389473,
+            "snr": 18.193684610860803,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-11",
+            "orbital_period": 10.3039,
+            "stellar_radius": 1.065,
+            "transit_depth": 0.03013,
+            "pl_orbper": 10.3039,
+            "st_rad": 1.065,
+            "pl_trandep": 0.03013,
+            "st_teff": 5663.0,
+            "st_mass": 0.961,
+            "sy_jmag": 12.548,
+            "raw_row_dump": {
+                "pl_name": "Kepler-11 b",
+                "pl_orbper": 10.3039,
+                "pl_orbpererr1": 0.0006,
+                "st_rad": 1.065,
+                "st_raderr1": 0.017,
+                "st_lum": 0.1202,
+                "st_teff": 5663.0,
+                "st_mass": 0.961,
+                "sy_jmag": 12.548,
+                "pl_trandep": 0.03013,
+                "pl_ratror": 0.01563
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "ffb5c2ff-1d64-4b39-be92-f9a063eb0869",
+        "timestamp": "2026-06-27T12:52:27.907096Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 10.86044385636562,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 39.503824240382315,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "d614e45f-3db5-4678-9a07-5e4c4ceb8e52",
+        "timestamp": "2026-06-27T12:52:30.558328Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 3.695823434063878,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 18.889195068562945,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "926d92ca-b6e3-48b3-a749-62c1612f92d8",
+        "timestamp": "2026-06-27T12:52:33.002016Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 15.313161262972915,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 18.98386675419302,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "dc011a81-c541-4fe2-ad5b-2055a1419ad0",
+        "timestamp": "2026-06-27T13:44:12.200600Z",
+        "dataset_hash": "a1614a22218e56bfc64f34184d8e27e4028c4ea5b89f40837ac2d556fd1745ba",
+        "params": {
+            "target_name": "Kepler-90",
+            "period": 29.84007933543144,
+            "stellar_rotation_period_days": 6.033968790919408,
+            "snr": 55.761039277754634,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "KOI-351",
+            "orbital_period": 331.60296,
+            "stellar_radius": 1.185,
+            "transit_depth": 0.83221,
+            "pl_orbper": 331.60296,
+            "st_rad": 1.185,
+            "pl_trandep": 0.83221,
+            "st_teff": 6031.13,
+            "st_mass": 1.242,
+            "sy_jmag": 12.79,
+            "raw_row_dump": {
+                "pl_name": "KOI-351 h",
+                "pl_orbper": 331.60296,
+                "pl_orbpererr1": 0.00034,
+                "st_rad": 1.185,
+                "st_raderr1": 0.031,
+                "st_lum": 0.26853,
+                "st_teff": 6031.13,
+                "st_mass": 1.242,
+                "sy_jmag": 12.79,
+                "pl_trandep": 0.83221,
+                "pl_ratror": 0.083115
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "7f976561-d475-457f-b0d5-5dec2a6a1d90",
+        "timestamp": "2026-06-27T14:07:23.212646Z",
+        "dataset_hash": "77d3c59fbcc207bdc9e51697bf9cf24f76b96ad84fd4cf338660c5d71166fb44",
+        "params": {
+            "target_name": "TRAPPIST-1",
+            "period": 1.5106281557418748,
+            "stellar_rotation_period_days": 0.3618380347043244,
+            "snr": 9.46964975103416,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "TRAPPIST-1",
+            "orbital_period": 18.772866,
+            "stellar_radius": 0.1192,
+            "transit_depth": 0.3375,
+            "pl_orbper": 18.772866,
+            "st_rad": 0.1192,
+            "pl_trandep": 0.3375,
+            "st_teff": 2566.0,
+            "st_mass": 0.0898,
+            "sy_jmag": 11.354,
+            "raw_row_dump": {
+                "pl_name": "TRAPPIST-1 h",
+                "pl_orbper": 18.772866,
+                "pl_orbpererr1": 0.000214,
+                "st_rad": 0.1192,
+                "st_raderr1": 0.0013,
+                "st_lum": -3.25727,
+                "st_teff": 2566.0,
+                "st_mass": 0.0898,
+                "sy_jmag": 11.354,
+                "pl_trandep": 0.3375,
+                "pl_ratror": 0.05809
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "860a9ebc-8d15-43c2-bfae-5c8ac858ea57",
+        "timestamp": "2026-06-27T14:18:02.472706Z",
+        "dataset_hash": "256cd2e9d996dd1fba560c7707cef9c37523bbc4ea8e0be2bcf6a251f5fb9906",
+        "params": {
+            "target_name": "Kepler-11",
+            "period": 15.995329862937023,
+            "stellar_rotation_period_days": 3.7410351362389473,
+            "snr": 18.193684610860803,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-11",
+            "orbital_period": 10.3039,
+            "stellar_radius": 1.065,
+            "transit_depth": 0.03013,
+            "pl_orbper": 10.3039,
+            "st_rad": 1.065,
+            "pl_trandep": 0.03013,
+            "st_teff": 5663.0,
+            "st_mass": 0.961,
+            "sy_jmag": 12.548,
+            "raw_row_dump": {
+                "pl_name": "Kepler-11 b",
+                "pl_orbper": 10.3039,
+                "pl_orbpererr1": 0.0006,
+                "st_rad": 1.065,
+                "st_raderr1": 0.017,
+                "st_lum": 0.1202,
+                "st_teff": 5663.0,
+                "st_mass": 0.961,
+                "sy_jmag": 12.548,
+                "pl_trandep": 0.03013,
+                "pl_ratror": 0.01563
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "1c5e71ed-a36d-406c-a8d7-0efe5bb5869b",
+        "timestamp": "2026-06-27T14:30:42.702685Z",
+        "dataset_hash": "77d3c59fbcc207bdc9e51697bf9cf24f76b96ad84fd4cf338660c5d71166fb44",
+        "params": {
+            "target_name": "TRAPPIST-1",
+            "period": 0.7326989641708096,
+            "stellar_rotation_period_days": 3.4103025655983124,
+            "snr": 7.602231028185225,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "TRAPPIST-1",
+            "orbital_period": 18.772866,
+            "stellar_radius": 0.1192,
+            "transit_depth": 0.3375,
+            "pl_orbper": 18.772866,
+            "st_rad": 0.1192,
+            "pl_trandep": 0.3375,
+            "st_teff": 2566.0,
+            "st_mass": 0.0898,
+            "sy_jmag": 11.354,
+            "raw_row_dump": {
+                "pl_name": "TRAPPIST-1 h",
+                "pl_orbper": 18.772866,
+                "pl_orbpererr1": 0.000214,
+                "st_rad": 0.1192,
+                "st_raderr1": 0.0013,
+                "st_lum": -3.25727,
+                "st_teff": 2566.0,
+                "st_mass": 0.0898,
+                "sy_jmag": 11.354,
+                "pl_trandep": 0.3375,
+                "pl_ratror": 0.05809
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "b0b1a40a-84d3-42ed-81b2-07bc11bd764a",
+        "timestamp": "2026-06-27T14:40:25.343847Z",
+        "dataset_hash": "256cd2e9d996dd1fba560c7707cef9c37523bbc4ea8e0be2bcf6a251f5fb9906",
+        "params": {
+            "target_name": "Kepler-11",
+            "period": 15.995329862937023,
+            "stellar_rotation_period_days": 3.7410351362389473,
+            "snr": 18.193684610860803,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-11",
+            "orbital_period": 10.3039,
+            "stellar_radius": 1.065,
+            "transit_depth": 0.03013,
+            "pl_orbper": 10.3039,
+            "st_rad": 1.065,
+            "pl_trandep": 0.03013,
+            "st_teff": 5663.0,
+            "st_mass": 0.961,
+            "sy_jmag": 12.548,
+            "raw_row_dump": {
+                "pl_name": "Kepler-11 b",
+                "pl_orbper": 10.3039,
+                "pl_orbpererr1": 0.0006,
+                "st_rad": 1.065,
+                "st_raderr1": 0.017,
+                "st_lum": 0.1202,
+                "st_teff": 5663.0,
+                "st_mass": 0.961,
+                "sy_jmag": 12.548,
+                "pl_trandep": 0.03013,
+                "pl_ratror": 0.01563
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "0ce2ccec-a126-4494-8bb8-a86c150a54c2",
+        "timestamp": "2026-06-27T14:53:45.701540Z",
+        "dataset_hash": "77d3c59fbcc207bdc9e51697bf9cf24f76b96ad84fd4cf338660c5d71166fb44",
+        "params": {
+            "target_name": "TRAPPIST-1",
+            "period": 0.7326989641708096,
+            "stellar_rotation_period_days": 3.4103025655983124,
+            "snr": 7.602231028185225,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "TRAPPIST-1",
+            "orbital_period": 18.772866,
+            "stellar_radius": 0.1192,
+            "transit_depth": 0.3375,
+            "pl_orbper": 18.772866,
+            "st_rad": 0.1192,
+            "pl_trandep": 0.3375,
+            "st_teff": 2566.0,
+            "st_mass": 0.0898,
+            "sy_jmag": 11.354,
+            "raw_row_dump": {
+                "pl_name": "TRAPPIST-1 h",
+                "pl_orbper": 18.772866,
+                "pl_orbpererr1": 0.000214,
+                "st_rad": 0.1192,
+                "st_raderr1": 0.0013,
+                "st_lum": -3.25727,
+                "st_teff": 2566.0,
+                "st_mass": 0.0898,
+                "sy_jmag": 11.354,
+                "pl_trandep": 0.3375,
+                "pl_ratror": 0.05809
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "4db27075-7afe-46b1-ae5d-4242d7d2c229",
+        "timestamp": "2026-06-27T15:03:09.841106Z",
+        "dataset_hash": "256cd2e9d996dd1fba560c7707cef9c37523bbc4ea8e0be2bcf6a251f5fb9906",
+        "params": {
+            "target_name": "Kepler-11",
+            "period": 15.995329862937023,
+            "stellar_rotation_period_days": 3.7410351362389473,
+            "snr": 18.193684610860803,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-11",
+            "orbital_period": 10.3039,
+            "stellar_radius": 1.065,
+            "transit_depth": 0.03013,
+            "pl_orbper": 10.3039,
+            "st_rad": 1.065,
+            "pl_trandep": 0.03013,
+            "st_teff": 5663.0,
+            "st_mass": 0.961,
+            "sy_jmag": 12.548,
+            "raw_row_dump": {
+                "pl_name": "Kepler-11 b",
+                "pl_orbper": 10.3039,
+                "pl_orbpererr1": 0.0006,
+                "st_rad": 1.065,
+                "st_raderr1": 0.017,
+                "st_lum": 0.1202,
+                "st_teff": 5663.0,
+                "st_mass": 0.961,
+                "sy_jmag": 12.548,
+                "pl_trandep": 0.03013,
+                "pl_ratror": 0.01563
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "8b655b13-0b6d-4bc6-b0a6-635d5c67dd86",
+        "timestamp": "2026-06-27T15:18:17.293441Z",
+        "dataset_hash": "09d5bed6990edc53b12997192ef037f0b3cb96d7d3addd4fd6a984ed9683de49",
+        "params": {
+            "target_name": "WASP-12 b",
+            "period": 1.0900225056264068,
+            "stellar_rotation_period_days": 1.091487342330744,
+            "snr": 370.05553833978973,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 0.0153777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 0.0153777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "b172cde2-d92e-433c-ac60-4884e0122193",
+        "timestamp": "2026-06-27T15:21:12.064534Z",
+        "dataset_hash": "09d5bed6990edc53b12997192ef037f0b3cb96d7d3addd4fd6a984ed9683de49",
+        "params": {
+            "target_name": "WASP-12 b",
+            "period": 4.365528882220556,
+            "stellar_rotation_period_days": 1.091487342330744,
+            "snr": 145.82676410616784,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 0.0153777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 0.0153777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "a0d86950-8ea2-4953-b9f4-4d4d4a3bb720",
+        "timestamp": "2026-06-27T15:23:45.117465Z",
+        "dataset_hash": "09d5bed6990edc53b12997192ef037f0b3cb96d7d3addd4fd6a984ed9683de49",
+        "params": {
+            "target_name": "WASP-12 b",
+            "period": 4.365528882220556,
+            "stellar_rotation_period_days": 1.091487342330744,
+            "snr": 148.82681563306477,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 0.0153777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 0.0153777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "e6ea3315-c218-4f3f-b234-05d9a4e9f0ff",
+        "timestamp": "2026-06-27T15:35:44.669213Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 10.86044385636562,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 39.503824240382315,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "27364634-87dd-4547-9db4-3e7a31d71d31",
+        "timestamp": "2026-06-27T15:35:47.201604Z",
+        "dataset_hash": "3d63e2195ada49e131aaf9be3e24c9b0b5d8d0fbeae5b7b09bc5c508325f46f6",
+        "params": {
+            "target_name": "Kepler-20",
+            "period": 15.313161262972915,
+            "stellar_rotation_period_days": 10.0,
+            "snr": 18.98386675419302,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-20",
+            "orbital_period": 34.94,
+            "stellar_radius": 0.9639,
+            "transit_depth": 0.0,
+            "pl_orbper": 34.94,
+            "st_rad": 0.9639,
+            "pl_trandep": 0.0,
+            "st_teff": 5495.0,
+            "st_mass": 0.948,
+            "sy_jmag": 11.252,
+            "raw_row_dump": {
+                "pl_name": "Kepler-20 g",
+                "pl_orbper": 34.94,
+                "pl_orbpererr1": 0.038,
+                "st_rad": 0.9639,
+                "st_raderr1": 0.0177,
+                "st_lum": -0.16451,
+                "st_teff": 5495.0,
+                "st_mass": 0.948,
+                "sy_jmag": 11.252,
+                "pl_trandep": null,
+                "pl_ratror": null
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "4ca71798-ad11-49f5-aeef-4395f6bb9090",
+        "timestamp": "2026-06-27T15:38:32.660195Z",
+        "dataset_hash": "77d3c59fbcc207bdc9e51697bf9cf24f76b96ad84fd4cf338660c5d71166fb44",
+        "params": {
+            "target_name": "TRAPPIST-1",
+            "period": 0.7326989641708096,
+            "stellar_rotation_period_days": 3.4103025655983124,
+            "snr": 7.602231028185225,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "TRAPPIST-1",
+            "orbital_period": 18.772866,
+            "stellar_radius": 0.1192,
+            "transit_depth": 0.3375,
+            "pl_orbper": 18.772866,
+            "st_rad": 0.1192,
+            "pl_trandep": 0.3375,
+            "st_teff": 2566.0,
+            "st_mass": 0.0898,
+            "sy_jmag": 11.354,
+            "raw_row_dump": {
+                "pl_name": "TRAPPIST-1 h",
+                "pl_orbper": 18.772866,
+                "pl_orbpererr1": 0.000214,
+                "st_rad": 0.1192,
+                "st_raderr1": 0.0013,
+                "st_lum": -3.25727,
+                "st_teff": 2566.0,
+                "st_mass": 0.0898,
+                "sy_jmag": 11.354,
+                "pl_trandep": 0.3375,
+                "pl_ratror": 0.05809
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "7b56433d-00e5-4152-8021-5eb1eb03ff0c",
+        "timestamp": "2026-06-27T15:41:31.791155Z",
+        "dataset_hash": "77d3c59fbcc207bdc9e51697bf9cf24f76b96ad84fd4cf338660c5d71166fb44",
+        "params": {
+            "target_name": "TRAPPIST-1",
+            "period": 0.7326989641708096,
+            "stellar_rotation_period_days": 3.4103025655983124,
+            "snr": 7.602231028185225,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "TRAPPIST-1",
+            "orbital_period": 18.772866,
+            "stellar_radius": 0.1192,
+            "transit_depth": 0.3375,
+            "pl_orbper": 18.772866,
+            "st_rad": 0.1192,
+            "pl_trandep": 0.3375,
+            "st_teff": 2566.0,
+            "st_mass": 0.0898,
+            "sy_jmag": 11.354,
+            "raw_row_dump": {
+                "pl_name": "TRAPPIST-1 h",
+                "pl_orbper": 18.772866,
+                "pl_orbpererr1": 0.000214,
+                "st_rad": 0.1192,
+                "st_raderr1": 0.0013,
+                "st_lum": -3.25727,
+                "st_teff": 2566.0,
+                "st_mass": 0.0898,
+                "sy_jmag": 11.354,
+                "pl_trandep": 0.3375,
+                "pl_ratror": 0.05809
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "e85c453a-2ab7-4b9f-a6d4-dfef6e944a98",
+        "timestamp": "2026-06-27T15:46:12.539687Z",
+        "dataset_hash": "77d3c59fbcc207bdc9e51697bf9cf24f76b96ad84fd4cf338660c5d71166fb44",
+        "params": {
+            "target_name": "TRAPPIST-1",
+            "period": 0.7326989641708096,
+            "stellar_rotation_period_days": 3.4103025655983124,
+            "snr": 7.602231028185225,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "TRAPPIST-1",
+            "orbital_period": 18.772866,
+            "stellar_radius": 0.1192,
+            "transit_depth": 0.3375,
+            "pl_orbper": 18.772866,
+            "st_rad": 0.1192,
+            "pl_trandep": 0.3375,
+            "st_teff": 2566.0,
+            "st_mass": 0.0898,
+            "sy_jmag": 11.354,
+            "raw_row_dump": {
+                "pl_name": "TRAPPIST-1 h",
+                "pl_orbper": 18.772866,
+                "pl_orbpererr1": 0.000214,
+                "st_rad": 0.1192,
+                "st_raderr1": 0.0013,
+                "st_lum": -3.25727,
+                "st_teff": 2566.0,
+                "st_mass": 0.0898,
+                "sy_jmag": 11.354,
+                "pl_trandep": 0.3375,
+                "pl_ratror": 0.05809
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "6b32ab47-741c-4a47-b3f5-01f7a5284c95",
+        "timestamp": "2026-06-27T15:55:56.141510Z",
+        "dataset_hash": "256cd2e9d996dd1fba560c7707cef9c37523bbc4ea8e0be2bcf6a251f5fb9906",
+        "params": {
+            "target_name": "Kepler-11",
+            "period": 15.995329862937023,
+            "stellar_rotation_period_days": 3.7410351362389473,
+            "snr": 18.193684610860803,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "Kepler-11",
+            "orbital_period": 10.3039,
+            "stellar_radius": 1.065,
+            "transit_depth": 0.03013,
+            "pl_orbper": 10.3039,
+            "st_rad": 1.065,
+            "pl_trandep": 0.03013,
+            "st_teff": 5663.0,
+            "st_mass": 0.961,
+            "sy_jmag": 12.548,
+            "raw_row_dump": {
+                "pl_name": "Kepler-11 b",
+                "pl_orbper": 10.3039,
+                "pl_orbpererr1": 0.0006,
+                "st_rad": 1.065,
+                "st_raderr1": 0.017,
+                "st_lum": 0.1202,
+                "st_teff": 5663.0,
+                "st_mass": 0.961,
+                "sy_jmag": 12.548,
+                "pl_trandep": 0.03013,
+                "pl_ratror": 0.01563
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "b3f58905-df60-4aef-a4fc-e66fdde82845",
+        "timestamp": "2026-06-27T16:09:51.712077Z",
+        "dataset_hash": "09d5bed6990edc53b12997192ef037f0b3cb96d7d3addd4fd6a984ed9683de49",
+        "params": {
+            "target_name": "WASP-12 b",
+            "period": 1.0900225056264068,
+            "stellar_rotation_period_days": 1.091487342330744,
+            "snr": 370.05553833978973,
+            "data_source": "TESS (via Lightkurve)",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "pl_name": "WASP-12 b",
+            "orbital_period": 1.091418901,
+            "stellar_radius": 1.69,
+            "transit_depth": 0.0153777921,
+            "pl_orbper": 1.091418901,
+            "st_rad": 1.69,
+            "pl_trandep": 0.0153777921,
+            "st_teff": 6265.0,
+            "st_mass": 1.325,
+            "sy_jmag": 10.477,
+            "raw_row_dump": {
+                "pl_name": "WASP-12 b",
+                "pl_orbper": 1.091418901,
+                "pl_orbpererr1": 1.8e-08,
+                "st_rad": 1.69,
+                "st_raderr1": 0.019,
+                "st_lum": 0.59711,
+                "st_teff": 6265.0,
+                "st_mass": 1.325,
+                "sy_jmag": 10.477,
+                "pl_trandep": 1.53777921,
+                "pl_ratror": 0.117
+            }
+        },
+        "fig_paths": []
     }
 ]

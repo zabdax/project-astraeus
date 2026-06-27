@@ -4,16 +4,16 @@ import json
 import time
 
 targets = [
-    {"name": "TRAPPIST-1", "source": "TESS (via Lightkurve)", "depth": 5, "snr": 5.0},
-    {"name": "Kepler-11", "source": "Kepler (via Lightkurve)", "depth": 6, "snr": 6.0},
+    {"name": "TRAPPIST-1", "source": "TESS (via Lightkurve)", "depth": 2, "snr": 5.0},
+    {"name": "Kepler-11", "source": "Kepler (via Lightkurve)", "depth": 3, "snr": 6.0},
     {"name": "WASP-12 b", "source": "TESS (via Lightkurve)", "depth": 1, "snr": 10.0},
-    {"name": "K2-138", "source": "Kepler (via Lightkurve)", "depth": 5, "snr": 5.5},
-    {"name": "Kepler-20", "source": "Kepler (via Lightkurve)", "depth": 5, "snr": 4.5},
+    {"name": "K2-138", "source": "Kepler (via Lightkurve)", "depth": 3, "snr": 5.5},
+    {"name": "Kepler-20", "source": "Kepler (via Lightkurve)", "depth": 3, "snr": 4.5},
     {"name": "AU Mic", "source": "TESS (via Lightkurve)", "depth": 2, "snr": 6.0},
     {"name": "HD 80606 b", "source": "TESS (via Lightkurve)", "depth": 1, "snr": 7.0},
-    {"name": "TOI-700", "source": "TESS (via Lightkurve)", "depth": 3, "snr": 4.8},
+    {"name": "TOI-700", "source": "TESS (via Lightkurve)", "depth": 2, "snr": 4.8},
     {"name": "Kepler-4d", "source": "Kepler (via Lightkurve)", "depth": 1, "snr": 6.5},
-    {"name": "Kepler-90", "source": "Kepler (via Lightkurve)", "depth": 7, "snr": 5.0}
+    {"name": "Kepler-90", "source": "Kepler (via Lightkurve)", "depth": 3, "snr": 5.0}
 ]
 
 async def set_slider(page, label_text, target_val, min_val, max_val, step=1):
@@ -94,7 +94,10 @@ async def run_target(p, target_info):
         await analyze_btn.wait_for(state="visible", timeout=600000)
     except Exception as e:
         print(f"FAILED to fetch {t_name} data (timeout waiting for Analyze button): {e}")
-        await browser.close()
+        try:
+            await browser.close()
+        except Exception:
+            pass
         return None
         
     # Multi-planet toggle
@@ -121,7 +124,10 @@ async def run_target(p, target_info):
         await page.wait_for_selector("text=Diagnostic Summary Matrix", timeout=600000)
     except Exception as e:
         print(f"FAILED Analysis for {t_name} (timeout waiting for matrix): {e}")
-        await browser.close()
+        try:
+            await browser.close()
+        except Exception:
+            pass
         return None
 
     await page.wait_for_timeout(3000)
@@ -141,7 +147,10 @@ async def run_target(p, target_info):
     if exceptions:
         print(f"EXCEPTIONS FOUND FOR {t_name}!")
         
-    await browser.close()
+    try:
+        await browser.close()
+    except Exception:
+        pass
     
     return {
         "dom": dom_text,
