@@ -415,9 +415,28 @@ def render(main_panel, right_panel) -> None:
                                 )
                                 st.rerun()
                             else:
+                                # FIX: surface the failure reason from the engine
+                                # (e.g. "Target not observed", "Stream truncated")
+                                # and store the result so the existing
+                                # empty-payload guard at line ~463 renders the
+                                # "Time-series data is required…" info block —
+                                # without forcing the Analyze button to render.
+                                reason = res.get("reason", "No time-series data")
+                                mast_err = res.get("mast_error")
+                                detail = f" (Reason: {reason})" if reason else ""
+                                if mast_err:
+                                    detail += f" — {mast_err}"
                                 st.markdown(
-                                    f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> <span>Metadata found, but no time-series data available for <b>{target}</b> on mission <b>{mission}</b>.</span></div>", unsafe_allow_html=True
+                                    f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> <span>Metadata found, but no time-series data available for <b>{target}</b> on mission <b>{mission}</b>.{detail}</span></div>", unsafe_allow_html=True
                                 )
+                                # Store the result WITHOUT time/flux keys so the
+                                # Analyze button stays hidden (per user rule:
+                                # "if the Analyze button doesn't appear, something
+                                # is wrong in the data") but the diagnostic
+                                # block below renders the explanatory info.
+                                st.session_state["active_metadata"] = res.get("metadata", {})
+                                st.session_state['fetched_target_data'] = res
+                                st.rerun()
                         elif fetch_status == "error":
                             st.markdown(
                                 f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> <span><b>MAST download failed</b> for <code>{target}</code></span></div>", unsafe_allow_html=True

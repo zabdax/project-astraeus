@@ -1,0 +1,167 @@
+Deploy
+ASTRAEUS
+Professional Workbench
+rocket_launch
+
+Simulation
+
+science
+
+Lab
+
+manage_search
+
+Detective
+
+explore
+
+Discover
+
+history
+
+History
+
+settings
+
+Settings
+
+ASTRAEUS OS v1.0
+● System Online
+
+Assets Panel
+
+Exoplanet Detective
+
+Analyze and detect candidate exoplanetary transits using the Box Least Squares (BLS) periodogram method.
+
+Kepler (via Lightkurve)
+— OR —
+Drag and drop file here
+Limit 200MB per file • CSV, FITS
+Browse files
+
+
+
+Multi-Planet Search Deep-Dive
+
+Max Planetary Scan Depth
+
+2
+1
+5
+
+Signal-to-Noise (SNR) Floor Cutoff
+
+7.10
+3.00
+12.00
+
+
+Target Discovery Confirmation
+
+System Designation
+
+Kepler-4d
+
+Archival Orbital Period
+
+N/A
+
+Stellar Radius (R☉)
+
+N/A
+
+Transit Depth (ppm)
+
+N/A
+
+
+
+Analyze Telemetry & Verify Harmonics
+
+Core Telemetry
+PLANET SCALE (R_EARTH)
+3.2887
+JWST FEASIBILITY (TSM)
+28.3373 | Med Tier
+VETTING SIGNAL
+LIKELY PLANET
+SNR: 18.194
+
+
+Phase-Folded Light Curve
+−8
+−6
+−4
+−2
+0
+2
+4
+6
+8
+0.9985
+0.999
+0.9995
+1
+1.0005
+1.001
+1.0015
+Phase (days)
+Relative Flux
+Diagnostic Summary Matrix
+
+Transit Timing Variation (TTV) analysis requires a minimum of 3 observed epochs to map timing residuals.
+
+V-SHAPE METRIC CHECK
+Pass
+Curvature: 0.6790
+Flat Bottom: 0.0625
+SECONDARY ECLIPSE
+Pass
+Depth: -0.00002
+SNR: 0.000
+Detection Report
+{
+"candidate_found":false
+"is_candidate":false
+"period_days":15.995329862937023
+"period":15.995329862937023
+"orbital_period":15.995329862937023
+"stellar_rotation_period_days":3.7410351362389473
+"transit_depth":0.0009069661033455079
+"stellar_radius":1
+"vetting_status":"Likely Planet"
+"confidence_score":3.8350298046220446
+"snr":18.193684610860803
+"depth":0.0009069661033455079
+"duration":0.15
+"t0":138.1650452097326
+"v_shape_metric":0.6790131772300484
+"flat_bottom_fraction":0.0625
+"secondary_eclipse_depth":-0.00001621527342732243
+"secondary_eclipse_snr":0
+"secondary_eclipse_detected":false
+"vetting_confidence":0.3209868227699516
+"u_shape_chi2":0.00000394291825596166
+"v_shape_chi2":0.0000058068361383593694
+"delta_chi2_u":0.000010693234859050513
+"delta_chi2_v":0.000008829316976652802
+"planet_radius_earth":3.2887
+"equilibrium_temp_k":723.02
+"jwst_tsm_score":28.3373
+"secondary_eclipse_threshold_ppm":113.49481288621246
+"secondary_eclipse_threshold_mode":"physical"
+"ttv_data":[
+0:{
+"epoch":0
+"ttv_residual_min":71.32091279149336
+}
+1:{
+"epoch":1
+"ttv_residual_min":48.91741896005897
+}
+]
+"metadata":{}
+}
+
+💬 AI Assistant

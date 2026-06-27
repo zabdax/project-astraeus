@@ -1,7 +1,10 @@
 import asyncio
 from playwright.async_api import async_playwright
 import json
+import os
 import time
+
+ARTIFACTS_DIR = os.path.join("outputs", "ui_tests")
 
 targets = [
     {"name": "TRAPPIST-1", "source": "TESS (via Lightkurve)", "depth": 2, "snr": 5.0},
@@ -89,9 +92,12 @@ async def run_target(p, target_info):
     
     print("Waiting for Fetch to finish...")
     try:
-        # Wait for the next button to appear
+        # Tightened from 600s to 180s — cache-first fallback should
+        # make fetch near-instant for cached targets. For MAST-only
+        # targets the Fetch button click is bounded by the engine's
+        # 90s search timeout.
         analyze_btn = page.locator("button:has-text('Analyze Telemetry')").first
-        await analyze_btn.wait_for(state="visible", timeout=600000)
+        await analyze_btn.wait_for(state="visible", timeout=180000)
     except Exception as e:
         print(f"FAILED to fetch {t_name} data (timeout waiting for Analyze button): {e}")
         try:
@@ -118,10 +124,27 @@ async def run_target(p, target_info):
         await analyze_btn.click()
     except Exception as e:
         print(f"Failed to click analyze: {e}")
-    
-    print("Waiting for Analysis...")
+
+    # Snapshot the post-analyze-click state immediately so even if the
+    # page later crashes we still have visual evidence that the Analyze
+    # button rendered and the BLS run started.
     try:
-        await page.wait_for_selector("text=Diagnostic Summary Matrix", timeout=600000)
+        await page.wait_for_timeout(2000)
+        safe = t_name.replace(" ", "_").replace("/", "_")
+        snap_png = os.path.join(ARTIFACTS_DIR, f"qa_{safe}_post_analyze.png")
+        os.makedirs(ARTIFACTS_DIR, exist_ok=True)
+        await page.screenshot(path=snap_png, full_page=True)
+        print(f"  → snapshot after Analyze click: {snap_png}")
+    except Exception as snap_exc:
+        print(f"  ! post-analyze snapshot failed: {snap_exc}")
+
+    print("Waiting for Analysis (matrix)...")
+    try:
+        # Tightened from 600s to 180s — the cache-first fallback means
+        # fetch is now near-instant, but the BLS run can still take a while.
+        # Post-analyze snapshot is captured before this wait, so even on
+        # timeout we still have evidence that the Analyze button rendered.
+        await page.wait_for_selector("text=Diagnostic Summary Matrix", timeout=180000)
     except Exception as e:
         print(f"FAILED Analysis for {t_name} (timeout waiting for matrix): {e}")
         try:
@@ -141,29 +164,69 @@ async def run_target(p, target_info):
             await page.wait_for_selector("text=Survival Time", timeout=30000)
     except:
         pass
-        
-    dom_text = await page.locator("body").inner_text()
-    exceptions = await page.locator("div[data-testid='stException']").all_inner_texts()
+
+    try:
+        dom_text = await page.locator("body").inner_text()
+    except Exception as dom_exc:
+        print(f"  ! body.inner_text() failed: {dom_exc}")
+        dom_text = ""
+    try:
+        exceptions = await page.locator("div[data-testid='stException']").all_inner_texts()
+    except Exception:
+        exceptions = []
     if exceptions:
         print(f"EXCEPTIONS FOUND FOR {t_name}!")
-        
+
+    # Per-target artifacts: write DOM + screenshot so we can visually verify
+    # each case instead of waiting blindly on the next button.
+    try:
+        os.makedirs(ARTIFACTS_DIR, exist_ok=True)
+        safe = t_name.replace(" ", "_").replace("/", "_")
+        dom_path = os.path.join(ARTIFACTS_DIR, f"qa_{safe}_dom.txt")
+        with open(dom_path, "w", encoding="utf-8") as f:
+            f.write(dom_text)
+        png_path = os.path.join(ARTIFACTS_DIR, f"qa_{safe}.png")
+        await page.screenshot(path=png_path, full_page=True)
+        print(f"  → wrote {dom_path} and {png_path}")
+    except Exception as art_exc:
+        print(f"  ! artifact save failed: {art_exc}")
+
     try:
         await browser.close()
     except Exception:
         pass
-    
+
     return {
         "dom": dom_text,
         "exceptions": exceptions
     }
 
+
+async def run_target_safe(p, target_info):
+    """Wrapper that catches page-crash exceptions and still saves artifacts."""
+    try:
+        return await run_target(p, target_info)
+    except Exception as exc:
+        t_name = target_info["name"]
+        print(f"!!! run_target({t_name}) crashed: {exc}")
+        try:
+            safe = t_name.replace(" ", "_").replace("/", "_")
+            err_path = os.path.join(ARTIFACTS_DIR, f"qa_{safe}_crash.txt")
+            os.makedirs(ARTIFACTS_DIR, exist_ok=True)
+            with open(err_path, "w", encoding="utf-8") as f:
+                f.write(f"run_target crashed:\n{exc}\n")
+            print(f"  → wrote {err_path}")
+        except Exception:
+            pass
+        return None
+
 async def main():
     results = {}
     async with async_playwright() as p:
         for t in targets:
-            res = await run_target(p, t)
+            res = await run_target_safe(p, t)
             results[t["name"]] = res
-            
+
             with open("qa_results.json", "w", encoding="utf-8") as f:
                 json.dump(results, f, ensure_ascii=False, indent=2)
 
