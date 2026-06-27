@@ -1,0 +1,83 @@
+# scripts/qa_targets.yaml
+# Two sections so the manifest stays readable as targets grow.
+# `cached` runs against the local cache (fast, deterministic).
+# `dynamic` runs with ASTRAEUS_FORCE_NETWORK=1 so the cache
+# fallback is bypassed — exercises the full MAST/S3 path.
+
+defaults:
+  fetch_timeout_sec: 180
+  matrix_timeout_sec: 600
+  post_analyze_settle_sec: 2
+  headless: true
+  viewport:
+    width: 1920
+    height: 1080
+
+cached:
+  - name: TRAPPIST-1
+    mission: TESS
+    mission_label: "TESS (via Lightkurve)"
+    depth: 2
+    snr: 5.0
+  - name: Kepler-11
+    mission: Kepler
+    mission_label: "Kepler (via Lightkurve)"
+    depth: 3
+    snr: 6.0
+  - name: WASP-12 b
+    mission: TESS
+    mission_label: "TESS (via Lightkurve)"
+    depth: 1
+    snr: 10.0
+  - name: Kepler-20
+    mission: Kepler
+    mission_label: "Kepler (via Lightkurve)"
+    depth: 3
+    snr: 4.5
+  - name: AU Mic
+    mission: TESS
+    mission_label: "TESS (via Lightkurve)"
+    depth: 2
+    snr: 6.0
+  - name: HD 80606 b
+    mission: TESS
+    mission_label: "TESS (via Lightkurve)"
+    depth: 1
+    snr: 7.0
+  - name: Kepler-4d
+    mission: Kepler
+    mission_label: "Kepler (via Lightkurve)"
+    depth: 1
+    snr: 6.5
+  - name: Kepler-90
+    mission: Kepler
+    mission_label: "Kepler (via Lightkurve)"
+    depth: 3
+    snr: 5.0
+
+dynamic:
+  - name: TOI-700
+    mission: TESS
+    mission_label: "TESS (via Lightkurve)"
+    depth: 2
+    snr: 4.8
+  - name: K2-138
+    mission: Kepler
+    mission_label: "Kepler (via Lightkurve)"
+    depth: 3
+    snr: 5.5
+  - name: Kepler-186
+    mission: Kepler
+    mission_label: "Kepler (via Lightkurve)"
+    depth: 2
+    snr: 5.0
+  - name: K2-18
+    mission: Kepler
+    mission_label: "Kepler (via Lightkurve)"
+    depth: 1
+    snr: 5.5
+  - name: WASP-121
+    mission: TESS
+    mission_label: "TESS (via Lightkurve)"
+    depth: 1
+    snr: 7.0
