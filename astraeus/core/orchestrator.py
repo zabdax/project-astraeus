@@ -104,15 +104,15 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
     """
     # Extract time and flux from raw_lightcurve
     if isinstance(raw_lightcurve, dict):
-        time = np.asarray(raw_lightcurve.get('time', []))
-        flux = np.asarray(raw_lightcurve.get('flux', []))
+        time = np.asarray(raw_lightcurve.get('time', []), dtype=np.float64)
+        flux = np.asarray(raw_lightcurve.get('flux', []), dtype=np.float64)
         target_name = raw_lightcurve.get('target_name', 'Unknown')
         data_source = raw_lightcurve.get('data_source', 'Unknown')
         metadata = raw_lightcurve.get('metadata', {})
     else:
         # Fallback assuming object notation
-        time = np.asarray(getattr(raw_lightcurve, 'time', []))
-        flux = np.asarray(getattr(raw_lightcurve, 'flux', []))
+        time = np.asarray(getattr(raw_lightcurve, 'time', []), dtype=np.float64)
+        flux = np.asarray(getattr(raw_lightcurve, 'flux', []), dtype=np.float64)
         target_name = getattr(raw_lightcurve, 'target_name', 'Unknown')
         data_source = getattr(raw_lightcurve, 'data_source', 'Unknown')
         metadata = getattr(raw_lightcurve, 'metadata', {})

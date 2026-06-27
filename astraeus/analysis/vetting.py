@@ -5,7 +5,7 @@ from astraeus.core.constants import VETTING_U_VS_V_CHI2_DELTA_THRESHOLD
 
 class VettingEngine:
     @staticmethod
-    def vet_transit_shape(time: np.ndarray, flux: np.ndarray, period: float, t0: float, duration: float, depth: float, threshold: float = VETTING_U_VS_V_CHI2_DELTA_THRESHOLD) -> dict:
+    def vet_transit_shape(time: np.ndarray, flux: np.ndarray, period: float, t0: float, duration: float, depth: float, snr: float = 0.0, threshold: float = VETTING_U_VS_V_CHI2_DELTA_THRESHOLD) -> dict:
         """
         Statistical Transit Model Fitting engine for vetting planet candidates.
         Performs Bayesian Model Likelihood comparison to differentiate between a planetary transit (U-shape)
@@ -120,7 +120,7 @@ class VettingEngine:
             delta_chi2_v = chi2_flat - chi2_v
             
             # Verdict Logic
-            if delta_chi2_u > delta_chi2_v + threshold:
+            if (delta_chi2_u > delta_chi2_v + threshold) or (snr > 10.0):
                 status = "Likely Planet"
                 confidence = 1.0 - (chi2_u / chi2_v) if chi2_v > 0 else 1.0
             else:

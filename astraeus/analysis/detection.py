@@ -93,7 +93,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         result.update(geom_metrics)
 
         # Statistical Transit Shape Vetting
-        vetting_metrics = VettingEngine.vet_transit_shape(active_time, active_flux, best_period, transit_time, duration, transit_depth_fraction)
+        vetting_metrics = VettingEngine.vet_transit_shape(active_time, active_flux, best_period, transit_time, duration, transit_depth_fraction, snr=best_snr)
         result.update(vetting_metrics)
 
         # Override v_shape_metric key with the inverse of the U-shape confidence for backwards compatibility

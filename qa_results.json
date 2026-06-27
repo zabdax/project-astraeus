@@ -1,0 +1,15 @@
+{
+  "TRAPPIST-1": null,
+  "Kepler-11": null,
+  "WASP-12 b": null,
+  "K2-138": null,
+  "Kepler-20": null,
+  "AU Mic": null,
+  "HD 80606 b": {
+    "dom": "Deploy\nASTRAEUS\nProfessional Workbench\nrocket_launch\n\nSimulation\n\nscience\n\nLab\n\nmanage_search\n\nDetective\n\nexplore\n\nDiscover\n\nhistory\n\nHistory\n\nsettings\n\nSettings\n\nASTRAEUS OS v1.0\n● System Online\n\nAssets Panel\n\nExoplanet Detective\n\nAnalyze and detect candidate exoplanetary transits using the Box Least Squares (BLS) periodogram method.\n\nTESS (via Lightkurve)\n— OR —\nDrag and drop file here\nLimit 200MB per file • CSV, FITS\nBrowse files\n\n\n\nMulti-Planet Search Deep-Dive\n\nMax Planetary Scan Depth\n\n2\n1\n5\n\nSignal-to-Noise (SNR) Floor Cutoff\n\n7.10\n3.00\n12.00\n\n\nTarget Discovery Confirmation\n\nSystem Designation\n\nHD 80606 b\n\nArchival Orbital Period\n\nN/A\n\nStellar Radius (R☉)\n\nN/A\n\nTransit Depth (ppm)\n\nN/A\n\n\n\nAnalyze Telemetry & Verify Harmonics\n\nCore Telemetry\nPLANET SCALE (R_EARTH)\n9.3716\nJWST FEASIBILITY (TSM)\n51.3924 | High Tier\nVETTING SIGNAL\nLIKELY PLANET\nSNR: 62.564\n\n\nPhase-Folded Light Curve\n−15\n−10\n−5\n0\n5\n10\n0.985\n0.99\n0.995\n1\n1.005\n1.01\n1.015\n1.02\n1.025\nPhase (days)\nRelative Flux\nDiagnostic Summary Matrix\n\nTransit Timing Variation (TTV) analysis requires a minimum of 3 observed epochs to map timing residuals.\n\nV-SHAPE METRIC CHECK\nPass (High-SNR Override)\nCurvature: 0.8558\nFlat Bottom: 0.0107\nSECONDARY ECLIPSE\nPass\nDepth: 0.00010\nSNR: 1.251\nDetection Report\n{\n\"candidate_found\":false\n\"is_candidate\":false\n\"period_days\":37.26931732933234\n\"period\":37.26931732933234\n\"orbital_period\":37.26931732933234\n\"stellar_rotation_period_days\":2.616812307654944\n\"transit_depth\":0.0073650876095276985\n\"stellar_radius\":1\n\"vetting_status\":\"Likely Planet\"\n\"confidence_score\":1.0000000000000018\n\"snr\":62.563967820649786\n\"depth\":0.0073650876095276985\n\"duration\":0.4\n\"t0\":1888.0661666961746\n\"v_shape_metric\":0.8557536081637345\n\"flat_bottom_fraction\":0.010676156583629894\n\"secondary_eclipse_depth\":0.00009830139563782314\n\"secondary_eclipse_snr\":1.251077871464085\n\"secondary_eclipse_detected\":false\n\"vetting_confidence\":0.14424639183626553\n\"u_shape_chi2\":0.005040993924031777\n\"v_shape_chi2\":0.00589070718012943\n\"delta_chi2_u\":0.013192940672477433\n\"delta_chi2_v\":0.01234322741637978\n\"planet_radius_earth\":9.3716\n\"equilibrium_temp_k\":545.38\n\"jwst_tsm_score\":51.3924\n\"secondary_eclipse_threshold_ppm\":695.1905832957268\n\"secondary_eclipse_threshold_mode\":\"physical\"\n\"ttv_data\":[\n0:{\n\"epoch\":0\n\"ttv_residual_min\":-2.7205888219396\n}\n]\n\"metadata\":{}\n}\n\n💬 AI Assistant",
+    "exceptions": []
+  },
+  "TOI-700": null,
+  "Kepler-4d": null,
+  "Kepler-90": null
+}

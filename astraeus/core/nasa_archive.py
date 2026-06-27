@@ -72,7 +72,7 @@ class NASAExoplanetArchive:
             params = {"query": query, "format": "json"}
 
             try:
-                resp = requests.get(url, params=params, timeout=5.0)
+                resp = requests.get(url, params=params, timeout=30.0)
                 resp.raise_for_status()
                 data = resp.json()
             except Exception as e:
@@ -130,7 +130,7 @@ class NASAExoplanetArchive:
 
                 for attempt in range(3):
                     try:
-                        resp = requests.get(url, params=params, timeout=5.0)
+                        resp = requests.get(url, params=params, timeout=30.0)
                         resp.raise_for_status()
                         data = resp.json()
                         if data:

@@ -23,7 +23,7 @@ class BLSSearchEngine:
         return float(snr), float(depth)
 
     @staticmethod
-    def search(time: np.ndarray, flux: np.ndarray) -> dict:
+    def search(time: np.ndarray, flux: np.ndarray, scan_depth: int = 1) -> dict:
         binned_time = time
         binned_flux = flux
 
@@ -36,20 +36,25 @@ class BLSSearchEngine:
         # (e.g. Kepler-90 h at ~331d) resolve cleanly instead of clipping the edge
         # and aliasing to half-period harmonics (~29.84d half-harmonic trap).
         p_min = 0.5
-        p_max = min(450.0, T_baseline / 2.0)
+        if T_baseline > 300.0:
+            p_max = 450.0
+        else:
+            p_max = min(450.0, T_baseline / 2.0)
         
+        # Auto-scale BLS grid density for high-density resonance chains
+        freq_factor = 2 if scan_depth > 3 else 1
+
         if p_max <= 20.0:
             # Short baseline dataset (e.g., TESS single sector) - use a clean localized grid
-            periods = np.linspace(p_min, p_max, 5000)
+            periods = np.linspace(p_min, p_max, 5000 * freq_factor)
         else:
             # Long baseline dataset (e.g., Kepler/PLATO) - use a balanced dual-zone layout
             # Zone 1: High-density linear tracking for rapid inner planets
-            grid_inner = np.linspace(p_min, 20.0, 4000)
+            grid_inner = np.linspace(p_min, 20.0, 4000 * freq_factor)
             # Zone 2: Physics-matched resolution for long-period outer giants.
-            # FIX 3: Densified (6000 -> 10000 nodes) across the 20-to-450d zone so the
             # narrow, infrequent transit dips of extreme cold giants are not skipped by
             # coarse grid spacing, breaking out of the ~29.84d half-harmonic alias trap.
-            grid_outer = np.linspace(20.0, p_max, 10000)
+            grid_outer = np.linspace(20.0, p_max, 10000 * freq_factor)
             
             # Merge and ensure unique, sorted periods
             periods = np.unique(np.concatenate([grid_inner, grid_outer]))
@@ -95,6 +100,6 @@ class BLSSearchEngine:
     @staticmethod
     def mask_transit(time: np.ndarray, flux: np.ndarray, period: float, t0: float, duration: float) -> tuple[np.ndarray, np.ndarray]:
         phase = (time - t0 + 0.5 * period) % period - 0.5 * period
-        mask_window = 2.5 * duration
+        mask_window = 1.5 * duration
         out_of_transit_mask = np.abs(phase) >= 0.5 * mask_window
         return time[out_of_transit_mask], flux[out_of_transit_mask]

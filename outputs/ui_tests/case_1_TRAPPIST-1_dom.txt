@@ -1,0 +1,75 @@
+Deploy
+ASTRAEUS
+Professional Workbench
+rocket_launch
+
+Simulation
+
+science
+
+Lab
+
+manage_search
+
+Detective
+
+explore
+
+Discover
+
+history
+
+History
+
+settings
+
+Settings
+
+ASTRAEUS OS v1.0
+● System Online
+
+Assets Panel
+
+Exoplanet Detective
+
+Analyze and detect candidate exoplanetary transits using the Box Least Squares (BLS) periodogram method.
+
+TESS (via Lightkurve)
+— OR —
+Drag and drop file here
+Limit 200MB per file • CSV, FITS
+Browse files
+
+
+
+Multi-Planet Search Deep-Dive
+
+Max Planetary Scan Depth
+
+5
+1
+5
+
+Signal-to-Noise (SNR) Floor Cutoff
+
+9.10
+3.00
+12.00
+
+
+
+Fetch Target Metadata
+
+check
+
+Context Assembly Complete.
+
+Fetching archive data...
+Connecting to MAST...
+Processing telemetry...
+Assembly complete.
+Metadata found, but no time-series data available for TRAPPIST-1 on mission TESS.
+Detection Report
+Awaiting detection run...
+
+💬 AI Assistant

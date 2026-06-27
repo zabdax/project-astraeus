@@ -1,0 +1,77 @@
+Deploy
+ASTRAEUS
+Professional Workbench
+rocket_launch
+
+Simulation
+
+science
+
+Lab
+
+manage_search
+
+Detective
+
+explore
+
+Discover
+
+history
+
+History
+
+settings
+
+Settings
+
+ASTRAEUS OS v1.0
+● System Online
+
+Assets Panel
+
+Transit Discover Workspace
+
+Total Iterations
+
+5
+
+Candidates Found
+
+4
+
+Peak System SNR
+
+17.68
+Candidate Ledger
+Advanced Candidate Inspection
+
+Candidate 1 | Period 266.9361 d
+
+Candidate 2 | Period 211.7070 d
+
+Candidate 3 | Period 238.6614 d
+
+Candidate 4 | Period 663.1439 d
+
+Control Panel
+
+Active Target
+
+KIC 11442793
+
+SNR Vetting Threshold
+
+12.00
+5.00
+25.00
+
+Dual-Zone Grid: ACTIVE
+
+1.5x Wing Subtraction: ACTIVE
+
+Manuscript Export
+
+Generate Research Manuscript
+
+💬 AI Assistant

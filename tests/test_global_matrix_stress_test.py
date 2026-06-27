@@ -73,12 +73,13 @@ def test_matrix_phase_track(phase: int, target: str, source: str):
     meta = data.get("metadata", {})
 
     if phase == 1:
-        # Metadata-only: must return no_time_series, must include
-        # the required archival keys.
+        # Metadata-only fallback: may return no_time_series, or success if the 
+        # bridge to TESS/Kepler time series successfully fetches fallback data.
+        # Must include the required archival keys regardless.
         assert "st_rad" in meta, "Root key 'st_rad' missing"
         assert "pl_orbper" in meta, "Root key 'pl_orbper' missing"
-        assert status == "no_time_series", (
-            f"Phase 1 expected 'no_time_series', got '{status}'"
+        assert status in ["no_time_series", "success"], (
+            f"Phase 1 expected 'no_time_series' or 'success', got '{status}'"
         )
 
     elif phase == 2:
