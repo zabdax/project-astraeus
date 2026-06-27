@@ -590,6 +590,18 @@ class LightkurveClient:
         Returns ``(lc_dict, None)`` on cache hit, ``(None, None)`` on miss.
         """
         try:
+            # QA mode: honour ASTRAEUS_FORCE_NETWORK=1 by skipping the cache
+            # lookup entirely. This lets the QA harness exercise the dynamic
+            # MAST/S3 path on every run, even for targets that already have
+            # files on disk. Default behaviour (env var unset) is unchanged.
+            if os.environ.get("ASTRAEUS_FORCE_NETWORK") == "1":
+                print(
+                    f"[LightkurveClient] cache bypass: ASTRAEUS_FORCE_NETWORK=1; "
+                    f"skipping cache lookup for {t_name}",
+                    file=sys.stderr,
+                )
+                return None, None
+
             mission_subdir = "TESS" if mission_type == "TESS" else "Kepler"
             mast_root = os.path.join(download_dir, "mastDownload", mission_subdir)
             if not os.path.isdir(mast_root):
