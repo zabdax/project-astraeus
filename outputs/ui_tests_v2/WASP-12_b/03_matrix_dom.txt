@@ -1,0 +1,190 @@
+Deploy
+ASTRAEUS
+Professional Workbench
+rocket_launch
+
+Simulation
+
+science
+
+Lab
+
+manage_search
+
+Detective
+
+explore
+
+Discover
+
+history
+
+History
+
+settings
+
+Settings
+
+ASTRAEUS OS v1.0
+● System Online
+
+Assets Panel
+
+Exoplanet Detective
+
+Analyze and detect candidate exoplanetary transits using the Box Least Squares (BLS) periodogram method.
+
+TESS (via Lightkurve)
+— OR —
+Drag and drop file here
+Limit 200MB per file • CSV, FITS
+Browse files
+
+
+
+Multi-Planet Search Deep-Dive
+
+Max Planetary Scan Depth
+
+2
+1
+5
+
+Signal-to-Noise (SNR) Floor Cutoff
+
+7.10
+3.00
+12.00
+
+
+Target Discovery Confirmation
+
+System Designation
+
+WASP-12 b
+
+Archival Orbital Period
+
+1.0914 d
+
+Stellar Radius (R☉)
+
+1.6900
+
+Transit Depth (ppm)
+
+15377.79
+
+
+
+Analyze Telemetry & Verify Harmonics
+
+Core Telemetry
+PLANET SCALE (R_EARTH)
+18.8987
+JWST FEASIBILITY (TSM)
+121.9245 | High Tier
+VETTING SIGNAL
+VERIFIED PLANET CANDIDATE
+SNR: 370.056
+
+
+Phase-Folded Light Curve
+−0.6
+−0.4
+−0.2
+0
+0.2
+0.4
+0.6
+0.97
+0.98
+0.99
+1
+1.01
+1.02
+Phase (days)
+Relative Flux
+Diagnostic Summary Matrix
+0
+500
+1000
+−40
+−20
+0
+20
+40
+60
+TTV O-C Diagram (Minutes)
+Transit Epoch
+O-C Residual (min)
+V-SHAPE METRIC CHECK
+Pass (High-SNR Override)
+Curvature: 0.9722
+Flat Bottom: 0.0001
+SECONDARY ECLIPSE
+Pass (Atmospheric Occultation Detected)
+Depth: 0.00017
+SNR: 7.159
+Detection Report
+{
+"candidate_found":true
+"is_candidate":true
+"period_days":1.0900225056264068
+"period":1.0900225056264068
+"orbital_period":1.0900225056264068
+"stellar_rotation_period_days":1.091487342330744
+"transit_depth":0.010486808446265927
+"stellar_radius":1.69
+"vetting_status":"Verified Planet Candidate"
+"confidence_score":21.850106643136026
+"snr":370.05553833978973
+"depth":0.010486808446265927
+"duration":0.1
+"t0":1842.6365101849983
+"v_shape_metric":0.9721794780548126
+"flat_bottom_fraction":0.00007991688643810437
+"secondary_eclipse_depth":0.00017311091108784815
+"secondary_eclipse_snr":7.159037069514319
+"secondary_eclipse_detected":true
+"vetting_confidence":0.02782052194518736
+"u_shape_chi2":2.990597067119655
+"v_shape_chi2":3.0761779430927687
+"delta_chi2_u":1.3703088809512254
+"delta_chi2_v":1.2847280049781116
+"planet_radius_earth":18.8987
+"equilibrium_temp_k":2380.79
+"jwst_tsm_score":121.9245
+"secondary_eclipse_threshold_ppm":3985.154750683141
+"secondary_eclipse_threshold_mode":"physical"
+"ttv_data":
+[0 - 100]
+[100 - 122]
+"metadata":{
+"pl_name":"WASP-12 b"
+"orbital_period":1.091418901
+"stellar_radius":1.69
+"transit_depth":0.0153777921
+"pl_orbper":1.091418901
+"st_rad":1.69
+"pl_trandep":0.0153777921
+"st_teff":6265
+"st_mass":1.325
+"sy_jmag":10.477
+"raw_row_dump":{
+"pl_name":"WASP-12 b"
+"pl_orbper":1.091418901
+"pl_orbpererr1":1.8e-8
+"st_rad":1.69
+"st_raderr1":0.019
+"st_lum":0.59711
+"st_teff":6265
+"st_mass":1.325
+"sy_jmag":10.477
+"pl_trandep":1.53777921
+"pl_ratror":0.117
+}
+}
+}
+
+💬 AI Assistant
