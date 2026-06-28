@@ -44,6 +44,7 @@ if "--mode" in sys.argv and "dynamic" in sys.argv:
 import yaml  # noqa: E402
 
 from astraeus.core.ingestion import RemoteDiscoveryEngine  # noqa: E402
+from playwright.async_api import async_playwright  # noqa: E402
 
 ARTIFACTS_DIR = Path("outputs/ui_tests_v2")
 REPORTS_DIR = Path("reports")
@@ -102,6 +103,212 @@ async def phase_a_backend_preflight(target: dict) -> dict:
         out["archive_error"] = result.get("archive_error")
         return {"status": "backend_failed", **out}
     return {"status": "backend_ok", **out}
+
+
+async def _set_slider(page, label_text: str, target_val: float,
+                      min_val: float, max_val: float,
+                      step: float = 1.0) -> None:
+    """Drive a Streamlit slider via keyboard arrows.
+
+    Streamlit sliders are focusable role='slider' elements; once focused,
+    ArrowRight / ArrowLeft change the value by `step`.
+    """
+    try:
+        slider = (
+            page.locator(f"div:has-text('{label_text}')")
+            .locator("div[role='slider']")
+            .first
+        )
+        await slider.focus()
+        await page.keyboard.press("Home")
+        await page.wait_for_timeout(200)
+        steps = int(round((target_val - min_val) / step))
+        for _ in range(max(steps, 0)):
+            await page.keyboard.press("ArrowRight")
+            await page.wait_for_timeout(50)
+    except Exception as exc:
+        print(
+            f"    ! slider '{label_text}' set failed: {exc}",
+            file=sys.stderr,
+        )
+
+
+async def phase_b_ui_flow(
+    target: dict, page_timeout: int, matrix_timeout: int,
+    headless: bool,
+) -> dict:
+    """Drive the Detective tab exactly like a user would.
+
+    Captures three snapshots:
+      01_post_fetch.png   after Fetch returns, Analyze button visible.
+      02_post_analyze.png immediately after Analyze click.
+      03_matrix.png       Diagnostic Summary Matrix fully rendered.
+
+    Returns a dict with stages.fetch / stages.matrix + ui_crashed flag.
+    """
+    safe = target["name"].replace(" ", "_").replace("/", "_")
+    out_dir = ARTIFACTS_DIR / safe
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    ui: dict = {
+        "target": target["name"],
+        "stages": {},
+        "ui_crashed": False,
+    }
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=headless)
+        page = await browser.new_page(
+            viewport={
+                "width": target.get("viewport", {}).get("width", 1920),
+                "height": target.get("viewport", {}).get("height", 1080),
+            }
+        )
+
+        try:
+            # Stage 1: navigate to Streamlit + click Detective tab
+            await page.goto("http://localhost:8501", timeout=30000)
+            await page.wait_for_selector(".stApp", state="attached")
+            await page.wait_for_timeout(3000)
+            await page.locator("text=Detective").first.click()
+            await page.wait_for_timeout(2000)
+
+            # Stage 2: type target + select mission route
+            target_input = (
+                page.locator('div[data-testid="stTextInput"] input').first
+            )
+            await target_input.wait_for(state="visible", timeout=15000)
+            await target_input.fill("")
+            await target_input.fill(target["name"])
+            await page.keyboard.press("Enter")
+            await page.wait_for_timeout(1000)
+            await page.locator('div[data-baseweb="select"]').first.click()
+            await page.wait_for_timeout(500)
+            await page.locator(
+                f"li:has-text('{target['mission_label']}')"
+            ).first.click()
+            await page.wait_for_timeout(500)
+
+            # Stage 3: click Fetch + wait for Analyze button
+            fetch_btn = page.locator(
+                "button:has-text('Fetch Target Metadata')"
+            ).first
+            await fetch_btn.click()
+            t0 = time.monotonic()
+            try:
+                await page.locator(
+                    "button:has-text('Analyze Telemetry')"
+                ).first.wait_for(
+                    state="visible", timeout=page_timeout * 1000,
+                )
+                ui["stages"]["fetch"] = {
+                    "status": "ok",
+                    "elapsed_sec": round(time.monotonic() - t0, 2),
+                }
+            except Exception as exc:
+                ui["stages"]["fetch"] = {
+                    "status": "timeout",
+                    "elapsed_sec": round(time.monotonic() - t0, 2),
+                    "error": str(exc),
+                }
+                await page.screenshot(
+                    path=out_dir / "fetch_timeout.png", full_page=True,
+                )
+                return ui
+
+            # Snapshot #1: post-fetch
+            await page.screenshot(
+                path=out_dir / "01_post_fetch.png", full_page=True,
+            )
+
+            # Stage 4: multi-planet toggle (if depth > 1)
+            depth = target.get("depth", 1)
+            if depth > 1:
+                try:
+                    await page.locator(
+                        "text=Multi-Planet Search Deep-Dive"
+                    ).first.click()
+                    await page.wait_for_timeout(500)
+                    await _set_slider(
+                        page, "Max Planetary Scan Depth",
+                        depth, 1, 5, 1,
+                    )
+                    await _set_slider(
+                        page,
+                        "Signal-to-Noise (SNR) Floor Cutoff",
+                        target.get("snr", 5.0), 3.0, 12.0, 0.1,
+                    )
+                except Exception as exc:
+                    print(
+                        f"    ! multi-planet toggle failed: {exc}",
+                        file=sys.stderr,
+                    )
+
+            # Stage 5: click Analyze
+            analyze_btn = page.locator(
+                "button:has-text('Analyze Telemetry')"
+            ).first
+            await analyze_btn.click()
+            await page.wait_for_timeout(
+                target.get("post_analyze_settle_sec", 2) * 1000
+            )
+
+            # Snapshot #2: post-analyze
+            await page.screenshot(
+                path=out_dir / "02_post_analyze.png", full_page=True,
+            )
+
+            # Stage 6: wait for Diagnostic Summary Matrix
+            t0 = time.monotonic()
+            try:
+                await page.wait_for_selector(
+                    "text=Diagnostic Summary Matrix",
+                    timeout=matrix_timeout * 1000,
+                )
+                await page.wait_for_timeout(3000)
+                ui["stages"]["matrix"] = {
+                    "status": "ok",
+                    "elapsed_sec": round(time.monotonic() - t0, 2),
+                }
+
+                # Snapshot #3 + DOM + exceptions
+                await page.screenshot(
+                    path=out_dir / "03_matrix.png", full_page=True,
+                )
+                body_text = await page.locator("body").inner_text()
+                (out_dir / "03_matrix_dom.txt").write_text(
+                    body_text, encoding="utf-8",
+                )
+                exceptions = await page.locator(
+                    "div[data-testid='stException']"
+                ).all_inner_texts()
+                if exceptions:
+                    (out_dir / "03_exceptions.txt").write_text(
+                        "\n\n".join(exceptions), encoding="utf-8",
+                    )
+                    ui["stages"]["matrix"]["exceptions"] = exceptions
+            except Exception as exc:
+                ui["stages"]["matrix"] = {
+                    "status": "timeout",
+                    "elapsed_sec": round(time.monotonic() - t0, 2),
+                    "error": str(exc),
+                }
+        except Exception as exc:
+            ui["ui_crashed"] = True
+            ui["error"] = f"{type(exc).__name__}: {exc}"
+            try:
+                await page.screenshot(
+                    path=out_dir / "crash_state.png", full_page=True,
+                )
+            except Exception:
+                pass
+        finally:
+            try:
+                await browser.close()
+            except Exception:
+                pass
+
+    return ui
 
 
 def parse_args() -> argparse.Namespace:
@@ -174,12 +381,20 @@ async def main() -> int:
         if backend.get("error"):
             print(f"    error: {backend['error']}")
 
-        # Phase B (UI) is implemented in Task 4. Until then, stub it.
-        ui: dict = {
-            "target": target["name"],
-            "stages": {},
-            "ui_crashed": False,
-        }
+        # Phase B: UI flow
+        ui = await phase_b_ui_flow(
+            target,
+            page_timeout=target.get("fetch_timeout_sec", 180),
+            matrix_timeout=target.get("matrix_timeout_sec", 600),
+            headless=target.get("headless", True),
+        )
+        for stage_name, stage in ui.get("stages", {}).items():
+            print(
+                f"    ui {stage_name}: {stage.get('status')} "
+                f"({stage.get('elapsed_sec', 0)}s)"
+            )
+        if ui.get("ui_crashed"):
+            print(f"    ! UI crashed: {ui.get('error')}")
 
         overall = (
             "pass"
