@@ -311,6 +311,97 @@ async def phase_b_ui_flow(
     return ui
 
 
+def write_report(results: list[dict], mode: str,
+                 started_at: datetime) -> Path:
+    """Write a markdown summary to reports/qa_v2_<mode>_<timestamp>.md."""
+    REPORTS_DIR.mkdir(exist_ok=True)
+    report_path = REPORTS_DIR / (
+        f"qa_v2_{mode}_{started_at:%Y%m%d_%H%M%S}.md"
+    )
+
+    n_total = len(results)
+    n_pass = sum(1 for r in results if r["overall"] == "pass")
+    n_fail = n_total - n_pass
+    pass_rate = 100 * n_pass / max(n_total, 1)
+
+    lines: list[str] = [
+        f"# QA v2 Report — {mode}",
+        "",
+        f"_Run started: {started_at:%Y-%m-%d %H:%M:%S}_",
+        "",
+        "## Summary",
+        "",
+        f"- Targets tested: **{n_total}**",
+        f"- Passed: **{n_pass}** ✅",
+        f"- Failed: **{n_fail}** ❌",
+        f"- Pass rate: **{pass_rate:.1f}%**",
+        "",
+        "## Per-target details",
+        "",
+    ]
+
+    for r in results:
+        b = r["backend"]
+        u = r["ui"]
+        lines.append(
+            f"### {r['target']} ({r['mission']}) — "
+            f"{r['overall'].upper()}"
+        )
+        lines.append("")
+        lines.append("**Backend**")
+        lines.append(f"- status: `{b.get('status')}`")
+        if b.get("fetch_status"):
+            lines.append(f"- fetch_status: `{b['fetch_status']}`")
+        if b.get("reason"):
+            lines.append(f"- reason: `{b['reason']}`")
+        lines.append(
+            f"- elapsed_sec: `{b.get('elapsed_sec', 0):.1f}`"
+        )
+        lines.append(
+            f"- time_points: `{b.get('time_points', 0)}`"
+        )
+        if b.get("bridged_mission"):
+            lines.append(
+                f"- bridged_mission: `{b['bridged_mission']}`"
+            )
+        if b.get("resolved_target"):
+            lines.append(
+                f"- resolved_target: `{b['resolved_target']}`"
+            )
+        if b.get("mast_error"):
+            lines.append(f"- mast_error: `{b['mast_error']}`")
+        lines.append("")
+
+        lines.append("**UI flow**")
+        if not u.get("stages"):
+            lines.append("- (skipped)")
+        else:
+            for stage_name, stage in u["stages"].items():
+                lines.append(
+                    f"- {stage_name}: `{stage.get('status')}` "
+                    f"({stage.get('elapsed_sec', 0):.1f}s)"
+                )
+                if stage.get("exceptions"):
+                    lines.append(
+                        f"  - exceptions: {len(stage['exceptions'])} "
+                        f"(see artifacts)"
+                    )
+        if u.get("ui_crashed"):
+            lines.append(
+                f"- ⚠️ **UI crashed**: `{u.get('error')}`"
+            )
+        lines.append("")
+
+        lines.append(
+            f"**Artifacts**: `outputs/ui_tests_v2/"
+            f"{r['target'].replace(' ', '_')}/`"
+        )
+        lines.append("")
+
+    report_path.write_text("\n".join(lines), encoding="utf-8")
+    return report_path
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument(
@@ -415,16 +506,13 @@ async def main() -> int:
             }
         )
 
-    # Reporter is implemented in Task 5. For now, write a stub.
-    REPORTS_DIR.mkdir(exist_ok=True)
-    out_path = REPORTS_DIR / f"qa_v2_{args.mode}_phase_a_only.md"
-    out_path.write_text(
-        f"# QA v2 ({args.mode}) — Phase A only stub\n"
-        f"Run started: {started_at:%Y-%m-%d %H:%M:%S}\n"
-        f"Targets tested: {len(results)}\n",
-        encoding="utf-8",
+    # Reporter
+    report_path = write_report(results, args.mode, started_at)
+    n_pass = sum(1 for r in results if r["overall"] == "pass")
+    print(
+        f"\n[qa_runner_v2] report written: {report_path} "
+        f"({n_pass}/{len(results)} passed)"
     )
-    print(f"\n[qa_runner_v2] stub report written: {out_path}")
     return 0
 
 
