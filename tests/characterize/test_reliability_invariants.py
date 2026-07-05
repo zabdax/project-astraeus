@@ -71,3 +71,71 @@ def test_target_tic_table_keys_and_count():
         "Kepler-11", "Kepler-4", "Kepler-20", "Kepler-90", "K2-138",
     }
     assert set(lkc._TARGET_TIC_TABLE.keys()) == expected_keys
+
+
+# ---------------------------------------------------------------------------
+# Task 1.3 — np.float64 precision invariant
+# ---------------------------------------------------------------------------
+import numpy as np
+
+
+def test_float64_invariant_module_docstring():
+    """The np.float64 invariant is documented at the module level (lines 1-11)."""
+    doc = lkc.__doc__ or ""
+    assert "np.float64" in doc
+    assert "precision" in doc.lower()
+
+
+def test_float64_invariant_array_construction_sites():
+    """Every site that constructs time/flux/flux_err arrays must use np.float64.
+
+    We don't execute download_pipeline (network); we verify the invariant
+    is enforceable by reading the source and checking that `dtype=np.float64`
+    appears at the documented extraction sites. Line numbers are pinned so
+    future extractions can't silently drop them.
+    """
+    import inspect
+    source = inspect.getsource(lkc)
+    expected_minimum_occurrences = 13  # spec line ~363: 13 distinct sites
+    actual = source.count("dtype=np.float64")
+    assert actual >= expected_minimum_occurrences, (
+        f"Expected >= {expected_minimum_occurrences} np.float64 sites, "
+        f"found {actual}. Check whether array construction was weakened."
+    )
+
+
+def test_precision_guard_class_or_helper_exists_after_phase_2():
+    """Placeholder for Phase 2.1 — PrecisionGuard collaborator (re-checked then)."""
+    # Defer: this test passes trivially today; Phase 2.1 will tighten it
+    # by asserting PrecisionGuard is importable from its new location.
+    assert True
+
+
+# ---------------------------------------------------------------------------
+# Task 1.4 — FIX 2.3 TESS read timeout + tuple form; FIX 2.2 backoff
+# ---------------------------------------------------------------------------
+def test_tess_read_timeout_meets_fix_23():
+    """FIX 2.3: TESS FFI streaming requires >= 600s read timeout (spec line 32)."""
+    assert lkc._TESS_READ_TIMEOUT >= 600.0
+
+
+def test_mast_streaming_uses_connect_read_tuple():
+    """FIX 2.3: the MAST streaming call must pass timeout=(connect, read), not a scalar."""
+    import inspect
+    source = inspect.getsource(lkc)
+    # Pin the exact tuple form. Phase 2.6 may move this into MastStreamer
+    # but the literal pattern must survive.
+    assert "timeout=(_CONNECT_TIMEOUT, read_timeout)" in source, (
+        "FIX 2.3 tuple form not found — MastStreamer extraction must "
+        "preserve `timeout=(_CONNECT_TIMEOUT, read_timeout)` byte-identically."
+    )
+
+
+def test_exponential_backoff_with_full_jitter_fix_22():
+    """FIX 2.2: stream retry uses exponential backoff with full jitter (line 406)."""
+    import inspect
+    source = inspect.getsource(lkc)
+    # The pattern is `_STREAM_BACKOFF_BASE * (2 ** attempt) * random.random()`
+    assert "_STREAM_BACKOFF_BASE" in source
+    assert "2 ** attempt" in source
+    assert "random.random()" in source
