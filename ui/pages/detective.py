@@ -324,8 +324,20 @@ def render(main_panel, right_panel) -> None:
         if uploaded_data is not None:
             if isinstance(uploaded_data, dict) and 'time' in uploaded_data and 'flux' in uploaded_data:
                 st.markdown(f"<div style='color: #10B981; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M22 11.08V12a10 10 0 1 1-5.93-9.14'></path><polyline points='22 4 12 14.01 9 11.01'></polyline></svg> Data loaded successfully: {len(uploaded_data['time'])} stellar points.</div>", unsafe_allow_html=True)
-                if st.button("Analyze Telemetry & Verify Harmonics", type="primary", use_container_width=True):
-                    run_analysis(uploaded_data['time'], uploaded_data['flux'], "Uploaded Asset", "Local Upload", uploaded_data.get('metadata', {}))
+                if st.button("Analyze Telemetry & Verify Harmonics", key="detective_analyze_uploaded", type="primary", use_container_width=True):
+                    # I4 fix (round-2 diagnostic 2026-07-06, see
+                    # logs/diagnostic_run_round2_*.json): the previous
+                    # code had no `key=` and no session-state guard,
+                    # so the button re-fired on every Streamlit
+                    # rerun (the AppTest 3s startup-timeout round-1
+                    # finding was caused by this). Adding a stable
+                    # `key=` gives the widget a stable identity, and
+                    # the session-state guard ensures run_analysis is
+                    # only invoked on a *fresh* click — not on every
+                    # rerun that follows it.
+                    if st.session_state.get("detective_analyze_uploaded_last_run") is None:
+                        st.session_state["detective_analyze_uploaded_last_run"] = True
+                        run_analysis(uploaded_data['time'], uploaded_data['flux'], "Uploaded Asset", "Local Upload", uploaded_data.get('metadata', {}))
             else:
                 st.markdown("<div style='color: #0ea5e9; display: flex; align-items: center; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='12' y1='16' x2='12' y2='12'></line><line x1='12' y1='8' x2='12.01' y2='8'></line></svg> Invalid parsed data format detected.</div>", unsafe_allow_html=True)
         elif target:
@@ -359,7 +371,7 @@ def render(main_panel, right_panel) -> None:
                     st.session_state.pop(key, None)
 
             if 'fetched_target_data' not in st.session_state:
-                if st.button("Fetch Target Metadata", type="primary", use_container_width=True):
+                if st.button("Fetch Target Metadata", key="detective_fetch_target_metadata", type="primary", use_container_width=True):
                     SVG_QUERY = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>"""
                     SVG_SERVER = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>"""
                     SVG_GEAR = """<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>"""
@@ -480,8 +492,18 @@ def render(main_panel, right_panel) -> None:
                     st.markdown("<br>", unsafe_allow_html=True)
                     
                     if 'time' in res and 'flux' in res:
-                        if st.button("Analyze Telemetry & Verify Harmonics", type="primary", use_container_width=True):
-                            run_analysis(res['time'], res['flux'], target, route, meta)
+                        if st.button("Analyze Telemetry & Verify Harmonics", key="detective_analyze_fetched", type="primary", use_container_width=True):
+                            # I4 fix (round-2 diagnostic 2026-07-06, see
+                            # logs/diagnostic_run_round2_*.json): the
+                            # previous code had no `key=` and no
+                            # session-state guard. Adding `key=` plus a
+                            # one-shot session-state guard ensures
+                            # run_analysis fires only on a *fresh*
+                            # user click — not on every Streamlit
+                            # rerun that follows the click.
+                            if st.session_state.get("detective_analyze_fetched_last_run") is None:
+                                st.session_state["detective_analyze_fetched_last_run"] = True
+                                run_analysis(res['time'], res['flux'], target, route, meta)
                     else:
                         st.info("Time-series data is required to run Detective Analysis. Please select a Lightkurve mission route to download telemetry.")
 
@@ -710,32 +732,43 @@ def render(main_panel, right_panel) -> None:
                         if "stability_detective_results" in st.session_state and st.session_state.get("stability_detective_config_hash") != current_hash:
                             st.warning("⚠️ Candidate configuration changed. Results below reflect the previous search. Re-run stability check to update.")
                             
-                        if st.button("Analyze System Stability", use_container_width=True):
-                            from astraeus.core.nbody_solver import check_system_stability, estimate_mass_from_radius
-                            
-                            stellar_mass = st.session_state.get('active_metadata', {}).get('stellar_mass', 1.0)
-                            
-                            planet_dicts = []
-                            n_candidates = len(candidates)
-                            for idx, cand in enumerate(candidates):
-                                radius_earth = float(cand.get('planet_radius_earth', 0.0))
-                                mass_msun = estimate_mass_from_radius(radius_earth)
-                                
-                                period_days = float(cand.get('period', 0.0))
-                                period_years = period_days / 365.25
-                                a_au = (stellar_mass * period_years**2)**(1.0/3.0)
-                                
-                                planet_dicts.append({
-                                    "mass_msun": mass_msun,
-                                    "semi_major_axis_au": a_au,
-                                    "eccentricity": float(cand.get('eccentricity', 0.0)),
-                                    "initial_phase_rad": 2.0 * np.pi * idx / n_candidates if n_candidates > 0 else 0.0,
-                                })
-                                
-                            res = check_system_stability(stellar_mass_msun=stellar_mass, planet_dicts=planet_dicts)
-                            st.session_state.stability_detective_results = res
-                            st.session_state.stability_detective_config_hash = current_hash
-                            st.rerun()
+                        if st.button("Analyze System Stability", key="detective_analyze_system_stability", use_container_width=True):
+                            # I4 fix (round-2 diagnostic 2026-07-06, see
+                            # logs/diagnostic_run_round2_*.json): the
+                            # previous code had no `key=` and no
+                            # session-state guard, so the n-body
+                            # stability run could re-fire on every
+                            # Streamlit rerun. Adding `key=` plus a
+                            # one-shot session-state guard ensures
+                            # check_system_stability fires only on a
+                            # *fresh* user click.
+                            if st.session_state.get("detective_stability_last_run") is None:
+                                st.session_state["detective_stability_last_run"] = True
+                                from astraeus.core.nbody_solver import check_system_stability, estimate_mass_from_radius
+
+                                stellar_mass = st.session_state.get('active_metadata', {}).get('stellar_mass', 1.0)
+
+                                planet_dicts = []
+                                n_candidates = len(candidates)
+                                for idx, cand in enumerate(candidates):
+                                    radius_earth = float(cand.get('planet_radius_earth', 0.0))
+                                    mass_msun = estimate_mass_from_radius(radius_earth)
+
+                                    period_days = float(cand.get('period', 0.0))
+                                    period_years = period_days / 365.25
+                                    a_au = (stellar_mass * period_years**2)**(1.0/3.0)
+
+                                    planet_dicts.append({
+                                        "mass_msun": mass_msun,
+                                        "semi_major_axis_au": a_au,
+                                        "eccentricity": float(cand.get('eccentricity', 0.0)),
+                                        "initial_phase_rad": 2.0 * np.pi * idx / n_candidates if n_candidates > 0 else 0.0,
+                                    })
+
+                                res = check_system_stability(stellar_mass_msun=stellar_mass, planet_dicts=planet_dicts)
+                                st.session_state.stability_detective_results = res
+                                st.session_state.stability_detective_config_hash = current_hash
+                                st.rerun()
                             
                         if "stability_detective_results" in st.session_state:
                             res = st.session_state.stability_detective_results

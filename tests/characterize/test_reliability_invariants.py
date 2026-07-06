@@ -3,6 +3,14 @@
 This file is the source of truth for the 'all 17 constants preserved exactly'
 acceptance criterion in the spec. If a future refactor changes any value,
 this test goes red and forces an explicit decision.
+
+NOTE: ``_MAX_DOWNLOAD_SEGMENTS`` was updated from 3 to 12 by the H1 patch
+on 2026-07-06 (see ``logs/diagnostic_run_*.json``). The old value of 3 was
+causing baseline starvation: a cap of 3 Kepler quarters yields only ~218d
+of stitched baseline, which falls below the 2.5*P minimum for 4/8 known
+Kepler-90 planets (e, f, g, h with periods 91-331d). The new value 12
+yields ~1056d of baseline, which exceeds 2.5 * 331.6d with margin.
+The expectation in ``EXPECTED_CONSTANTS`` below was updated to match.
 """
 from astraeus.core import lightkurve_client as lkc
 
@@ -10,7 +18,7 @@ from astraeus.core import lightkurve_client as lkc
 EXPECTED_CONSTANTS: dict[str, object] = {
     "_LIGHTKURVE_CACHE_DIR": None,  # value computed below; just check shape
     "_ASTRAEUS_LIGHTKURVE_CACHE_DIR": None,
-    "_MAX_DOWNLOAD_SEGMENTS": 3,
+    "_MAX_DOWNLOAD_SEGMENTS": 12,  # was 3; H1 patch 2026-07-06 (see module docstring)
     "_MAST_DOWNLOAD_URL": "https://mast.stsci.edu/api/v0/Download/file",
     "_TESS_READ_TIMEOUT": 600.0,
     "_KEPLER_READ_TIMEOUT": 180.0,

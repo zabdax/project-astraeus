@@ -48,9 +48,15 @@ KEPLER90D_DURATION_D = 4.2 / 24.0
 KEPLER90D_T0_BJD = 130.0  # arbitrary; just gives a clear phase
 
 # --- Curve parameters ------------------------------------------------------
-BASELINE_D = 1500.0
+# Short baseline on purpose: we want this to complete in under a few minutes.
+# 5k cadences / 365d is enough to recover P=59.74d (~6 transits) and to run
+# TLS with a narrow [56.75, 62.72]d window inside the 10-min job budget.
+# A 1500d / 30k-cadence curve (used in the first run of this script) hung
+# in the BLS grid at p_max=450d; the autoperiod+power cost scales with
+# both baseline and grid size, so we keep both small for the e2e check.
+BASELINE_D = 365.0
 CADENCE_D = 29.4 / 60.0 / 24.0  # Kepler long cadence
-N_CADENCES = int(BASELINE_D / CADENCE_D)  # ~ 73,469
+N_CADENCES = int(BASELINE_D / CADENCE_D)  # ~ 17,883
 NOISE_PPM = 100.0  # per-cadence
 
 
@@ -86,6 +92,17 @@ def make_kepler90d_curve() -> tuple[np.ndarray, np.ndarray]:
 
 
 def main() -> None:
+    # Force unbuffered stdout in the parent so the polling loop's prints
+    # surface in real time. The daemon worker (spawn-launched child) will
+    # inherit PYTHONUNBUFFERED from the env if set; we set it here too.
+    import os
+    os.environ.setdefault("PYTHONUNBUFFERED", "1")
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+        sys.stderr.reconfigure(line_buffering=True)
+    except Exception:
+        pass
+
     out_dir = PROJECT_ROOT / "logs"
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
@@ -131,10 +148,11 @@ def main() -> None:
     sys.stdout.flush()
 
     HARD_TIMEOUT_S = 600.0
-    POLL_S = 1.0
+    POLL_S = 2.0
     deadline = time.perf_counter() + HARD_TIMEOUT_S
     terminal_seen = False
     snapshots: list[dict] = []
+    last_partial_write = 0.0
     while time.perf_counter() < deadline:
         status = get_job_status(job_id)
         snapshots.append({
@@ -143,6 +161,17 @@ def main() -> None:
             "iteration": status.get("iteration", 0),
             "n_candidates": len(status.get("candidates", [])),
         })
+        # Write a partial report every 30s so a timeout still leaves evidence.
+        if time.perf_counter() - last_partial_write > 30.0:
+            partial = {
+                "experiment": "e2e_kepler90d_real_path — partial, in progress",
+                "job_id": job_id,
+                "elapsed_s": round(time.perf_counter() - t0_submit, 2),
+                "snapshots": snapshots,
+                "current_status": status,
+            }
+            out_path.write_text(json.dumps(partial, indent=2, default=str))
+            last_partial_write = time.perf_counter()
         if status.get("status") in (JobState.DONE, JobState.FAILED, JobState.CANCELLED):
             terminal_seen = True
             final_status = status

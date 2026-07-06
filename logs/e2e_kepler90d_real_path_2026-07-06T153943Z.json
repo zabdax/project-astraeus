@@ -1,0 +1,21 @@
+{
+  "experiment": "e2e_kepler90d_real_path \u2014 partial, in progress",
+  "job_id": "d1229c36-2741-4848-b6fe-8d8ebe4e9d8f",
+  "elapsed_s": 2.87,
+  "snapshots": [
+    {
+      "t_s": 2.87,
+      "status": "PENDING",
+      "iteration": 0,
+      "n_candidates": 0
+    }
+  ],
+  "current_status": {
+    "status": "PENDING",
+    "target": "Kepler-90 (synthetic, d-only)",
+    "iteration": 0,
+    "max_signals": 1,
+    "candidates": [],
+    "error": null
+  }
+}
