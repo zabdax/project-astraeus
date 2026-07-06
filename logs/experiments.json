@@ -358,5 +358,45 @@
         },
         "metadata": {},
         "fig_paths": []
+    },
+    {
+        "id": "7d0f994e-9624-4122-8570-eebb5e0a63c6",
+        "timestamp": "2026-07-06T16:07:59.674048Z",
+        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
+        "params": {
+            "target_name": "profile-test",
+            "period": 59.734303469746976,
+            "stellar_rotation_period_days": 0.49388327832565865,
+            "snr": 30.311523223796343,
+            "data_source": "synthetic",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "st_rad": 1.2,
+            "st_teff": 5930.0,
+            "st_mass": 1.13,
+            "sy_jmag": 12.49
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "eabdc18a-d415-4d7a-b091-62778ce0c7e3",
+        "timestamp": "2026-07-06T16:12:16.913084Z",
+        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
+        "params": {
+            "target_name": "Kepler-90 (synthetic, d-only)",
+            "period": 59.734303469746976,
+            "stellar_rotation_period_days": 0.49388327832565865,
+            "snr": 30.311523223796343,
+            "data_source": "synthetic-e2e",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "st_rad": 1.2,
+            "st_teff": 5930.0,
+            "st_mass": 1.13,
+            "sy_jmag": 12.49
+        },
+        "fig_paths": []
     }
 ]

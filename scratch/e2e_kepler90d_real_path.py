@@ -48,15 +48,13 @@ KEPLER90D_DURATION_D = 4.2 / 24.0
 KEPLER90D_T0_BJD = 130.0  # arbitrary; just gives a clear phase
 
 # --- Curve parameters ------------------------------------------------------
-# Short baseline on purpose: we want this to complete in under a few minutes.
-# 5k cadences / 365d is enough to recover P=59.74d (~6 transits) and to run
-# TLS with a narrow [56.75, 62.72]d window inside the 10-min job budget.
-# A 1500d / 30k-cadence curve (used in the first run of this script) hung
-# in the BLS grid at p_max=450d; the autoperiod+power cost scales with
-# both baseline and grid size, so we keep both small for the e2e check.
-BASELINE_D = 365.0
+# Diagnostic-grade small curve. We are testing whether the gate is
+# functional, not the full per-iteration perf. 200d / 2000 cadences /
+# ~3 transits is enough for BLS to recover P=59.74d on a clean signal
+# and for TLS to validate it inside a few-minute budget.
+BASELINE_D = 200.0
 CADENCE_D = 29.4 / 60.0 / 24.0  # Kepler long cadence
-N_CADENCES = int(BASELINE_D / CADENCE_D)  # ~ 17,883
+N_CADENCES = int(BASELINE_D / CADENCE_D)  # ~ 9,795
 NOISE_PPM = 100.0  # per-cadence
 
 

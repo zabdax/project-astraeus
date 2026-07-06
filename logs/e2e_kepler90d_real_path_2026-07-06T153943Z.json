@@ -1,19 +1,1729 @@
 {
   "experiment": "e2e_kepler90d_real_path \u2014 partial, in progress",
   "job_id": "d1229c36-2741-4848-b6fe-8d8ebe4e9d8f",
-  "elapsed_s": 2.87,
+  "elapsed_s": 573.16,
   "snapshots": [
     {
       "t_s": 2.87,
       "status": "PENDING",
       "iteration": 0,
       "n_candidates": 0
+    },
+    {
+      "t_s": 4.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 6.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 8.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 10.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 12.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 14.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 16.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 18.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 20.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 22.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 24.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 26.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 28.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 30.87,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 32.88,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 34.88,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 36.88,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 38.88,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 40.88,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 42.88,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 44.88,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 46.88,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 48.89,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 50.89,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 52.9,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 54.91,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 56.91,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 58.91,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 60.91,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 62.91,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 64.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 66.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 68.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 70.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 72.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 74.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 76.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 78.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 80.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 82.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 84.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 86.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 88.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 90.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 92.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 94.92,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 96.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 98.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 100.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 102.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 104.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 106.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 108.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 110.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 112.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 114.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 116.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 118.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 120.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 122.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 124.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 126.93,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 128.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 130.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 132.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 134.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 136.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 138.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 140.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 142.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 144.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 146.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 148.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 150.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 152.96,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 154.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 156.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 158.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 160.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 162.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 164.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 166.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 168.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 170.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 172.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 174.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 176.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 178.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 180.97,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 182.98,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 184.98,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 186.98,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 188.98,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 190.98,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 193.0,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 195.0,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 197.0,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 199.0,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 201.0,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 203.0,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 205.0,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 207.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 209.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 211.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 213.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 215.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 217.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 219.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 221.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 223.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 225.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 227.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 229.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 231.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 233.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 235.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 237.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 239.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 241.01,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 243.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 245.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 247.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 249.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 251.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 253.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 255.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 257.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 259.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 261.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 263.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 265.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 267.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 269.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 271.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 273.02,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 275.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 277.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 279.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 281.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 283.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 285.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 287.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 289.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 291.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 293.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 295.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 297.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 299.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 301.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 303.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 305.03,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 307.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 309.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 311.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 313.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 315.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 317.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 319.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 321.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 323.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 325.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 327.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 329.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 331.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 333.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 335.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 337.04,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 339.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 341.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 343.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 345.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 347.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 349.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 351.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 353.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 355.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 357.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 359.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 361.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 363.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 365.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 367.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 369.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 371.05,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 373.06,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 375.06,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 377.06,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 379.06,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 381.06,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 383.06,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 385.06,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 387.06,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 389.06,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 391.06,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 393.06,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 395.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 397.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 399.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 401.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 403.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 405.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 407.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 409.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 411.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 413.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 415.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 417.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 419.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 421.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 423.07,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 425.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 427.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 429.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 431.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 433.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 435.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 437.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 439.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 441.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 443.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 445.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 447.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 449.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 451.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 453.08,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 455.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 457.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 459.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 461.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 463.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 465.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 467.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 469.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 471.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 473.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 475.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 477.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 479.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 481.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 483.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 485.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 487.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 489.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 491.09,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 493.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 495.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 497.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 499.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 501.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 503.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 505.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 507.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 509.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 511.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 513.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 515.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 517.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 519.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 521.1,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 523.11,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 525.15,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 527.15,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 529.15,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 531.15,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 533.15,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 535.15,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 537.15,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 539.15,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 541.15,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 543.15,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 545.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 547.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 549.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 551.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 553.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 555.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 557.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 559.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 561.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 563.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 565.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 567.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 569.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 571.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
+    },
+    {
+      "t_s": 573.16,
+      "status": "RUNNING",
+      "iteration": 1,
+      "n_candidates": 0
     }
   ],
   "current_status": {
-    "status": "PENDING",
+    "status": "RUNNING",
     "target": "Kepler-90 (synthetic, d-only)",
-    "iteration": 0,
+    "iteration": 1,
     "max_signals": 1,
     "candidates": [],
     "error": null
