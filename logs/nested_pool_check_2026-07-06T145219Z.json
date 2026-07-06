@@ -1,0 +1,75 @@
+{
+  "experiment": "nested_pool_check \u2014 replicates J2 production call stack (multiprocessing.Process + TLS multiprocessing.Pool) on Windows",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "cpu_count": 8,
+  "n_cadences": 45853,
+  "period_window_d": [
+    200.07655499999998,
+    221.137245
+  ],
+  "arm_timeout_s": 600,
+  "arms": [
+    {
+      "use_threads": 1,
+      "wall_s": 83.72237359999417,
+      "proc_alive_at_return": false,
+      "events": [
+        {
+          "event": "imported_tls",
+          "use_threads": 1
+        },
+        {
+          "event": "made_curve",
+          "n": 45853
+        },
+        {
+          "event": "construct_ready"
+        },
+        {
+          "event": "done",
+          "elapsed_s": 80.9152408000009,
+          "sde": 5.493565875051543,
+          "tls_period": 214.42651426644076
+        }
+      ],
+      "terminal": {
+        "event": "done",
+        "elapsed_s": 80.9152408000009,
+        "sde": 5.493565875051543,
+        "tls_period": 214.42651426644076
+      }
+    },
+    {
+      "use_threads": 8,
+      "wall_s": 5.269088200002443,
+      "proc_alive_at_return": false,
+      "events": [
+        {
+          "event": "imported_tls",
+          "use_threads": 8
+        },
+        {
+          "event": "made_curve",
+          "n": 45853
+        },
+        {
+          "event": "construct_ready"
+        },
+        {
+          "event": "error",
+          "type": "AssertionError",
+          "message": "daemonic processes are not allowed to have children",
+          "traceback": "Traceback (most recent call last):\n  File \"F:\\solo_leveling_assistant\\project-astraeus\\scratch\\nested_pool_check.py\", line 81, in worker_entry\n    results = model.power(\n              ^^^^^^^^^^^^\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\transitleastsquares\\main.py\", line 141, in power\n    pool = multiprocessing.Pool(processes=self.use_threads)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\multiprocessing\\context.py\", line 119, in Pool\n    return Pool(processes, initializer, initargs, maxtasksperchild,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\multiprocessing\\pool.py\", line 215, in __init__\n    self._repopulate_pool()\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\multiprocessing\\pool.py\", line 306, in _repopulate_pool\n    return self._repopulate_pool_static(self._ctx, self.Process,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\multiprocessing\\pool.py\", line 329, in _repopulate_pool_static\n    w.start()\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\multiprocessing\\process.py\", line 118, in start\n    assert not _current_process._config.get('daemon'), \\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: daemonic processes are not allowed to have children\n"
+        }
+      ],
+      "terminal": {
+        "event": "error",
+        "type": "AssertionError",
+        "message": "daemonic processes are not allowed to have children",
+        "traceback": "Traceback (most recent call last):\n  File \"F:\\solo_leveling_assistant\\project-astraeus\\scratch\\nested_pool_check.py\", line 81, in worker_entry\n    results = model.power(\n              ^^^^^^^^^^^^\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\transitleastsquares\\main.py\", line 141, in power\n    pool = multiprocessing.Pool(processes=self.use_threads)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\multiprocessing\\context.py\", line 119, in Pool\n    return Pool(processes, initializer, initargs, maxtasksperchild,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\multiprocessing\\pool.py\", line 215, in __init__\n    self._repopulate_pool()\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\multiprocessing\\pool.py\", line 306, in _repopulate_pool\n    return self._repopulate_pool_static(self._ctx, self.Process,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\multiprocessing\\pool.py\", line 329, in _repopulate_pool_static\n    w.start()\n  File \"C:\\Users\\MIT\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\multiprocessing\\process.py\", line 118, in start\n    assert not _current_process._config.get('daemon'), \\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: daemonic processes are not allowed to have children\n"
+      }
+    }
+  ],
+  "verdict": "NESTED POOL BROKEN on this Windows box \u2014 control arm completed, nested arm terminated with error: daemonic processes are not allowed to have children. This is the exact failure mode the reviewer predicted. The fix is forcing use_threads=1 inside the worker (or restructuring so TLS's pool is not nested inside another Process), NOT picking a faster duration-grid config. Options 1-3 must NOT proceed until the call path is fixed."
+}
