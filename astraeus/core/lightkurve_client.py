@@ -26,7 +26,14 @@ _ASTRAEUS_LIGHTKURVE_CACHE_DIR = os.environ.get(
     "ASTRAEUS_LIGHTKURVE_CACHE_DIR",
     os.path.join(tempfile.gettempdir(), "astraeus_lightkurve_cache"),
 )
-_MAX_DOWNLOAD_SEGMENTS = 3          # Kepler row-by-row fallback limit
+# Kepler row-by-row fallback limit. Evidence-driven (see logs/diagnostic_run_*.json, H1):
+# A cap of 3 yielded a stitched baseline of ~218d for Kepler-90, starving 4/8 known
+# planets (e, f, g, h with periods 91-331d) below the BLS 2.5x-period minimum.
+# Longest known Kepler-90 period = 331.6d -> 2.5*period = 829d. At ~88d/quarter
+# for long-cadence Kepler, 12 quarters gives ~1056d baseline, which exceeds
+# 2.5 * longest_target_period with margin. Bounded (not "delete the cap") to
+# keep download time predictable for the multi-target matrix.
+_MAX_DOWNLOAD_SEGMENTS = 12         # Kepler row-by-row fallback limit (H1 patch 2026-07-06)
 
 # TESS FFI cutouts can be 10GB+; the default 180s read timeout aborts mid-stream.
 # The streaming helper stages files directly into lightkurve's mastDownload cache
@@ -679,6 +686,19 @@ class LightkurveClient:
             stitched = lk.LightCurveCollection(lcs).stitch()
             flat = stitched.normalize().remove_nans()
             t = np.asarray(flat.time.value, dtype=np.float64)
+            # I2 fix (round-2 diagnostic 2026-07-06, see
+            # logs/diagnostic_run_round2_*.json): lightkurve returns the
+            # time array in mission-specific offset units (BKJD for
+            # Kepler = BJD - 2454833, BTJD for TESS = BJD - 2457000).
+            # Downstream consumers in this codebase (orchestrator, NASA
+            # archive comparison, reporting) historically compared
+            # `lc.time` directly to NASA `pl_tranmid` values, which are
+            # in BJD full — silently producing offsets of ~2454833 days
+            # with no error signal. Convert to BJD full at the
+            # ingestion boundary and tag the dict so this class of
+            # bug cannot recur silently.
+            bjd_epoch_offset = 2454833.0 if mission_type == "Kepler" else 2457000.0
+            t = t + bjd_epoch_offset
             f = np.asarray(flat.flux.value, dtype=np.float64)
             e = np.asarray(flat.flux_err.value, dtype=np.float64)
             valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
@@ -686,7 +706,13 @@ class LightkurveClient:
             if len(t) == 0:
                 return None, None
             sort_idx = np.argsort(t)
-            return {"time": t[sort_idx], "flux": f[sort_idx], "flux_err": e[sort_idx]}, None
+            return {
+                "time": t[sort_idx],
+                "flux": f[sort_idx],
+                "flux_err": e[sort_idx],
+                "time_unit": "BJD",
+                "bjd_epoch_offset_applied": bjd_epoch_offset,
+            }, None
         except Exception as exc:
             print(
                 f"[LightkurveClient] CACHE FALLBACK: error scanning cache — {exc}",
@@ -808,6 +834,19 @@ class LightkurveClient:
             f = np.asarray(flat.flux.value, dtype=np.float64)
             e = np.asarray(flat.flux_err.value, dtype=np.float64)
 
+            # I2 fix (round-2 diagnostic 2026-07-06): convert the
+            # mission-specific time offset (BKJD for Kepler, BTJD for
+            # TESS) to BJD full at the ingestion boundary so every
+            # downstream consumer — orchestrator, NASA archive
+            # comparison, reporting — gets a consistent, explicitly
+            # labeled epoch. The conversion was previously done nowhere,
+            # so any t0/epoch value compared to NASA `pl_tranmid` (BJD
+            # full) was silently off by ~2454833 days. The dict also
+            # carries `time_unit` / `bjd_epoch_offset_applied` so this
+            # class of bug cannot recur silently elsewhere later.
+            bjd_epoch_offset = 2454833.0 if mission_type == "Kepler" else 2457000.0
+            t = t + bjd_epoch_offset
+
             valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
             t, f, e = t[valid], f[valid], e[valid]
 
@@ -815,7 +854,13 @@ class LightkurveClient:
                 return None, None
 
             sort_idx = np.argsort(t)
-            return {"time": t[sort_idx], "flux": f[sort_idx], "flux_err": e[sort_idx]}, None
+            return {
+                "time": t[sort_idx],
+                "flux": f[sort_idx],
+                "flux_err": e[sort_idx],
+                "time_unit": "BJD",
+                "bjd_epoch_offset_applied": bjd_epoch_offset,
+            }, None
 
         except Exception as exc:
             mast_error = str(exc)
@@ -864,33 +909,41 @@ class LightkurveClient:
             return None, "Both Kepler and TESS searches failed."
 
         # Simplistic concat (time alignment may be required in advanced fusion)
-        _UNIFIED_EPOCH = 2454833.0
-        
+        #
+        # I2 fix (round-2 diagnostic 2026-07-06): download_pipeline
+        # already converts BKJD/BTJD to BJD full at the ingestion
+        # boundary, so both `kep_res['time']` and `tess_res['time']`
+        # are already in BJD full. The previous code added an extra
+        # `(mission_epoch - _UNIFIED_EPOCH)` offset on top, which was a
+        # no-op for Kepler (both = 2454833) and wrong for TESS (the
+        # fused time was offset by 2457000 - 2454833 = 2167 days).
+        # Drop the extra offset; both arrays are already in BJD full.
+
         unified_t = []
         unified_f = []
         unified_e = []
 
         if kep_res:
-            k_time = np.asarray(kep_res['time'], dtype=np.float64) + (2454833.0 - _UNIFIED_EPOCH)
+            k_time = np.asarray(kep_res['time'], dtype=np.float64)
             k_flux_raw = np.asarray(kep_res['flux'], dtype=np.float64)
             k_err_raw = np.asarray(kep_res['flux_err'], dtype=np.float64)
             k_med = np.float64(np.nanmedian(k_flux_raw))
             k_flux = k_flux_raw / k_med
             k_err = k_err_raw / k_med
-            
+
             valid = ~np.isnan(k_flux)
             unified_t.append(k_time[valid])
             unified_f.append(k_flux[valid])
             unified_e.append(k_err[valid])
-        
+
         if tess_res:
-            t_time = np.asarray(tess_res['time'], dtype=np.float64) + (2457000.0 - _UNIFIED_EPOCH)
+            t_time = np.asarray(tess_res['time'], dtype=np.float64)
             t_flux_raw = np.asarray(tess_res['flux'], dtype=np.float64)
             t_err_raw = np.asarray(tess_res['flux_err'], dtype=np.float64)
             t_med = np.float64(np.nanmedian(t_flux_raw))
             t_flux = t_flux_raw / t_med
             t_err = t_err_raw / t_med
-            
+
             valid = ~np.isnan(t_flux)
             unified_t.append(t_time[valid])
             unified_f.append(t_flux[valid])

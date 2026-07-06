@@ -150,7 +150,8 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
             target_name=target_name,
             data_source=data_source,
             metadata=metadata,
-            snr_threshold=snr_floor
+            snr_threshold=snr_floor,
+            known_periods=discovered_periods
         )
         
         # Read the returned dictionary from the run. Extract the calculated SNR and vetting status.
@@ -259,3 +260,321 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
     print(json.dumps(serializable_results, indent=2))
             
     return discovered_planetary_properties
+
+import multiprocessing
+import threading
+import uuid
+import time as _time
+import queue
+
+# Global Registry
+JOB_REGISTRY = {}
+JOB_LOCK = threading.Lock()
+
+
+class JobState:
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    DONE = "DONE"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+
+def get_job_status(job_id: str) -> dict:
+    """Return a snapshot of a job's state, or None if job_id is unknown."""
+    with JOB_LOCK:
+        if job_id not in JOB_REGISTRY:
+            return None
+        entry = JOB_REGISTRY[job_id]
+        return {k: v for k, v in entry.items() if not k.startswith("_")}
+
+
+def cancel_job(job_id: str):
+    """Hard-cancel a running or pending job by terminating its subprocess."""
+    with JOB_LOCK:
+        if job_id not in JOB_REGISTRY:
+            return
+        entry = JOB_REGISTRY[job_id]
+        if entry["status"] not in (JobState.PENDING, JobState.RUNNING):
+            return
+        entry["status"] = JobState.CANCELLED
+        proc = entry.get("_process")
+
+    # Terminate outside the lock to avoid holding it during join()
+    if proc is not None and proc.is_alive():
+        proc.terminate()
+        proc.join(timeout=5)
+        if proc.is_alive():
+            proc.kill()
+            proc.join(timeout=2)
+
+
+# ---------------------------------------------------------------------------
+# Subprocess worker  (module-level function — must be picklable)
+# ---------------------------------------------------------------------------
+def _subprocess_search_worker(result_queue, raw_lightcurve, max_signals, snr_floor):
+    """
+    Runs the iterative multi-planet detection loop inside a child process.
+
+    Communicates back to the parent via *result_queue*:
+        {'type': 'running'}                     – worker has started
+        {'type': 'iteration', 'n': int}         – beginning iteration n
+        {'type': 'candidate', 'data': dict}     – accepted candidate
+        {'type': 'done'}                        – search finished normally
+        {'type': 'error', 'error': str}         – search failed
+    """
+    try:
+        from astraeus.analysis.detection import detect_transit_candidate
+        from astraeus.core.orchestrator import subtract_planetary_signal
+
+        result_queue.put({"type": "running"})
+
+        # --- Extract arrays ---------------------------------------------------
+        if isinstance(raw_lightcurve, dict):
+            time_arr = np.asarray(raw_lightcurve.get("time", []), dtype=np.float64)
+            flux = np.asarray(raw_lightcurve.get("flux", []), dtype=np.float64)
+            target_name = raw_lightcurve.get("target_name", "Unknown")
+            data_source = raw_lightcurve.get("data_source", "Unknown")
+            metadata = raw_lightcurve.get("metadata", {})
+        else:
+            time_arr = np.asarray(getattr(raw_lightcurve, "time", []), dtype=np.float64)
+            flux = np.asarray(getattr(raw_lightcurve, "flux", []), dtype=np.float64)
+            target_name = getattr(raw_lightcurve, "target_name", "Unknown")
+            data_source = getattr(raw_lightcurve, "data_source", "Unknown")
+            metadata = getattr(raw_lightcurve, "metadata", {})
+
+        if len(time_arr) < 10 or len(flux) < 10:
+            raise ValueError("Insufficient data points")
+
+        # --- State -----------------------------------------------------------
+        discovered_planetary_properties = []
+        discovered_periods = []
+        active_time = time_arr.copy()
+        current_working_flux = flux.copy()
+
+        duplicate_retries = 0
+        max_duplicate_retries = 3
+        _GUARDRAIL1_MARGINAL_TOLERANCE = 3
+        guardrail1_consecutive_marginal = 0
+        iteration = 0
+
+        while len(discovered_planetary_properties) < max_signals:
+            iteration += 1
+            if iteration > max_signals + max_duplicate_retries:
+                break
+
+            result_queue.put({"type": "iteration", "iteration": iteration})
+
+            result = detect_transit_candidate(
+                active_time,
+                current_working_flux,
+                target_name,
+                data_source,
+                metadata,
+                snr_floor,
+                discovered_periods,
+            )
+
+            snr = result.get("snr", 0.0)
+            vetting_status = result.get("vetting_status", "")
+            best_period = result.get("period", 0.0)
+            transit_time = result.get("t0")
+            duration = result.get("duration")
+            depth = result.get("depth")
+
+            # GUARDRAIL 1
+            if snr < snr_floor or not vetting_status.startswith("Verified Planet Candidate"):
+                guardrail1_consecutive_marginal += 1
+                if (
+                    best_period is not None
+                    and transit_time is not None
+                    and duration is not None
+                    and depth is not None
+                    and guardrail1_consecutive_marginal < _GUARDRAIL1_MARGINAL_TOLERANCE
+                ):
+                    depth_ppm = depth * 1e6
+                    current_working_flux = subtract_planetary_signal(
+                        current_working_flux, active_time, best_period,
+                        transit_time, duration, depth_ppm, metadata,
+                    )
+                if guardrail1_consecutive_marginal >= _GUARDRAIL1_MARGINAL_TOLERANCE:
+                    break
+                continue
+
+            guardrail1_consecutive_marginal = 0
+
+            # GUARDRAIL 2  – duplicate / harmonic detection
+            is_duplicate = False
+            for prev_period in discovered_periods:
+                period_ratio = best_period / prev_period if prev_period > 0 else 0
+                if abs(period_ratio - 1.0) < 0.05:
+                    is_duplicate = True
+                    break
+                for harmonic in (0.5, 2.0):
+                    if abs(period_ratio - harmonic) < 0.05:
+                        is_duplicate = True
+                        break
+                if is_duplicate:
+                    break
+
+            if is_duplicate:
+                duplicate_retries += 1
+                if duplicate_retries > max_duplicate_retries:
+                    break
+                if best_period is not None and transit_time is not None and duration is not None and depth is not None:
+                    depth_ppm = depth * 1e6
+                    current_working_flux = subtract_planetary_signal(
+                        current_working_flux, active_time, best_period,
+                        transit_time, duration, depth_ppm, metadata,
+                    )
+                continue
+
+            # Accept candidate
+            discovered_planetary_properties.append(result)
+            discovered_periods.append(best_period)
+            result_queue.put({"type": "candidate", "data": result})
+
+            if best_period is not None and transit_time is not None and duration is not None and depth is not None:
+                depth_ppm = depth * 1e6
+                current_working_flux = subtract_planetary_signal(
+                    current_working_flux, active_time, best_period,
+                    transit_time, duration, depth_ppm, metadata,
+                )
+            else:
+                break
+
+        result_queue.put({"type": "done"})
+
+    except Exception as e:
+        result_queue.put({"type": "error", "error": str(e)})
+
+
+# ---------------------------------------------------------------------------
+# Monitoring thread  (reads queue, updates registry)
+# ---------------------------------------------------------------------------
+def _monitor_worker(job_id, result_queue, process):
+    """
+    Daemon thread that drains *result_queue* and keeps JOB_REGISTRY in sync.
+    Exits when a terminal message ('done' / 'error') is received or the
+    subprocess dies unexpectedly.
+    """
+    try:
+        while True:
+            # If the process has died and the queue is empty, stop.
+            try:
+                msg = result_queue.get(timeout=1.0)
+            except (queue.Empty, EOFError):
+                if not process.is_alive():
+                    with JOB_LOCK:
+                        entry = JOB_REGISTRY.get(job_id)
+                        if entry and entry["status"] in (JobState.PENDING, JobState.RUNNING):
+                            entry["status"] = JobState.FAILED
+                            entry["error"] = "Worker process exited unexpectedly"
+                    return
+                continue
+
+            msg_type = msg.get("type")
+
+            if msg_type == "running":
+                with JOB_LOCK:
+                    entry = JOB_REGISTRY.get(job_id)
+                    if entry and entry["status"] == JobState.PENDING:
+                        entry["status"] = JobState.RUNNING
+
+            elif msg_type == "iteration":
+                with JOB_LOCK:
+                    entry = JOB_REGISTRY.get(job_id)
+                    if entry:
+                        entry["iteration"] = msg["iteration"]
+
+            elif msg_type == "candidate":
+                with JOB_LOCK:
+                    entry = JOB_REGISTRY.get(job_id)
+                    if entry:
+                        entry["candidates"].append(msg["data"])
+
+            elif msg_type == "done":
+                with JOB_LOCK:
+                    entry = JOB_REGISTRY.get(job_id)
+                    if entry and entry["status"] not in (JobState.CANCELLED,):
+                        entry["status"] = JobState.DONE
+                return
+
+            elif msg_type == "error":
+                with JOB_LOCK:
+                    entry = JOB_REGISTRY.get(job_id)
+                    if entry and entry["status"] not in (JobState.CANCELLED,):
+                        entry["status"] = JobState.FAILED
+                        entry["error"] = msg.get("error", "Unknown error")
+                return
+
+    except Exception:
+        # Safety net — mark as failed so callers never hang.
+        with JOB_LOCK:
+            entry = JOB_REGISTRY.get(job_id)
+            if entry and entry["status"] in (JobState.PENDING, JobState.RUNNING):
+                entry["status"] = JobState.FAILED
+                entry["error"] = "Monitor thread crashed"
+
+
+# ---------------------------------------------------------------------------
+# Public submission entry-point
+# ---------------------------------------------------------------------------
+def submit_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1) -> str:
+    """Submit an async multi-planet search.  Returns a job_id string."""
+    job_id = str(uuid.uuid4())
+
+    target = (
+        raw_lightcurve.get("target_name", "Unknown")
+        if isinstance(raw_lightcurve, dict)
+        else getattr(raw_lightcurve, "target_name", "Unknown")
+    )
+
+    result_queue = multiprocessing.Queue()
+
+    # ARCHITECTURAL CONSTRAINT (J2c nested-pool fix, 2026-07-06):
+    # The worker is spawned daemon=True. On Windows, multiprocessing
+    # forbids daemonic processes from spawning their own children. Any
+    # code that runs inside _subprocess_search_worker (and transitively
+    # inside detect_transit_candidate) MUST NOT itself call
+    # multiprocessing.Pool(...) or multiprocessing.Process(...). In
+    # particular, transitleastsquares' default use_threads=cpu_count()
+    # path instantiates multiprocessing.Pool(processes=use_threads) and
+    # raises AssertionError("daemonic processes are not allowed to have
+    # children") when invoked from inside this worker. detection.py
+    # forces use_threads=1 on its TLS call to honour this constraint.
+    # See logs/nested_pool_check_2026-07-06T145219Z.json and tests/
+    # characterize/test_tls_call_path_contract.py for the experimental
+    # confirmation and the contract tests. If you ever set daemon=False
+    # here (or remove the constraint in detection.py), you must
+    # explicitly update the characterization tests and the call path
+    # comment in detection.py.
+    proc = multiprocessing.Process(
+        target=_subprocess_search_worker,
+        args=(result_queue, raw_lightcurve, max_signals, snr_floor),
+        daemon=True,
+    )
+
+    with JOB_LOCK:
+        JOB_REGISTRY[job_id] = {
+            "status": JobState.PENDING,
+            "target": target,
+            "iteration": 0,
+            "max_signals": max_signals,
+            "candidates": [],
+            "error": None,
+            "_process": proc,        # stored for hard-kill
+            "_queue": result_queue,   # stored for cleanup
+        }
+
+    proc.start()
+
+    # Launch a daemon monitor thread that reads the queue
+    monitor = threading.Thread(
+        target=_monitor_worker,
+        args=(job_id, result_queue, proc),
+        daemon=True,
+    )
+    monitor.start()
+
+    return job_id
