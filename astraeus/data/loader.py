@@ -6,10 +6,12 @@ import pandas as pd
 import json
 import astropy.units as u
 
+from astraeus.core.time_units import to_bjd
+
 def fetch_lightcurve(target_name: str, mission: str = "Kepler") -> lk.LightCurve:
     """Fetches and stitches light curve data from NASA archives."""
     search_result = lk.search_lightcurve(target_name, mission=mission)
-    
+
     if len(search_result) == 0:
         raise ValueError(f"No data found for target '{target_name}' in mission '{mission}'.")
 
@@ -21,9 +23,18 @@ def clean_lightcurve(lc: lk.LightCurve) -> lk.LightCurve:
     lc = lc[lc.quality == 0]
     return lc.remove_nans()
 
-def extract_lightcurve_arrays(lc: lk.LightCurve) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Extracts time, flux, and flux_err arrays from a light curve."""
-    return lc.time.value, lc.flux.value, lc.flux_err.value
+def extract_lightcurve_arrays(lc: lk.LightCurve, mission: str = "Kepler") -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Extracts time, flux, and flux_err arrays from a light curve.
+
+    I2 fix (round-2 diagnostic 2026-07-06, see
+    logs/diagnostic_run_round2_*.json): the time array is converted
+    from the mission-specific offset (BKJD / BTJD) to BJD full here so
+    every downstream consumer gets a consistent, explicitly labeled
+    epoch. Use `astraeus.core.time_units.to_bjd` for the conversion.
+    """
+    t = np.asarray(lc.time.value, dtype=np.float64)
+    t = to_bjd(t, mission)
+    return t, lc.flux.value, lc.flux_err.value
 
 def load_nasa_lightcurve(target_name: str, mission: str = "Kepler") -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -39,7 +50,7 @@ def load_nasa_lightcurve(target_name: str, mission: str = "Kepler") -> tuple[np.
     lc = fetch_lightcurve(target_name, mission=mission)
     lc = clean_lightcurve(lc)
     lc = lc.normalize()
-    return extract_lightcurve_arrays(lc)
+    return extract_lightcurve_arrays(lc, mission=mission)
 
 def _resolve_columns(df: pd.DataFrame, column_map: dict = None) -> tuple[str, str, str]:
     """Resolves time, flux, and flux_err column names using mapping or heuristics."""
@@ -110,7 +121,11 @@ class NASAArchiveLoader(DataLoaderStrategy):
         lc_collection = search_result.download_all() if quarter is None else search_result.download()
         lc = lc_collection.stitch() if hasattr(lc_collection, 'stitch') else lc_collection
         lc = lc[lc.quality == 0].remove_nans().normalize()
-        return lc.time.value, lc.flux.value, lc.flux_err.value
+        # I2 fix (round-2 diagnostic 2026-07-06): convert to BJD full at
+        # this ingestion boundary. See `extract_lightcurve_arrays`.
+        t = np.asarray(lc.time.value, dtype=np.float64)
+        t = to_bjd(t, mission)
+        return t, lc.flux.value, lc.flux_err.value
 
 
 class CSVLoader(DataLoaderStrategy):

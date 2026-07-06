@@ -146,7 +146,11 @@ class RealDataPipeline:
             print("Downloading data...")
             lc = search.download()
             lc = lc[lc.quality == 0].remove_nans().normalize()
-            time_raw, flux_raw = lc.time.value, lc.flux.value
+            # I2 fix (round-2 diagnostic 2026-07-06): convert BKJD/BTJD
+            # to BJD full at this ingestion boundary.
+            from astraeus.core.time_units import to_bjd
+            time_raw = to_bjd(lc.time.value, mission)
+            flux_raw = lc.flux.value
         except Exception as e:
             print(f"Error loading data: {e}")
             return
