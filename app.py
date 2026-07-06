@@ -8,6 +8,9 @@ import plotly.graph_objects as go
 from typing import Dict, Any, List
 import logging
 
+from astraeus.core.orchestrator import submit_multi_planet_search, get_job_status, cancel_job, JobState
+from astraeus.simulation.synthetic import SyntheticTransitScenario, generate_synthetic_transit_series
+
 from astraeus.dashboard.ui.layout import workbench_layout
 from astraeus.dashboard.ui.styles import inject_page_styles
 from astraeus.dashboard.ui.components import render_floating_chat
@@ -175,6 +178,46 @@ def _build_adapted_metrics_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
         )
     }
 
+
+@st.fragment(run_every=2)
+def render_job_status(job_id):
+    status = get_job_status(job_id)
+    if not status:
+        st.error("Job not found")
+        return
+        
+    state = status.get("status")
+    candidates = status.get("candidates", [])
+    iteration = status.get("iteration", 0)
+    
+    # Update payload in session state for rendering below
+    payload = st.session_state["discovery_payload"]
+    payload["total_iterations_executed"] = iteration
+    payload["candidates"] = candidates
+    st.session_state["discovery_payload"] = payload
+    
+    st.markdown("### Search Progress")
+    if state in [JobState.PENDING, JobState.RUNNING]:
+        st.info(f"Running iteration {iteration}...")
+        if st.button("Cancel Analysis", key=f"cancel_{job_id}"):
+            cancel_job(job_id)
+            st.rerun()
+    elif state == JobState.DONE:
+        st.success(f"Analysis complete! Found {len(candidates)} candidates.")
+        if st.button("Clear Job", key=f"clear_done_{job_id}"):
+            st.session_state.pop("active_job_id", None)
+            st.rerun()
+    elif state == JobState.FAILED:
+        st.error(f"Analysis failed: {status.get('error')}")
+        if st.button("Clear Job", key=f"clear_fail_{job_id}"):
+            st.session_state.pop("active_job_id", None)
+            st.rerun()
+    elif state == JobState.CANCELLED:
+        st.warning("Analysis was cancelled.")
+        if st.button("Clear Job", key=f"clear_cancel_{job_id}"):
+            st.session_state.pop("active_job_id", None)
+            st.rerun()
+
 def main():
     """Render the interactive ASTRAEUS dashboard."""
     
@@ -216,7 +259,31 @@ def main():
                 st.success("Dual-Zone Grid: ACTIVE")
                 st.info("1.5x Wing Subtraction: ACTIVE")
                 
+                
+                if "active_job_id" in st.session_state:
+                    render_job_status(st.session_state["active_job_id"])
+                else:
+                    if st.button("Run Live Analysis"):
+                        # Generate a synthetic multi-planet system for demo
+                        scenario = SyntheticTransitScenario(duration=100.0)
+                        series = generate_synthetic_transit_series(scenario)
+                        raw_lc = {
+                            "time": series.time_days,
+                            "flux": series.observed_flux,
+                            "target_name": target,
+                            "metadata": {}
+                        }
+                        
+                        # Reset payload candidates
+                        st.session_state["discovery_payload"]["candidates"] = []
+                        st.session_state["discovery_payload"]["total_iterations_executed"] = 0
+                        
+                        job_id = submit_multi_planet_search(raw_lc, max_signals=2, snr_floor=snr_threshold)
+                        st.session_state["active_job_id"] = job_id
+                        st.rerun()
+                
                 # 4. Two-Stage PDF Compiler Sidebar Handshake
+
                 st.markdown("---")
                 st.markdown("### Manuscript Export")
 
