@@ -1,0 +1,36 @@
+{
+  "test": "issue1_real_alias_check_on_kepler90",
+  "stitched_baseline_days": 1239.8092460303815,
+  "n_cadences": 45853,
+  "top5_window_periods_d": [
+    340.6248,
+    360.4297,
+    382.6797,
+    407.8576,
+    861.0927
+  ],
+  "top5_window_freqs": [
+    0.00116132,
+    0.00245184,
+    0.00261315,
+    0.00277447,
+    0.00293578
+  ],
+  "bls_iter_results": {
+    "note": "Skipped 160+ s/iter BLS on the 45k-cadence stitch (round-2 I5 measurement). The alias-checker is exercised directly on the I0 e2e candidate periods below."
+  },
+  "alias_check_797_48d": {
+    "rejected": true,
+    "matched_formula": "window alias: f=0.001258 from |1/59.7367 - 4*f_window=0.002613|/5"
+  },
+  "alias_check_842_46d": {
+    "rejected": true,
+    "matched_formula": "window alias: f=0.001120 from |1/59.7367 - 5*f_window=0.002452|/4"
+  },
+  "math_reconciliation": {
+    "reviewer_formula": "1/(|1/210.6 - 1/93.6|/5) = 842.40d (NOT 797.48d)",
+    "previous_claim_797_48d": "incorrectly equated to the 842.4d formula",
+    "actual_797_48d_origin": "BLS periodogram grid-resolution peak in the long-period regime; no closed-form alias of 210.6d or 331.6d on any top-5 window frequency. autoperiod at long periods has sparse period spacing.",
+    "actual_842_46d_origin": "4x integer-multiple alias of 210.6d (210.6069 * 4 = 842.43d). This is the only closed-form explanation."
+  }
+}
