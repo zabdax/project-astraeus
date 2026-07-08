@@ -1,0 +1,24 @@
+{
+  "experiment": "r8_repro_vetting_override \u2014 minimal repro of orchestrator TLS-gate bypass",
+  "timestamp_utc": "2026-07-08T08:21:38.836507+00:00",
+  "result": {
+    "period": 10.000000000000014,
+    "snr": 70.44484080347135,
+    "tls_valid": false,
+    "tls_sde": 0.0,
+    "is_candidate": false,
+    "vetting_status": "Verified Planet Candidate",
+    "confidence_score": 211.07702373901637
+  },
+  "diagnostic": {
+    "string_prefix_passes": true,
+    "load_bearing_tls_gate": false,
+    "bypass_reproduced": true
+  },
+  "round7_origin": {
+    "j7c_iter_1_period_d": 489.13,
+    "j7c_iter_1_snr": 16.37,
+    "j7c_iter_1_tls_sde": 4.22,
+    "j7c_iter_1_vetting_status": "Verified Planet Candidate (Likely Planet)"
+  }
+}

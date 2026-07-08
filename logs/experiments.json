@@ -538,5 +538,20 @@
             "sy_jmag": 12.49
         },
         "fig_paths": []
+    },
+    {
+        "id": "aa5db0d2-055c-4286-9606-318208b627e1",
+        "timestamp": "2026-07-08T08:21:38.816607Z",
+        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "params": {
+            "target_name": "R8-bug-repro",
+            "period": 10.000000000000014,
+            "stellar_rotation_period_days": 0.43469941553019753,
+            "snr": 70.44484080347135,
+            "data_source": "synthetic",
+            "is_valid_candidate": false
+        },
+        "metadata": {},
+        "fig_paths": []
     }
 ]
