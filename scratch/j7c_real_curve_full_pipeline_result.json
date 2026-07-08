@@ -1,0 +1,87 @@
+{
+  "experiment": "j7c_real_curve_full_pipeline \u2014 orchestrator-style multi-planet search on real Kepler-90 stitch",
+  "timestamp_utc": "2026-07-08T04:50:06.344916+00:00",
+  "cache_dir": "C:\\Users\\MIT\\AppData\\Local\\Temp\\astraeus_h1_kepler90_measurement\\download_all",
+  "curve": {
+    "t_baseline_d": 1239.8092,
+    "n_cadences": 45853,
+    "load_s": 7.64
+  },
+  "config": {
+    "max_signals": 3,
+    "snr_floor": 7.1,
+    "max_dup_retries": 3
+  },
+  "iterations": [
+    {
+      "iteration": 1,
+      "wall_s": 136.52,
+      "period": 489.1304347825386,
+      "snr": 16.36649050441578,
+      "duration": 0.1,
+      "depth_ppm": 1519.1852674296679,
+      "vetting_status": "Verified Planet Candidate",
+      "tls_valid": false,
+      "tls_sde": 4.219390783785445
+    },
+    {
+      "iteration": 2,
+      "wall_s": 172.48,
+      "period": 7.008254166017744,
+      "snr": 11.503814608195341,
+      "duration": 0.15,
+      "depth_ppm": 67.65761826432737,
+      "vetting_status": "Verified Planet Candidate",
+      "tls_valid": true,
+      "tls_sde": 23.91440171280963
+    },
+    {
+      "iteration": 3,
+      "wall_s": 142.41,
+      "period": 8.719240457275708,
+      "snr": 11.462974757084183,
+      "duration": 0.15,
+      "depth_ppm": 76.60527716502052,
+      "vetting_status": "Verified Planet Candidate",
+      "tls_valid": true,
+      "tls_sde": 22.87190328157856
+    }
+  ],
+  "discovered": [
+    {
+      "iteration": 1,
+      "period": 489.1304347825386,
+      "snr": 16.36649050441578,
+      "duration": 0.1,
+      "depth_ppm": 1519.1852674296679,
+      "matched_planet": null
+    },
+    {
+      "iteration": 2,
+      "period": 7.008254166017744,
+      "snr": 11.503814608195341,
+      "duration": 0.15,
+      "depth_ppm": 67.65761826432737,
+      "matched_planet": "Kepler-90b"
+    },
+    {
+      "iteration": 3,
+      "period": 8.719240457275708,
+      "snr": 11.462974757084183,
+      "duration": 0.15,
+      "depth_ppm": 76.60527716502052,
+      "matched_planet": "Kepler-90c"
+    }
+  ],
+  "verdict": {
+    "verdict_text": "FAIL: recovered_d_or_h=[]  total_wall=451.4s  n_recovered=2",
+    "total_wall_s": 451.41,
+    "n_iterations": 3,
+    "recovered_planets": [
+      "Kepler-90b",
+      "Kepler-90c"
+    ],
+    "n_recovered": 2,
+    "recovered_d_or_h": []
+  }
+}

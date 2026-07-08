@@ -398,5 +398,145 @@
             "sy_jmag": 12.49
         },
         "fig_paths": []
+    },
+    {
+        "id": "518e039f-0c28-403f-9d56-d1a599121a28",
+        "timestamp": "2026-07-08T04:31:57.358300Z",
+        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
+        "params": {
+            "target_name": "Kepler-90 (real stitch, J7c gate)",
+            "period": 489.1304347825386,
+            "stellar_rotation_period_days": 0.15420699498611312,
+            "snr": 16.36649050441578,
+            "data_source": "real-kepler90-stitch",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "st_rad": 1.2,
+            "st_teff": 5930.0,
+            "st_mass": 1.13,
+            "sy_jmag": 12.49
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "27bca89b-8e5c-4b5e-9581-cadd510b4ccc",
+        "timestamp": "2026-07-08T04:34:41.418213Z",
+        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
+        "params": {
+            "target_name": "Kepler-90 (real stitch, J7c gate)",
+            "period": 7.008254166017744,
+            "stellar_rotation_period_days": 0.15420699498611312,
+            "snr": 11.503814608195341,
+            "data_source": "real-kepler90-stitch",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "st_rad": 1.2,
+            "st_teff": 5930.0,
+            "st_mass": 1.13,
+            "sy_jmag": 12.49
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "7f8ae1f1-0a7c-4891-ac28-6826c4263d7a",
+        "timestamp": "2026-07-08T04:36:53.383846Z",
+        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
+        "params": {
+            "target_name": "Kepler-90 (real stitch, J7c gate)",
+            "period": 8.719240457275708,
+            "stellar_rotation_period_days": 0.15420699498611312,
+            "snr": 11.462974757084183,
+            "data_source": "real-kepler90-stitch",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "st_rad": 1.2,
+            "st_teff": 5930.0,
+            "st_mass": 1.13,
+            "sy_jmag": 12.49
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "54a3541d-8ba3-4bef-b907-b024673dcdd2",
+        "timestamp": "2026-07-08T04:39:30.998631Z",
+        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
+        "params": {
+            "target_name": "Kepler-90 (real stitch, J7c gate)",
+            "period": 93.36099585062043,
+            "stellar_rotation_period_days": 0.15420699498611312,
+            "snr": 8.742901399138363,
+            "data_source": "real-kepler90-stitch",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "st_rad": 1.2,
+            "st_teff": 5930.0,
+            "st_mass": 1.13,
+            "sy_jmag": 12.49
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "ecb92781-bcb5-4c58-b941-1c3fa9f48505",
+        "timestamp": "2026-07-08T04:44:51.393005Z",
+        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
+        "params": {
+            "target_name": "Kepler-90 (real stitch, J7c gate)",
+            "period": 489.1304347825386,
+            "stellar_rotation_period_days": 0.15420699498611312,
+            "snr": 16.36649050441578,
+            "data_source": "real-kepler90-stitch",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "st_rad": 1.2,
+            "st_teff": 5930.0,
+            "st_mass": 1.13,
+            "sy_jmag": 12.49
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "30376749-6646-42a5-949f-a0ccc1081ffc",
+        "timestamp": "2026-07-08T04:47:43.873706Z",
+        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
+        "params": {
+            "target_name": "Kepler-90 (real stitch, J7c gate)",
+            "period": 7.008254166017744,
+            "stellar_rotation_period_days": 0.15420699498611312,
+            "snr": 11.503814608195341,
+            "data_source": "real-kepler90-stitch",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "st_rad": 1.2,
+            "st_teff": 5930.0,
+            "st_mass": 1.13,
+            "sy_jmag": 12.49
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "db50d479-9e86-4bfa-b6b2-91534e6ff5ae",
+        "timestamp": "2026-07-08T04:50:06.303600Z",
+        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
+        "params": {
+            "target_name": "Kepler-90 (real stitch, J7c gate)",
+            "period": 8.719240457275708,
+            "stellar_rotation_period_days": 0.15420699498611312,
+            "snr": 11.462974757084183,
+            "data_source": "real-kepler90-stitch",
+            "is_valid_candidate": true
+        },
+        "metadata": {
+            "st_rad": 1.2,
+            "st_teff": 5930.0,
+            "st_mass": 1.13,
+            "sy_jmag": 12.49
+        },
+        "fig_paths": []
     }
 ]

@@ -1,0 +1,95 @@
+{
+  "experiment": "j7b_real_curve_measure_detrended \u2014 J3 fix on real Kepler-90 stitch WITH detrend",
+  "timestamp_utc": "2026-07-08T04:26:03.080275+00:00",
+  "cache_dir": "C:\\Users\\MIT\\AppData\\Local\\Temp\\astraeus_h1_kepler90_measurement\\download_all",
+  "curve": {
+    "t_baseline_d": 1239.8092,
+    "n_cadences": 45853,
+    "load_s": 7.09
+  },
+  "upstream": {
+    "rotation_d": 0.1542,
+    "rotation_s": 0.16,
+    "detrend_s": 0.69,
+    "flux_raw_std": 0.00041269871864370804,
+    "flux_detrended_median": 1.000001164991601,
+    "flux_detrended_std": 0.00018615514234772844
+  },
+  "expected": {
+    "frequency_factor": 341.58377034276066,
+    "p_max_d": 619.9046230151907
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "wall_s": 37.82,
+      "period": 489.1304347825386,
+      "snr": 16.36649050441578,
+      "depth": 0.001519185267429668,
+      "duration": 0.1,
+      "confidence_score": 21.62784920848894
+    },
+    {
+      "iteration": 1,
+      "wall_s": 39.42,
+      "period": 7.008254166017744,
+      "snr": 11.484093837820012,
+      "depth": 6.768115392219443e-05,
+      "duration": 0.15,
+      "confidence_score": 13.00852504403519
+    },
+    {
+      "iteration": 2,
+      "wall_s": 41.86,
+      "period": 8.719240457275708,
+      "snr": 11.260911954807883,
+      "depth": 7.551216608214784e-05,
+      "duration": 0.15,
+      "confidence_score": 12.290362655850688
+    }
+  ],
+  "accepted": [
+    {
+      "period": 489.1304347825386,
+      "snr": 16.36649050441578
+    },
+    {
+      "period": 7.008254166017744,
+      "snr": 11.484093837820012
+    },
+    {
+      "period": 8.719240457275708,
+      "snr": 11.260911954807883
+    }
+  ],
+  "recovery": [
+    {
+      "period": 489.1304347825386,
+      "snr": 16.36649050441578,
+      "matched_planet": null
+    },
+    {
+      "period": 7.008254166017744,
+      "snr": 11.484093837820012,
+      "matched_planet": "Kepler-90b"
+    },
+    {
+      "period": 8.719240457275708,
+      "snr": 11.260911954807883,
+      "matched_planet": "Kepler-90c"
+    }
+  ],
+  "verdict": {
+    "verdict_text": "FAIL: recovered_d_or_h=[]  total_wall=119.1s",
+    "total_wall_s": 119.09,
+    "n_iters": 3,
+    "rotation_d": 0.15420699498611312,
+    "recovered_planets": [
+      "Kepler-90b",
+      "Kepler-90c"
+    ],
+    "n_recovered": 2,
+    "recovered_d_or_h": []
+  },
+  "round1_baseline_wall_s": 161.3
+}
