@@ -1,0 +1,110 @@
+{
+  "curve": {
+    "n_samples": 3000,
+    "t_span": 1500.0,
+    "seed": 42
+  },
+  "grid": {
+    "frequency_factor": 100.0,
+    "n_periods": 449701,
+    "n_durations": 4
+  },
+  "noise_floor": {
+    "median": 1.0405965772208046e-06,
+    "p99": 2.3571017784523954e-06,
+    "max": 8.667231436015645e-06
+  },
+  "signal_periodogram": {
+    "median": 1.1229095006166783e-06,
+    "p99": 3.1449098576479826e-06,
+    "max": 7.480526055256021e-06,
+    "rank20_cutoff": 5.087805914822291e-06
+  },
+  "per_planet": [
+    {
+      "name": "p1",
+      "true_period": 12.0,
+      "true_duration": 0.15,
+      "signal_period": 11.999999999999979,
+      "signal_dur": 0.1,
+      "signal_power": 2.7620428738361934e-06,
+      "noise_period": 11.999999999999979,
+      "noise_dur": 0.05,
+      "noise_power": 1.5644412867574362e-06,
+      "excess_power": 1.1976015870787572e-06,
+      "rel_excess": 0.7655139232236609,
+      "rank": 5966,
+      "in_top20": false,
+      "in_top50": false,
+      "in_top100": false
+    },
+    {
+      "name": "p2",
+      "true_period": 45.0,
+      "true_duration": 0.25,
+      "signal_period": 44.99999999999971,
+      "signal_dur": 0.2,
+      "signal_power": 6.8432438814359435e-06,
+      "noise_period": 44.99999999999971,
+      "noise_dur": 0.05,
+      "noise_power": 1.8878008166827701e-06,
+      "excess_power": 4.955443064753174e-06,
+      "rel_excess": 2.62498194775699,
+      "rank": 3,
+      "in_top20": true,
+      "in_top50": true,
+      "in_top100": true
+    },
+    {
+      "name": "p3",
+      "true_period": 120.0,
+      "true_duration": 0.4,
+      "signal_period": 119.99999999999723,
+      "signal_dur": 0.4,
+      "signal_power": 4.347119448405932e-06,
+      "noise_period": 119.99999999999723,
+      "noise_dur": 0.05,
+      "noise_power": 1.650612054397053e-06,
+      "excess_power": 2.6965073940088785e-06,
+      "rel_excess": 1.6336409193339358,
+      "rank": 75,
+      "in_top20": false,
+      "in_top50": false,
+      "in_top100": true
+    },
+    {
+      "name": "p4",
+      "true_period": 300.0,
+      "true_duration": 0.6,
+      "signal_period": 299.99999999999307,
+      "signal_dur": 0.4,
+      "signal_power": 5.235746717750681e-06,
+      "noise_period": 299.99999999999307,
+      "noise_dur": 0.2,
+      "noise_power": 1.7286120884055033e-06,
+      "excess_power": 3.5071346293451778e-06,
+      "rel_excess": 2.028873136355427,
+      "rank": 16,
+      "in_top20": true,
+      "in_top50": true,
+      "in_top100": true
+    },
+    {
+      "name": "p5",
+      "true_period": 600.0,
+      "true_duration": 0.8,
+      "signal_period": 599.9999999999861,
+      "signal_dur": 0.4,
+      "signal_power": 6.150022326052201e-06,
+      "noise_period": 599.9999999999861,
+      "noise_dur": 0.05,
+      "noise_power": 1.641760750742434e-06,
+      "excess_power": 4.508261575309767e-06,
+      "rel_excess": 2.7459918098730585,
+      "rank": 5,
+      "in_top20": true,
+      "in_top50": true,
+      "in_top100": true
+    }
+  ]
+}

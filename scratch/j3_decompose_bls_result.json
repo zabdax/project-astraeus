@@ -1,0 +1,19 @@
+{
+  "baseline_d": 200.0,
+  "n_cadences": 9795,
+  "n_periods": 795688,
+  "n_durations": 8,
+  "n_window_freqs": 100,
+  "n_candidates": 795688,
+  "candidates_scanned": 1,
+  "accepted_idx": 792993,
+  "known_periods_len_during_call": 0,
+  "autoperiod_s": 0.016263599987723865,
+  "model_power_s": 136.9342251999915,
+  "window_periodogram_s": 10.137714700002107,
+  "alias_loop_s": 0.000738900009309873,
+  "overhead_s": 0.04468269999779295,
+  "total_s": 147.13362509998842,
+  "accepted_period_d": 59.734303469746976,
+  "target_period_d": 59.73667
+}

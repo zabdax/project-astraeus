@@ -1,0 +1,20 @@
+[
+  {
+    "p_max": 50.0,
+    "n_periods": 791691,
+    "n_durations": 8,
+    "autoperiod_s": 0.010697299992898479,
+    "model_power_s": 110.04508710000664,
+    "p_min_period": 0.5,
+    "p_max_period": 50.00106060191296
+  },
+  {
+    "p_max": 25.0,
+    "n_periods": 783694,
+    "n_durations": 8,
+    "autoperiod_s": 0.010965700013912283,
+    "model_power_s": 97.5003221000079,
+    "p_min_period": 0.5,
+    "p_max_period": 25.000057209601806
+  }
+]

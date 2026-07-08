@@ -1,0 +1,55 @@
+{
+  "single": {
+    "n_cadences": 9795,
+    "T_baseline": 199.96083333333334,
+    "target_period": 59.73667,
+    "recovered_period": 59.751315151154806,
+    "recovered_power": 5.1276993180061845e-06,
+    "recovered_duration": 0.18,
+    "rel_err_pct": 0.024516182697845994,
+    "coarse_s": 0.2577657000074396,
+    "refine_s": 0.03378549999615643,
+    "total_s": 0.291551200003596,
+    "coarse_top_periods": [
+      59.78767040488735,
+      29.856373668538954,
+      59.6294198084786,
+      19.90337449426776,
+      14.949047827372608
+    ]
+  },
+  "syn5p": {
+    "n_cadences": 3000,
+    "T_baseline": 1500.0,
+    "injected": [
+      [
+        "p1",
+        12.0
+      ],
+      [
+        "p2",
+        45.0
+      ],
+      [
+        "p3",
+        120.0
+      ],
+      [
+        "p4",
+        300.0
+      ],
+      [
+        "p5",
+        600.0
+      ]
+    ],
+    "recovered": [],
+    "recovered_count": 0,
+    "expected_count": 5,
+    "all_recovered": false,
+    "wall_s": 0.9133050999953412,
+    "recovered_periods": [
+      0.521799770503292
+    ]
+  }
+}
