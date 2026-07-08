@@ -165,11 +165,11 @@ def test_window_alias_k1_rejected():
 
 def test_window_alias_round2_842d_rejected():
     """The actual Round 2 bug: 842.46d false positive.
-    
+
     The round-2 false positives at ~842d were explained by:
       1/842.4 = 1/210.6 − 1/93.6
     i.e. f_alias = f_known − 1 × f_window where f_window ≈ 1/93.6
-    
+
     This is a k=1 alias with the 93.6-day sampling window frequency.
     """
     np.random.seed(42)
@@ -183,12 +183,17 @@ def test_window_alias_round2_842d_rejected():
     alias_842_freq = abs(f_known - f_window)
     alias_842_period = 1.0 / alias_842_freq  # ≈ 842d
 
+    # Round-7 update: with the J3 boundary-margin check (5% of p_max),
+    # we use 40d as the second-highest peak instead of 50d (50d would
+    # be at exactly p_max=50 for this 100d curve, which the new
+    # boundary check correctly rejects as a noise peak). The core
+    # contract — that the 842d alias gets rejected — is unchanged.
     with mock.patch("astraeus.analysis.bls_search.BoxLeastSquares") as mock_bls, \
          mock.patch("astropy.timeseries.LombScargle") as mock_ls:
 
         _setup_bls_mocks(
             mock_bls, mock_ls,
-            periods=[alias_842_period, 50.0, 25.0],
+            periods=[alias_842_period, 40.0, 25.0],
             powers=[10.0, 5.0, 2.0],
             window_freq=np.array([f_window]),
         )
@@ -199,6 +204,6 @@ def test_window_alias_round2_842d_rejected():
             f"k=1 alias at {alias_842_period:.2f}d (the Round 2 ~842d bug) "
             f"was NOT rejected!"
         )
-        assert results['period'] == 50.0, (
-            f"Expected fallback to 50.0d, got {results['period']}"
+        assert results['period'] == 40.0, (
+            f"Expected fallback to 40.0d, got {results['period']}"
         )

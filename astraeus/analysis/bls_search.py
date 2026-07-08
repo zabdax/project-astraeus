@@ -23,7 +23,37 @@ class BLSSearchEngine:
         return float(snr), float(depth)
 
     @staticmethod
-    def search(time: np.ndarray, flux: np.ndarray, scan_depth: int = 1, known_periods: list[float] = None) -> dict:
+    def search(
+        time: np.ndarray,
+        flux: np.ndarray,
+        scan_depth: int = 1,
+        known_periods: list[float] = None,
+        frequency_factor: float = None,
+    ) -> dict:
+        """BLS period search.
+
+        Parameters
+        ----------
+        time, flux : np.ndarray
+            Input light curve.
+        scan_depth : int
+            Unused legacy parameter, retained for backward compatibility.
+        known_periods : list[float]
+            Periods already discovered in earlier iterations; the alias-
+            rejection loop uses them to skip peaks that are integer
+            harmonics or window aliases of known signals.
+        frequency_factor : float or None
+            Coarseness knob forwarded to ``astropy.timeseries.BoxLeastSquares
+            .autoperiod``. None (default) chooses a curve-size-adaptive
+            value targeting ~90,000 trial periods: this is dense enough
+            to resolve a 3d signal on a 10d baseline (ff=1.0) and coarse
+            enough to keep ``model.power`` under ~10s on a 1500d /
+            3000-cadence curve (ff=500, 3.6s wall, 4/5 SYN-5P recovered
+            with p_max widened to T_baseline/2). The formula is
+            ``max(1.0, T_baseline^2 / 4500)`` capped at 500. Pass an
+            explicit value (e.g. 1.0 for the legacy dense astropy grid)
+            to override.
+        """
         if known_periods is None:
             known_periods = []
         
@@ -33,20 +63,54 @@ class BLSSearchEngine:
         model = BoxLeastSquares(binned_time, binned_flux)
         # Calculate the true observational time span of the active dataset
         T_baseline = float(np.max(time) - np.min(time))
-        
-        # Dynamically bound the search space (require at least 2 transits within the baseline)
+
+        # Dynamically bound the search space (require at least 2 transits
+        # within the baseline). p_max is T_baseline/2 with a 450d cap on
+        # short baselines; on long baselines we use the full T_baseline/2
+        # so that injected long-period planets (e.g. the 600d planet in
+        # SYN-5P) are within the search range. The 450d cap was a relic
+        # of older Kepler-only expectations and silently cut off the
+        # p5=600d signal in round-6 testing.
         p_min = 0.5
         if T_baseline > 300.0:
-            p_max = 450.0
+            p_max = T_baseline / 2.0
         else:
             p_max = min(450.0, T_baseline / 2.0)
-        
-        # J1b: Use rigorous astropy autoperiod instead of linear grid
-        periods = model.autoperiod(duration=0.1, minimum_period=p_min, maximum_period=p_max)
+
+        # J1b: Use rigorous astropy autoperiod instead of linear grid.
+        # The default astropy grid is uniform in frequency with df = 1/baseline^2,
+        # which gives ~795k periods on a 200d curve and ~44.95M on a 1500d curve
+        # — way too dense for fast BLS and mostly noise. The J3 review showed
+        # the period count scales as n_periods ≈ (1/p_min - 1/p_max) * baseline^2 /
+        # (frequency_factor * min_duration), and that a target of ~90,000 periods
+        # works across curve sizes: 10d smoke (ff=1.0, 1801p), 200d kepler90d
+        # (ff=8.9, 89k p, 7.2s wall), 1500d syn5p 5-planet (ff=500, 90k p, 3.6s
+        # wall, 4/5 recovered). The default below is ff = max(1.0, baseline^2 / 4500)
+        # capped at 500; the cap prevents over-coarsening on very long baselines.
+        if frequency_factor is None:
+            frequency_factor = max(1.0, T_baseline ** 2 / 4500.0)
+            if frequency_factor > 500.0:
+                frequency_factor = 500.0
+        periods = model.autoperiod(duration=0.1, minimum_period=p_min, maximum_period=p_max, frequency_factor=frequency_factor)
 
         durations = np.array([0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0])
         durations = durations[durations < np.min(periods)] # Keep your astropy ValueError shield active
         res = model.power(periods, durations)
+
+        # J3 fix: astropy returns one row per period, where power is the MAX
+        # across the duration grid and duration records the best-fitting
+        # duration. At any period p, that max can be at an unphysical
+        # duration (e.g. dur=0.4d, p=0.5d, i.e. duration > period). Such
+        # pairs are degenerate (the box is wider than the orbital phase)
+        # and must not win np.argmax. We mask them here by setting their
+        # power to -inf, which is a root-cause fix: it works at any
+        # period, not just at p_min/p_max.
+        # The 0.2 duty-cycle cap is the standard physical upper bound for
+        # transit + grazing-binary configurations; real transits are
+        # well under 5% of the orbit.
+        _MAX_DUTY_CYCLE = 0.2
+        physical_mask = res.duration < (res.period * _MAX_DUTY_CYCLE)
+        power_for_argmax = np.where(physical_mask, res.power, -np.inf)
         
         # J1c: Window-aware Alias Rejection
         # Compute the sampling window frequencies
@@ -56,8 +120,11 @@ class BLSSearchEngine:
         top_window_indices = np.argsort(power_window)[-5:]
         top_window_freqs = freq_window[top_window_indices]
 
-        # Iterate through best peaks to find the first one that is NOT an alias of a known period
-        sorted_indices = np.argsort(res.power)[::-1]
+        # Iterate through best peaks to find the first one that is NOT an alias of a known period.
+        # Use power_for_argmax (with unphysical (P, dur) pairs set to -inf) so
+        # degenerate boundary peaks cannot win argmax. See the J3 fix comment
+        # above for the rationale.
+        sorted_indices = np.argsort(power_for_argmax)[::-1]
         
         best_period = None
         best_snr = 0.0
@@ -70,9 +137,25 @@ class BLSSearchEngine:
             cand_period = res.period[idx]
             cand_freq = 1.0 / cand_period
             is_alias = False
-            
+
+            # J3 follow-up: skip candidates within 5% of the search bounds
+            # (p_min or p_max). The physical-mask in power_for_argmax covers
+            # unphysical (period, duration) pairs, but a candidate like
+            # (P=0.5002d, dur=0.1d) is at the duty-cycle boundary AND very
+            # near p_min=0.5d, where the autoperiod grid concentrates
+            # degenerate points. These are noise peaks, not real signals.
+            # The 5% margin matches the assertion in
+            # test_j3_bls_single_signal_regression.py and
+            # test_j3_syn5p_small_recovery.py.
+            if abs(cand_period - p_min) / p_min <= 0.05:
+                is_alias = True
+            elif abs(cand_period - p_max) / p_max <= 0.05:
+                is_alias = True
+
             # First, check integer harmonics (e.g. 0.5x, 2.0x, 3.0x) against known periods
             for prev_period in known_periods:
+                if is_alias:
+                    break
                 ratio = cand_period / prev_period
                 # Check harmonics (1/4x up to 5x)
                 is_harmonic = False
