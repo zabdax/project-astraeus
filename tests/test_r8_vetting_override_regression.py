@@ -7,7 +7,11 @@ Contract locked by this test (R8):
   Candidate". The orchestrator's GUARDRAIL 1 reads
   vetting_status.startswith("Verified Planet Candidate") to decide
   whether to accept and continue iterating, so any string starting
-  with that prefix bypasses the TLS gate.
+  with that prefix bypasses the TLS gate. R8 (2026-07-12) closes
+  this bypass at two layers: (a) the VettingEngine "Likely Planet"
+  override in detection.py:328 is now gated on is_valid, and (b) the
+  orchestrator's GUARDRAIL 1 explicitly requires tls_valid=True.
+  This test confirms the contract holds.
 
 This test does NOT prescribe the exact string the override should
 produce (could be "rejected", "TLS Rejected", "Likely Planet",
@@ -40,18 +44,14 @@ from unittest import mock
 import numpy as np
 import pytest
 
-# KNOWN FAILURE: this test locks the round-8 vetting-override bypass
-# (see scratch/r8_repro_vetting_override.py + the round-7 J7c log).
-# Marked xfail so CI doesn't fail while the round-8 fix is pending.
-# When the fix lands, remove this xfail decorator and the test will
-# turn green to confirm the bypass is closed.
-pytestmark = pytest.mark.xfail(
-    reason="Round 8: VettingEngine override at detection.py:328-329 sets "
-           "'Verified Planet Candidate' on TLS-rejected candidates; the "
-           "orchestrator's string-prefix check accepts that. Locked here "
-           "so the fix turns this green.",
-    strict=False,
-)
+# R8 fix (2026-07-12): the VettingEngine override at detection.py:328
+# is now gated on is_valid (which is the conjunction of SNR,
+# confidence, and the TLS gate), so a TLS-rejected candidate can no
+# longer be tagged as "Verified Planet Candidate" by the classifier.
+# The orchestrator-level defense-in-depth guard at orchestrator.py
+# GUARDRAIL 1 also requires tls_valid=True, so the load-bearing TLS
+# gate is now closed at both layers. This test now runs as a
+# non-xfail regression to confirm the bypass stays closed.
 
 
 def _force_tls_low_sde(*args, **kwargs):

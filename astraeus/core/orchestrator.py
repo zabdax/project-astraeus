@@ -165,8 +165,22 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
         print(f"[Orchestrator] Iteration {iteration} result: Period={best_period:.4f}d, SNR={snr:.2f}, Duration={duration:.4f}d, Depth={depth:.6f}, Status={vetting_status}")
         
         # GUARDRAIL 1 (The SNR/Vetting Break)
-        if snr < snr_floor or not vetting_status.startswith("Verified Planet Candidate"):
-            print(f"[Orchestrator] Signal significance floor reached (SNR={snr:.2f}, status='{vetting_status}'). Halting iterative search.")
+        # R8 fix (2026-07-12): also require tls_valid=True on the accept
+        # path. The VettingEngine's "Likely Planet" override in
+        # detection.py:328 can still set vetting_status to "Verified Planet
+        # Candidate" on TLS-rejected candidates (the R8 detector-level fix
+        # in detection.py now also requires is_valid, but defense-in-depth
+        # at the orchestrator level is the safer guarantee that the load-
+        # bearing TLS gate cannot be bypassed by a future classifier
+        # override reintroducing a "Verified Planet Candidate*" string).
+        # This is the "option (b)" defense-in-depth described in
+        # scratch/r8_repro_vetting_override.py:35-42.
+        tls_valid = bool(result.get('tls_valid', False))
+        if snr < snr_floor or not vetting_status.startswith("Verified Planet Candidate") or not tls_valid:
+            if not tls_valid and vetting_status.startswith("Verified Planet Candidate"):
+                print(f"[Orchestrator] TLS-rejected candidate bypassed the classifier gate (SNR={snr:.2f}, tls_valid={tls_valid}, status='{vetting_status}'). Halting to preserve the load-bearing TLS gate (R8 fix).")
+            else:
+                print(f"[Orchestrator] Signal significance floor reached (SNR={snr:.2f}, status='{vetting_status}'). Halting iterative search.")
             break
         
         # GUARDRAIL 2 (Duplicate Period Detection)
@@ -383,7 +397,16 @@ def _subprocess_search_worker(result_queue, raw_lightcurve, max_signals, snr_flo
             depth = result.get("depth")
 
             # GUARDRAIL 1
-            if snr < snr_floor or not vetting_status.startswith("Verified Planet Candidate"):
+            # R8 fix (2026-07-12): also require tls_valid=True. See the
+            # matching comment in run_multi_planet_search above for the
+            # full rationale. Defense-in-depth against the VettingEngine
+            # "Likely Planet" override that previously bypassed the
+            # load-bearing TLS gate (round-7 J7c iter 1: 489.13d
+            # spurious peak, tls_sde=4.22, vetting='Verified Planet
+            # Candidate (Likely Planet)' — orchestrator accepted it and
+            # burned an iteration slot).
+            tls_valid = bool(result.get("tls_valid", False))
+            if snr < snr_floor or not vetting_status.startswith("Verified Planet Candidate") or not tls_valid:
                 guardrail1_consecutive_marginal += 1
                 if (
                     best_period is not None

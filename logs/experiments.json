@@ -1,547 +1,373 @@
 [
     {
-        "id": "835dae39-0c3a-4b5c-a68c-7f62325e2c4a",
-        "timestamp": "2026-07-06T07:40:35.360700Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P",
-            "period": 11.999699969997,
-            "stellar_rotation_period_days": 0.10270634102955317,
-            "snr": 10.844706776985797,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "47a670bf-07f4-4e23-b7cd-c90e91f495b0",
-        "timestamp": "2026-07-06T07:44:12.754259Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P",
-            "period": 11.999699969997,
-            "stellar_rotation_period_days": 0.10270634102955317,
-            "snr": 10.844706776985797,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "8f552cb0-a9a9-44c8-9d17-a6f8638b20a2",
-        "timestamp": "2026-07-06T07:47:11.166833Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P",
-            "period": 11.999699969997,
-            "stellar_rotation_period_days": 0.10270634102955317,
-            "snr": 10.844706776985797,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "3c935e72-17fb-43c1-bb16-97c973f53235",
-        "timestamp": "2026-07-06T07:49:58.856281Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P",
-            "period": 45.005500550055004,
-            "stellar_rotation_period_days": 0.10270634102955317,
-            "snr": 8.478767972325508,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "b6c7ede5-7281-4d3f-9c86-6ea51653fff9",
-        "timestamp": "2026-07-06T07:52:51.422886Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P",
-            "period": 406.39363936393636,
-            "stellar_rotation_period_days": 0.10270634102955317,
-            "snr": 8.081343778957692,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "0720a035-7934-4371-a024-118440efcec3",
-        "timestamp": "2026-07-06T07:54:35.029029Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P",
-            "period": 261.3831383138314,
-            "stellar_rotation_period_days": 0.10270634102955317,
-            "snr": 6.364008125037036,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "3ce02273-bfa3-49b0-9f6d-5ed56097b82d",
-        "timestamp": "2026-07-06T07:56:29.947370Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P",
-            "period": 11.999699969997,
-            "stellar_rotation_period_days": 0.10270634102955317,
-            "snr": 10.844706776985797,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "60ff1b05-8e19-4c54-946f-9505e4afe259",
-        "timestamp": "2026-07-06T07:58:09.113442Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P",
-            "period": 45.005500550055004,
-            "stellar_rotation_period_days": 0.10270634102955317,
-            "snr": 8.478767972325508,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "b91bf82e-b4af-4dee-987c-aafcc18bde0f",
-        "timestamp": "2026-07-06T07:59:47.250085Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P",
-            "period": 406.39363936393636,
-            "stellar_rotation_period_days": 0.10270634102955317,
-            "snr": 8.081343778957692,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "817f78b8-523e-4e00-af5c-b9b998b440f5",
-        "timestamp": "2026-07-06T08:01:25.868116Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P",
-            "period": 261.3831383138314,
-            "stellar_rotation_period_days": 0.10270634102955317,
-            "snr": 6.364008125037036,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "aa759f11-8e99-437f-886c-6814cabdda47",
-        "timestamp": "2026-07-06T08:05:41.973807Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P-small",
-            "period": 0.5,
-            "stellar_rotation_period_days": 0.1061976976339153,
-            "snr": 0.0,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "aa1cc804-2517-4cd0-af67-6cbc944e7fec",
-        "timestamp": "2026-07-06T08:08:09.581310Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P-small",
-            "period": 0.5,
-            "stellar_rotation_period_days": 0.1061976976339153,
-            "snr": 0.0,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "f4cd000e-351c-487a-8e75-553d3c016699",
-        "timestamp": "2026-07-06T08:10:33.849150Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-5P-small",
-            "period": 0.5,
-            "stellar_rotation_period_days": 0.1061976976339153,
-            "snr": 0.0,
-            "data_source": "synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "0162294e-bca2-4b6f-8de3-ac11971bf7d8",
-        "timestamp": "2026-07-06T08:18:37.558815Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "id": "92854e87-0bd2-4b4a-8476-7c71e10b41c3",
+        "timestamp": "2026-07-10T03:42:58.914366Z",
+        "dataset_hash": "ba926be0a6cc2c16701899b54101f94bd314422077334b2605c3a4b067c83d69",
         "params": {
             "target_name": "Kepler-90",
-            "period": 797.4777477747774,
-            "stellar_rotation_period_days": 0.15420699498611312,
-            "snr": 16.36649050441578,
-            "data_source": "MAST-stitch-12quarters",
+            "period": 7.217321571772254,
+            "stellar_rotation_period_days": 2.4193548387096775,
+            "snr": 16.163172928350203,
+            "data_source": "NASA Exoplanet Archive",
             "is_valid_candidate": false
         },
-        "metadata": {},
+        "metadata": {
+            "pl_name": "Kepler-90",
+            "orbital_period": 14.45,
+            "stellar_radius": 1.2,
+            "transit_depth": 0.0005,
+            "stellar_mass": 1.2
+        },
         "fig_paths": []
     },
     {
-        "id": "76cbaeca-b68f-4ac7-a86b-d7f751f60eed",
-        "timestamp": "2026-07-06T08:42:16.950202Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "id": "1c956ba0-760a-4b1f-b66b-f7242172a639",
+        "timestamp": "2026-07-10T03:43:14.641952Z",
+        "dataset_hash": "ba926be0a6cc2c16701899b54101f94bd314422077334b2605c3a4b067c83d69",
         "params": {
             "target_name": "Kepler-90",
-            "period": 842.116211621162,
-            "stellar_rotation_period_days": 0.15420699498611312,
-            "snr": 12.39556843806958,
-            "data_source": "MAST-stitch-12quarters",
+            "period": 7.217321571772254,
+            "stellar_rotation_period_days": 2.4193548387096775,
+            "snr": 16.163172928350203,
+            "data_source": "NASA Exoplanet Archive",
             "is_valid_candidate": false
         },
-        "metadata": {},
+        "metadata": {
+            "pl_name": "Kepler-90",
+            "orbital_period": 14.45,
+            "stellar_radius": 1.2,
+            "transit_depth": 0.0005,
+            "stellar_mass": 1.2
+        },
         "fig_paths": []
     },
     {
-        "id": "aa73ef35-be64-41e0-b57d-a29b4d833977",
-        "timestamp": "2026-07-06T08:44:48.252386Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "id": "5be99624-5bd8-4cc2-a552-803342422aa4",
+        "timestamp": "2026-07-10T03:43:30.487767Z",
+        "dataset_hash": "ba926be0a6cc2c16701899b54101f94bd314422077334b2605c3a4b067c83d69",
         "params": {
             "target_name": "Kepler-90",
-            "period": 332.08220822082205,
-            "stellar_rotation_period_days": 0.15420699498611312,
-            "snr": 11.139662489073608,
-            "data_source": "MAST-stitch-12quarters",
+            "period": 7.217321571772254,
+            "stellar_rotation_period_days": 2.4193548387096775,
+            "snr": 16.163172928350203,
+            "data_source": "NASA Exoplanet Archive",
             "is_valid_candidate": false
         },
-        "metadata": {},
+        "metadata": {
+            "pl_name": "Kepler-90",
+            "orbital_period": 14.45,
+            "stellar_radius": 1.2,
+            "transit_depth": 0.0005,
+            "stellar_mass": 1.2
+        },
         "fig_paths": []
     },
     {
-        "id": "949b1a35-e8ec-4757-b2ef-4903f08ef774",
-        "timestamp": "2026-07-06T09:57:30.337300Z",
+        "id": "b709d8cd-2857-4e51-8f57-ec54f2976f45",
+        "timestamp": "2026-07-10T06:35:55.174911Z",
+        "dataset_hash": "487c4618efa375d2b9a44a3326e1d8f14e70e867a1c6f13dfee2b29a55520417",
+        "params": {
+            "target_name": "TRAPPIST-1",
+            "period": 1.3841566919888235,
+            "stellar_rotation_period_days": 3.410302565599472,
+            "snr": 8.064277868312534,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "TRAPPIST-1",
+            "orbital_period": 1.510826,
+            "stellar_radius": 0.1192,
+            "transit_depth": 0.7378,
+            "transit_depth_source": "pl_trandep",
+            "pl_orbper": 1.510826,
+            "st_rad": 0.1192,
+            "pl_trandep": 0.7378,
+            "st_teff": 2566.0,
+            "st_mass": 0.0898,
+            "sy_jmag": 11.354,
+            "raw_row_dump": {
+                "pl_name": "TRAPPIST-1 b",
+                "pl_orbper": 1.510826,
+                "pl_orbpererr1": 6e-06,
+                "st_rad": 0.1192,
+                "st_raderr1": 0.0013,
+                "st_lum": -3.25727,
+                "st_teff": 2566.0,
+                "st_mass": 0.0898,
+                "sy_jmag": 11.354,
+                "pl_trandep": 0.7378,
+                "pl_ratror": 0.0859
+            },
+            "bridged_mission": "TESS",
+            "resolved_target": "TRAPPIST-1"
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "41e9ba62-5cf4-4dc6-a057-399b00634e53",
+        "timestamp": "2026-07-10T06:41:23.348839Z",
+        "dataset_hash": "487c4618efa375d2b9a44a3326e1d8f14e70e867a1c6f13dfee2b29a55520417",
+        "params": {
+            "target_name": "TRAPPIST-1",
+            "period": 1.5106789745652907,
+            "stellar_rotation_period_days": 3.410302565599472,
+            "snr": 10.842600883706549,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "TRAPPIST-1",
+            "orbital_period": 1.510826,
+            "stellar_radius": 0.1192,
+            "transit_depth": 0.7378,
+            "transit_depth_source": "pl_trandep",
+            "pl_orbper": 1.510826,
+            "st_rad": 0.1192,
+            "pl_trandep": 0.7378,
+            "st_teff": 2566.0,
+            "st_mass": 0.0898,
+            "sy_jmag": 11.354,
+            "raw_row_dump": {
+                "pl_name": "TRAPPIST-1 b",
+                "pl_orbper": 1.510826,
+                "pl_orbpererr1": 6e-06,
+                "st_rad": 0.1192,
+                "st_raderr1": 0.0013,
+                "st_lum": -3.25727,
+                "st_teff": 2566.0,
+                "st_mass": 0.0898,
+                "sy_jmag": 11.354,
+                "pl_trandep": 0.7378,
+                "pl_ratror": 0.0859
+            },
+            "bridged_mission": "TESS",
+            "resolved_target": "TRAPPIST-1"
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "c4de33ec-6ae1-4f77-9bff-e84f3944be16",
+        "timestamp": "2026-07-10T06:44:59.244832Z",
+        "dataset_hash": "487c4618efa375d2b9a44a3326e1d8f14e70e867a1c6f13dfee2b29a55520417",
+        "params": {
+            "target_name": "TRAPPIST-1",
+            "period": 9.86845134802278,
+            "stellar_rotation_period_days": 1.4186587739734418,
+            "snr": 7.792403927094148,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "TRAPPIST-1",
+            "orbital_period": 1.510826,
+            "stellar_radius": 0.1192,
+            "transit_depth": 0.7378,
+            "transit_depth_source": "pl_trandep",
+            "pl_orbper": 1.510826,
+            "st_rad": 0.1192,
+            "pl_trandep": 0.7378,
+            "st_teff": 2566.0,
+            "st_mass": 0.0898,
+            "sy_jmag": 11.354,
+            "raw_row_dump": {
+                "pl_name": "TRAPPIST-1 b",
+                "pl_orbper": 1.510826,
+                "pl_orbpererr1": 6e-06,
+                "st_rad": 0.1192,
+                "st_raderr1": 0.0013,
+                "st_lum": -3.25727,
+                "st_teff": 2566.0,
+                "st_mass": 0.0898,
+                "sy_jmag": 11.354,
+                "pl_trandep": 0.7378,
+                "pl_ratror": 0.0859
+            },
+            "bridged_mission": "TESS",
+            "resolved_target": "TRAPPIST-1"
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "9b93a19a-b28e-4236-9208-a66e32eb2140",
+        "timestamp": "2026-07-10T06:48:55.847934Z",
+        "dataset_hash": "487c4618efa375d2b9a44a3326e1d8f14e70e867a1c6f13dfee2b29a55520417",
+        "params": {
+            "target_name": "TRAPPIST-1",
+            "period": 8.622563487433304,
+            "stellar_rotation_period_days": 3.410302565599472,
+            "snr": 7.404843346985762,
+            "data_source": "NASA Exoplanet Archive",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "TRAPPIST-1",
+            "orbital_period": 1.510826,
+            "stellar_radius": 0.1192,
+            "transit_depth": 0.7378,
+            "transit_depth_source": "pl_trandep",
+            "pl_orbper": 1.510826,
+            "st_rad": 0.1192,
+            "pl_trandep": 0.7378,
+            "st_teff": 2566.0,
+            "st_mass": 0.0898,
+            "sy_jmag": 11.354,
+            "raw_row_dump": {
+                "pl_name": "TRAPPIST-1 b",
+                "pl_orbper": 1.510826,
+                "pl_orbpererr1": 6e-06,
+                "st_rad": 0.1192,
+                "st_raderr1": 0.0013,
+                "st_lum": -3.25727,
+                "st_teff": 2566.0,
+                "st_mass": 0.0898,
+                "sy_jmag": 11.354,
+                "pl_trandep": 0.7378,
+                "pl_ratror": 0.0859
+            },
+            "bridged_mission": "TESS",
+            "resolved_target": "TRAPPIST-1"
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "33318cd3-b50a-4bda-887b-e670af2559fe",
+        "timestamp": "2026-07-12T16:02:35.908410Z",
+        "dataset_hash": "61ffab5dce0378c85e191ecdf16fe8d15565292a771c36139b34cb9454754b33",
+        "params": {
+            "target_name": "kepler-90",
+            "period": 14.932478485646934,
+            "stellar_rotation_period_days": 6.033968790943337,
+            "snr": 60.45404449746046,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "KOI-351",
+            "orbital_period": 331.60296,
+            "stellar_radius": 1.185,
+            "transit_depth": 0.83221,
+            "transit_depth_source": "pl_trandep",
+            "pl_orbper": 331.60296,
+            "st_rad": 1.185,
+            "pl_trandep": 0.83221,
+            "st_teff": 6031.13,
+            "st_mass": 1.242,
+            "sy_jmag": 12.79,
+            "raw_row_dump": {
+                "pl_name": "KOI-351 h",
+                "pl_orbper": 331.60296,
+                "pl_orbpererr1": 0.00034,
+                "st_rad": 1.185,
+                "st_raderr1": 0.031,
+                "st_lum": 0.26853,
+                "st_teff": 6031.13,
+                "st_mass": 1.242,
+                "sy_jmag": 12.79,
+                "pl_trandep": 0.83221,
+                "pl_ratror": 0.083115
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "4eb4b9b3-1da2-4741-bd73-553beb2952ec",
+        "timestamp": "2026-07-12T16:02:47.459144Z",
+        "dataset_hash": "61ffab5dce0378c85e191ecdf16fe8d15565292a771c36139b34cb9454754b33",
+        "params": {
+            "target_name": "kepler-90",
+            "period": 15.773446054256388,
+            "stellar_rotation_period_days": 5.4450118722433105,
+            "snr": 54.61207398294778,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "KOI-351",
+            "orbital_period": 331.60296,
+            "stellar_radius": 1.185,
+            "transit_depth": 0.83221,
+            "transit_depth_source": "pl_trandep",
+            "pl_orbper": 331.60296,
+            "st_rad": 1.185,
+            "pl_trandep": 0.83221,
+            "st_teff": 6031.13,
+            "st_mass": 1.242,
+            "sy_jmag": 12.79,
+            "raw_row_dump": {
+                "pl_name": "KOI-351 h",
+                "pl_orbper": 331.60296,
+                "pl_orbpererr1": 0.00034,
+                "st_rad": 1.185,
+                "st_raderr1": 0.031,
+                "st_lum": 0.26853,
+                "st_teff": 6031.13,
+                "st_mass": 1.242,
+                "sy_jmag": 12.79,
+                "pl_trandep": 0.83221,
+                "pl_ratror": 0.083115
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "328b0a57-efa5-419c-b84a-acc743c6a239",
+        "timestamp": "2026-07-12T16:02:56.513009Z",
+        "dataset_hash": "61ffab5dce0378c85e191ecdf16fe8d15565292a771c36139b34cb9454754b33",
+        "params": {
+            "target_name": "kepler-90",
+            "period": 6.592973995316444,
+            "stellar_rotation_period_days": 2.4707172522840173,
+            "snr": 3.183844344067654,
+            "data_source": "Kepler (via Lightkurve)",
+            "is_valid_candidate": false
+        },
+        "metadata": {
+            "pl_name": "KOI-351",
+            "orbital_period": 331.60296,
+            "stellar_radius": 1.185,
+            "transit_depth": 0.83221,
+            "transit_depth_source": "pl_trandep",
+            "pl_orbper": 331.60296,
+            "st_rad": 1.185,
+            "pl_trandep": 0.83221,
+            "st_teff": 6031.13,
+            "st_mass": 1.242,
+            "sy_jmag": 12.79,
+            "raw_row_dump": {
+                "pl_name": "KOI-351 h",
+                "pl_orbper": 331.60296,
+                "pl_orbpererr1": 0.00034,
+                "st_rad": 1.185,
+                "st_raderr1": 0.031,
+                "st_lum": 0.26853,
+                "st_teff": 6031.13,
+                "st_mass": 1.242,
+                "sy_jmag": 12.79,
+                "pl_trandep": 0.83221,
+                "pl_ratror": 0.083115
+            }
+        },
+        "fig_paths": []
+    },
+    {
+        "id": "f2540f30-3a75-4de7-bc93-043e716c25a6",
+        "timestamp": "2026-07-16T03:15:18.588782Z",
         "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "params": {
-            "target_name": "Test3",
-            "period": 0.5,
-            "stellar_rotation_period_days": 0.1000410578916272,
-            "snr": 0.0,
-            "data_source": "Unknown",
+            "target_name": "R8",
+            "period": 10.000000000000014,
+            "stellar_rotation_period_days": 0.43469941553019753,
+            "snr": 70.44484080347135,
+            "data_source": "synth",
             "is_valid_candidate": false
         },
         "metadata": {},
         "fig_paths": []
     },
     {
-        "id": "ddc6ecfd-4954-40f9-8b73-c3bb2c0d78d2",
-        "timestamp": "2026-07-06T10:19:07.726347Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-LONGPERIOD",
-            "period": 0.2,
-            "stellar_rotation_period_days": 0.21730622893792811,
-            "snr": 5.579265024270448,
-            "data_source": "Synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "0fcdae86-2f6d-4745-b8ba-dabb155a39bc",
-        "timestamp": "2026-07-06T10:20:03.900839Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-LONGPERIOD",
-            "period": 0.2,
-            "stellar_rotation_period_days": 0.21730622893792811,
-            "snr": 5.579265024270448,
-            "data_source": "Synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "32bdeb78-90f7-4d4f-b001-b2a5fbcd43c6",
-        "timestamp": "2026-07-06T10:20:41.292106Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "SYN-LONGPERIOD",
-            "period": 0.2,
-            "stellar_rotation_period_days": 0.21730622893792811,
-            "snr": 5.579265024270448,
-            "data_source": "Synthetic",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "b72da589-6a23-4df8-ad91-2635558554bd",
-        "timestamp": "2026-07-06T10:45:27.611263Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "Test1",
-            "period": 0.5,
-            "stellar_rotation_period_days": 10.0,
-            "snr": 0.0,
-            "data_source": "Unknown",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "4f9a9746-96fd-4144-a458-aeed32dd4e56",
-        "timestamp": "2026-07-06T10:45:27.853363Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "Test1",
-            "period": 0.5,
-            "stellar_rotation_period_days": 0.12501578482131584,
-            "snr": 16.47009180570965,
-            "data_source": "Unknown",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "8b56db97-6ccf-4af5-9489-12cb17473fcc",
-        "timestamp": "2026-07-06T11:46:33.758911Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "Test1",
-            "period": 0.5,
-            "stellar_rotation_period_days": 10.0,
-            "snr": 0.0,
-            "data_source": "Unknown",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "0971b0c3-c524-4477-ab6e-dc0577dd3e75",
-        "timestamp": "2026-07-06T11:46:33.965734Z",
-        "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-        "params": {
-            "target_name": "Test1",
-            "period": 0.5,
-            "stellar_rotation_period_days": 0.12501578482131584,
-            "snr": 16.47009180570965,
-            "data_source": "Unknown",
-            "is_valid_candidate": false
-        },
-        "metadata": {},
-        "fig_paths": []
-    },
-    {
-        "id": "7d0f994e-9624-4122-8570-eebb5e0a63c6",
-        "timestamp": "2026-07-06T16:07:59.674048Z",
-        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
-        "params": {
-            "target_name": "profile-test",
-            "period": 59.734303469746976,
-            "stellar_rotation_period_days": 0.49388327832565865,
-            "snr": 30.311523223796343,
-            "data_source": "synthetic",
-            "is_valid_candidate": true
-        },
-        "metadata": {
-            "st_rad": 1.2,
-            "st_teff": 5930.0,
-            "st_mass": 1.13,
-            "sy_jmag": 12.49
-        },
-        "fig_paths": []
-    },
-    {
-        "id": "eabdc18a-d415-4d7a-b091-62778ce0c7e3",
-        "timestamp": "2026-07-06T16:12:16.913084Z",
-        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
-        "params": {
-            "target_name": "Kepler-90 (synthetic, d-only)",
-            "period": 59.734303469746976,
-            "stellar_rotation_period_days": 0.49388327832565865,
-            "snr": 30.311523223796343,
-            "data_source": "synthetic-e2e",
-            "is_valid_candidate": true
-        },
-        "metadata": {
-            "st_rad": 1.2,
-            "st_teff": 5930.0,
-            "st_mass": 1.13,
-            "sy_jmag": 12.49
-        },
-        "fig_paths": []
-    },
-    {
-        "id": "518e039f-0c28-403f-9d56-d1a599121a28",
-        "timestamp": "2026-07-08T04:31:57.358300Z",
-        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
-        "params": {
-            "target_name": "Kepler-90 (real stitch, J7c gate)",
-            "period": 489.1304347825386,
-            "stellar_rotation_period_days": 0.15420699498611312,
-            "snr": 16.36649050441578,
-            "data_source": "real-kepler90-stitch",
-            "is_valid_candidate": false
-        },
-        "metadata": {
-            "st_rad": 1.2,
-            "st_teff": 5930.0,
-            "st_mass": 1.13,
-            "sy_jmag": 12.49
-        },
-        "fig_paths": []
-    },
-    {
-        "id": "27bca89b-8e5c-4b5e-9581-cadd510b4ccc",
-        "timestamp": "2026-07-08T04:34:41.418213Z",
-        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
-        "params": {
-            "target_name": "Kepler-90 (real stitch, J7c gate)",
-            "period": 7.008254166017744,
-            "stellar_rotation_period_days": 0.15420699498611312,
-            "snr": 11.503814608195341,
-            "data_source": "real-kepler90-stitch",
-            "is_valid_candidate": true
-        },
-        "metadata": {
-            "st_rad": 1.2,
-            "st_teff": 5930.0,
-            "st_mass": 1.13,
-            "sy_jmag": 12.49
-        },
-        "fig_paths": []
-    },
-    {
-        "id": "7f8ae1f1-0a7c-4891-ac28-6826c4263d7a",
-        "timestamp": "2026-07-08T04:36:53.383846Z",
-        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
-        "params": {
-            "target_name": "Kepler-90 (real stitch, J7c gate)",
-            "period": 8.719240457275708,
-            "stellar_rotation_period_days": 0.15420699498611312,
-            "snr": 11.462974757084183,
-            "data_source": "real-kepler90-stitch",
-            "is_valid_candidate": true
-        },
-        "metadata": {
-            "st_rad": 1.2,
-            "st_teff": 5930.0,
-            "st_mass": 1.13,
-            "sy_jmag": 12.49
-        },
-        "fig_paths": []
-    },
-    {
-        "id": "54a3541d-8ba3-4bef-b907-b024673dcdd2",
-        "timestamp": "2026-07-08T04:39:30.998631Z",
-        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
-        "params": {
-            "target_name": "Kepler-90 (real stitch, J7c gate)",
-            "period": 93.36099585062043,
-            "stellar_rotation_period_days": 0.15420699498611312,
-            "snr": 8.742901399138363,
-            "data_source": "real-kepler90-stitch",
-            "is_valid_candidate": false
-        },
-        "metadata": {
-            "st_rad": 1.2,
-            "st_teff": 5930.0,
-            "st_mass": 1.13,
-            "sy_jmag": 12.49
-        },
-        "fig_paths": []
-    },
-    {
-        "id": "ecb92781-bcb5-4c58-b941-1c3fa9f48505",
-        "timestamp": "2026-07-08T04:44:51.393005Z",
-        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
-        "params": {
-            "target_name": "Kepler-90 (real stitch, J7c gate)",
-            "period": 489.1304347825386,
-            "stellar_rotation_period_days": 0.15420699498611312,
-            "snr": 16.36649050441578,
-            "data_source": "real-kepler90-stitch",
-            "is_valid_candidate": false
-        },
-        "metadata": {
-            "st_rad": 1.2,
-            "st_teff": 5930.0,
-            "st_mass": 1.13,
-            "sy_jmag": 12.49
-        },
-        "fig_paths": []
-    },
-    {
-        "id": "30376749-6646-42a5-949f-a0ccc1081ffc",
-        "timestamp": "2026-07-08T04:47:43.873706Z",
-        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
-        "params": {
-            "target_name": "Kepler-90 (real stitch, J7c gate)",
-            "period": 7.008254166017744,
-            "stellar_rotation_period_days": 0.15420699498611312,
-            "snr": 11.503814608195341,
-            "data_source": "real-kepler90-stitch",
-            "is_valid_candidate": true
-        },
-        "metadata": {
-            "st_rad": 1.2,
-            "st_teff": 5930.0,
-            "st_mass": 1.13,
-            "sy_jmag": 12.49
-        },
-        "fig_paths": []
-    },
-    {
-        "id": "db50d479-9e86-4bfa-b6b2-91534e6ff5ae",
-        "timestamp": "2026-07-08T04:50:06.303600Z",
-        "dataset_hash": "a5d02fe7bd7ba8e0765720e187af7e6880d3550f341f9f340bf3ecd1d57fa3f0",
-        "params": {
-            "target_name": "Kepler-90 (real stitch, J7c gate)",
-            "period": 8.719240457275708,
-            "stellar_rotation_period_days": 0.15420699498611312,
-            "snr": 11.462974757084183,
-            "data_source": "real-kepler90-stitch",
-            "is_valid_candidate": true
-        },
-        "metadata": {
-            "st_rad": 1.2,
-            "st_teff": 5930.0,
-            "st_mass": 1.13,
-            "sy_jmag": 12.49
-        },
-        "fig_paths": []
-    },
-    {
-        "id": "aa5db0d2-055c-4286-9606-318208b627e1",
-        "timestamp": "2026-07-08T08:21:38.816607Z",
+        "id": "1851ab71-467c-4391-88c9-0f42322bb8ea",
+        "timestamp": "2026-07-16T03:17:02.535858Z",
         "dataset_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "params": {
             "target_name": "R8-bug-repro",

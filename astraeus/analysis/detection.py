@@ -297,7 +297,23 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     sec_depth = geom_metrics.get('secondary_eclipse_depth', 0.0)
 
     if transit_depth_fraction < VETTING_PLANET_CANDIDATE_MAX_DEPTH_FRACTION:
-        result['vetting_status'] = "Verified Planet Candidate"
+        # R8 fix (2026-07-12): gate the "depth-only pass" override on
+        # the production emission gate (`is_valid`). Previously this
+        # branch unconditionally set vetting_status to "Verified Planet
+        # Candidate" whenever the transit depth was below the binary
+        # ceiling (3%), regardless of the TLS gate. The orchestrator's
+        # GUARDRAIL 1 reads .startswith("Verified Planet Candidate") to
+        # decide whether to accept and continue iterating, so a
+        # TLS-rejected candidate that clears the depth check would be
+        # silently accepted by the orchestrator (the round-7 J7c iter 1
+        # regression case: 489.13d spurious peak, tls_sde=4.22, depth
+        # well under the 3% ceiling, this branch stamped "Verified
+        # Planet Candidate" anyway and the orchestrator accepted it).
+        # Gating on is_valid preserves the load-bearing TLS gate here
+        # too; the orchestrator-level defense-in-depth guard in
+        # orchestrator.py GUARDRAIL 1 is the belt-and-braces layer.
+        if is_valid:
+            result['vetting_status'] = "Verified Planet Candidate"
     elif (vetting_metrics['vetting_status'] == "Ambiguous/False Positive"
           and geom_metrics['secondary_eclipse_detected']
           and (best_snr <= VETTING_VSHAPE_LOW_SNR_GATE or sec_depth >= sec_eclipse_threshold_fraction)):
@@ -322,10 +338,35 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
             # occulted, NOT a binary eclipse. The threshold adapts
             # to the system so a hot, large planet around a cool
             # star is not falsely flagged as a binary.
-            result['vetting_status'] = "Verified Planet Candidate (Atmospheric Occultation Detected)"
+            if is_valid:
+                # R8 fix (2026-07-12): see the matching comment above
+                # the depth-only branch — same logic, the
+                # "Atmospheric Occultation Detected" verdict is also
+                # a "Verified Planet Candidate*" string that the
+                # orchestrator's prefix check would accept, so the
+                # TLS gate must be preserved here too.
+                result['vetting_status'] = "Verified Planet Candidate (Atmospheric Occultation Detected)"
         else:
             result['vetting_status'] = "Eclipsing Binary Detected (Secondary Eclipse at Phase 0.5)"
-    elif vetting_metrics['vetting_status'] == "Likely Planet":
+    elif vetting_metrics['vetting_status'] == "Likely Planet" and is_valid:
+        # R8 fix (2026-07-12): gate the VettingEngine "Likely Planet"
+        # override on the production emission gate (`is_valid`). Previously
+        # this branch unconditionally set vetting_status to "Verified Planet
+        # Candidate" whenever the shape vet said "Likely Planet", which
+        # bypassed the load-bearing TLS gate on the orchestrator's read path
+        # (orchestrator's GUARDRAIL 1 reads .startswith with the
+        # "Verified Planet Candidate" prefix to decide whether to accept
+        # the candidate and continue iterating). Round 7's J7c run hit
+        # this on the real Kepler-90 curve: iter 1 found a spurious
+        # 489.13d peak, TLS correctly rejected it (tls_sde=4.22 < 5.0,
+        # tls_valid=False), but this branch then stamped
+        # "Verified Planet Candidate" anyway, and the orchestrator accepted
+        # and subtracted the spurious signal, burning an iteration slot.
+        # `is_valid` is the conjunction of the SNR threshold, the
+        # confidence_score floor, AND the TLS gate (line 164-168), so
+        # gating on it preserves the load-bearing TLS gate at the
+        # classifier level. The orchestrator-level defense-in-depth guard
+        # (also added in R8) makes this a belt-and-braces fix.
         result['vetting_status'] = "Verified Planet Candidate"
     elif not is_valid:
         # No shape-vet verdict and emission gate failed: keep the

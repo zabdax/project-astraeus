@@ -69,10 +69,18 @@ _TARGET_TIC_TABLE: dict[str, str] = {
     "WASP-12 b": "86396382",
     "HD 80606 b": "79075148",
     # KIC IDs for Kepler / K2 targets (9-digit, zero-padded).
-    "Kepler-11": "011442793",
+    # R8 fix (2026-07-12): the previous table had Kepler-11 and Kepler-90
+    # swapped AND Kepler-90's KIC was wrong (7 digits, off by one digit).
+    # The real KIC for Kepler-90 is 11442793 (the leading zero pads to 9
+    # digits as "011442793", the same digits the previous table had under
+    # the wrong key "Kepler-11"). The cache-first FITS path at line ~628
+    # rejects any resolved KIC shorter than 9 digits, so the wrong
+    # resolution silently returned (None, None) and the orchestrator fell
+    # back to live MAST downloads (slow) for every Kepler-90 run.
     "Kepler-4": "006541920",
+    "Kepler-11": "010209133",   # real KIC for Kepler-11 (6-planet transiting system)
     "Kepler-20": "006850504",
-    "Kepler-90": "006114424",
+    "Kepler-90": "011442793",   # real KIC for Kepler-90 (8-planet transiting system, KOI-351)
     "K2-138": "211315939",
 }
 

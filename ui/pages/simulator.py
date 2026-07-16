@@ -240,116 +240,113 @@ div[data-testid="stButton"] > button[kind="secondary"]:has(p:-webkit-any(*, *)) 
 
 
             if st.button("Execute Stability Sweep", key="simulator_execute_stability_sweep", use_container_width=True):
-                # I4 fix (round-2 diagnostic 2026-07-06, see
-                # logs/diagnostic_run_round2_*.json): the previous
-                # code had no `key=` and no session-state guard, so
-                # the stability sweep could re-fire on every
-                # Streamlit rerun. Adding `key=` plus a one-shot
-                # session-state guard ensures the n-body integration
-                # fires only on a *fresh* user click.
-                if st.session_state.get("simulator_stability_sweep_last_run") is None:
-                    st.session_state["simulator_stability_sweep_last_run"] = True
-                    from astraeus.core.nbody_solver import estimate_mass_from_radius, PlanetParams, _keplerian_to_cartesian, run_stability_integration
-                
-                    df = st.session_state.get('active_dataframe')
-                
-                    period_col = None
-                    ecc_col = None
-                    mass_col = None
-                    radius_col = None
-                
-                    if df is not None and hasattr(df, 'columns') and not getattr(df, 'empty', True):
-                        cols = {str(c).lower(): c for c in df.columns}
-                        for cand in ['period', 'p (days)', 'orbital_period', 'period_days']:
-                            if cand in cols: period_col = cols[cand]; break
-                        for cand in ['eccentricity', 'ecc', 'e']:
-                            if cand in cols: ecc_col = cols[cand]; break
-                        for cand in ['mass', 'm_earth', 'planet_mass']:
-                            if cand in cols: mass_col = cols[cand]; break
-                        for cand in ['radius', 'radius_earth', 'planet_radius', 'radius_ratio']:
-                            if cand in cols: radius_col = cols[cand]; break
+                # Stable `key=` (added in the I4 round-2 fix) gives the
+                # widget a stable identity so st.button() does not
+                # re-fire on reruns. The earlier I4 session-state guard
+                # was removed: it was a write-once latch with no reset
+                # path, which caused subsequent clicks on the same
+                # button to be silently swallowed.
+                from astraeus.core.nbody_solver import estimate_mass_from_radius, PlanetParams, _keplerian_to_cartesian, run_stability_integration
 
-                    stellar_mass_msun = 1.2
-                    if df is None or getattr(df, 'empty', True) or period_col is None:
-                        n_planets = 1
-                        n_bodies = 1 + n_planets
-                        masses = np.zeros(n_bodies)
-                        positions = np.zeros((n_bodies, 3))
-                        velocities = np.zeros((n_bodies, 3))
-                        masses[0] = stellar_mass_msun
-                    
-                        p_days = 7.0
-                        ecc = 0.0
+                df = st.session_state.get('active_dataframe')
+
+                period_col = None
+                ecc_col = None
+                mass_col = None
+                radius_col = None
+
+                if df is not None and hasattr(df, 'columns') and not getattr(df, 'empty', True):
+                    cols = {str(c).lower(): c for c in df.columns}
+                    for cand in ['period', 'p (days)', 'orbital_period', 'period_days']:
+                        if cand in cols: period_col = cols[cand]; break
+                    for cand in ['eccentricity', 'ecc', 'e']:
+                        if cand in cols: ecc_col = cols[cand]; break
+                    for cand in ['mass', 'm_earth', 'planet_mass']:
+                        if cand in cols: mass_col = cols[cand]; break
+                    for cand in ['radius', 'radius_earth', 'planet_radius', 'radius_ratio']:
+                        if cand in cols: radius_col = cols[cand]; break
+
+                stellar_mass_msun = 1.2
+                if df is None or getattr(df, 'empty', True) or period_col is None:
+                    n_planets = 1
+                    n_bodies = 1 + n_planets
+                    masses = np.zeros(n_bodies)
+                    positions = np.zeros((n_bodies, 3))
+                    velocities = np.zeros((n_bodies, 3))
+                    masses[0] = stellar_mass_msun
+
+                    p_days = 7.0
+                    ecc = 0.0
+                    p_years = p_days / 365.25
+                    a_au = (p_years**2 * stellar_mass_msun)**(1/3)
+                    mass_msun_planet = estimate_mass_from_radius(1.31)
+
+                    planet = PlanetParams(
+                        mass_msun=mass_msun_planet,
+                        semi_major_axis_au=a_au,
+                        eccentricity=ecc,
+                        initial_phase_rad=0.0
+                    )
+                    pos, vel = _keplerian_to_cartesian(stellar_mass_msun, planet)
+                    masses[1] = mass_msun_planet
+                    positions[1] = pos
+                    velocities[1] = vel
+                else:
+                    n_planets = len(df)
+                    n_bodies = 1 + n_planets
+                    masses = np.zeros(n_bodies)
+                    positions = np.zeros((n_bodies, 3))
+                    velocities = np.zeros((n_bodies, 3))
+                    masses[0] = stellar_mass_msun
+
+                    df_iterable = df.reset_index(drop=True)
+                    for idx, row in df_iterable.iterrows():
+                        p_days = float(row[period_col]) if pd.notnull(row[period_col]) else 7.0
+                        ecc = float(row[ecc_col]) if ecc_col and pd.notnull(row[ecc_col]) else 0.0
+
+                        if mass_col and pd.notnull(row[mass_col]):
+                            mass_msun_planet = float(row[mass_col]) * 3.003e-6
+                        elif radius_col and pd.notnull(row[radius_col]):
+                            mass_msun_planet = estimate_mass_from_radius(float(row[radius_col]))
+                        else:
+                            mass_msun_planet = estimate_mass_from_radius(1.31)
+
                         p_years = p_days / 365.25
                         a_au = (p_years**2 * stellar_mass_msun)**(1/3)
-                        mass_msun_planet = estimate_mass_from_radius(1.31)
-                    
+
                         planet = PlanetParams(
                             mass_msun=mass_msun_planet,
                             semi_major_axis_au=a_au,
                             eccentricity=ecc,
-                            initial_phase_rad=0.0
+                            initial_phase_rad=2.0 * np.pi * idx / n_planets if n_planets > 0 else 0.0
                         )
-                        pos, vel = _keplerian_to_cartesian(stellar_mass_msun, planet)
-                        masses[1] = mass_msun_planet
-                        positions[1] = pos
-                        velocities[1] = vel
-                    else:
-                        n_planets = len(df)
-                        n_bodies = 1 + n_planets
-                        masses = np.zeros(n_bodies)
-                        positions = np.zeros((n_bodies, 3))
-                        velocities = np.zeros((n_bodies, 3))
-                        masses[0] = stellar_mass_msun
-                    
-                        df_iterable = df.reset_index(drop=True)
-                        for idx, row in df_iterable.iterrows():
-                            p_days = float(row[period_col]) if pd.notnull(row[period_col]) else 7.0
-                            ecc = float(row[ecc_col]) if ecc_col and pd.notnull(row[ecc_col]) else 0.0
-                        
-                            if mass_col and pd.notnull(row[mass_col]):
-                                mass_msun_planet = float(row[mass_col]) * 3.003e-6
-                            elif radius_col and pd.notnull(row[radius_col]):
-                                mass_msun_planet = estimate_mass_from_radius(float(row[radius_col]))
-                            else:
-                                mass_msun_planet = estimate_mass_from_radius(1.31)
-                            
-                            p_years = p_days / 365.25
-                            a_au = (p_years**2 * stellar_mass_msun)**(1/3)
-                        
-                            planet = PlanetParams(
-                                mass_msun=mass_msun_planet,
-                                semi_major_axis_au=a_au,
-                                eccentricity=ecc,
-                                initial_phase_rad=2.0 * np.pi * idx / n_planets if n_planets > 0 else 0.0
-                            )
-                        
-                            pos, vel = _keplerian_to_cartesian(stellar_mass_msun, planet)
-                            masses[idx + 1] = mass_msun_planet
-                            positions[idx + 1] = pos
-                            velocities[idx + 1] = vel
 
-                    with st.spinner("Executing multi-body orbital integration loop..."):
-                        result = run_stability_integration(positions, velocities, masses, n_steps=n_steps, dt=dt)
-                    
-                    if result.is_stable:
-                        st.success("System Status: Orbitally Stable Baseline Maintained")
+                        pos, vel = _keplerian_to_cartesian(stellar_mass_msun, planet)
+                        masses[idx + 1] = mass_msun_planet
+                        positions[idx + 1] = pos
+                        velocities[idx + 1] = vel
+
+                with st.spinner("Executing multi-body orbital integration loop..."):
+                    result = run_stability_integration(positions, velocities, masses, n_steps=n_steps, dt=dt)
+
+                if result.is_stable:
+                    st.success("System Status: Orbitally Stable Baseline Maintained")
+                else:
+                    if result.termination_reason in ["Physical Boundary Breach", "collision", "ejection"]:
+                        st.error("System Unstable: Physical Boundary Breach Encountered (Catastrophic Collision Singularity or Hyperbolic Escape Intercepted).")
                     else:
-                        if result.termination_reason in ["Physical Boundary Breach", "collision", "ejection"]:
-                            st.error("System Unstable: Physical Boundary Breach Encountered (Catastrophic Collision Singularity or Hyperbolic Escape Intercepted).")
-                        else:
-                            st.error(f"System Unstable: {result.termination_reason.replace('_', ' ').title()}")
-                        
-                    st.markdown("#### Diagnostic Summary")
-                    survival_step = int(round(result.survival_time_years / dt))
-                
-                    summary_df = pd.DataFrame([
-                        {"Metric": "Survival Step", "Value": str(survival_step)},
-                        {"Metric": "Survival Time (years)", "Value": f"{result.survival_time_years:.2f}"},
-                        {"Metric": "Max Eccentricity Drift", "Value": f"{result.max_eccentricity_drift:.4f}"},
-                        {"Metric": "Termination Reason", "Value": result.termination_reason.replace('_', ' ').title()}
-                    ])
-                    st.table(summary_df.set_index("Metric"))
+                        st.error(f"System Unstable: {result.termination_reason.replace('_', ' ').title()}")
+
+                st.markdown("#### Diagnostic Summary")
+                survival_step = int(round(result.survival_time_years / dt))
+
+                summary_df = pd.DataFrame([
+                    {"Metric": "Survival Step", "Value": str(survival_step)},
+                    {"Metric": "Survival Time (years)", "Value": f"{result.survival_time_years:.2f}"},
+                    {"Metric": "Max Eccentricity Drift", "Value": f"{result.max_eccentricity_drift:.4f}"},
+                    {"Metric": "Termination Reason", "Value": result.termination_reason.replace('_', ' ').title()}
+                ])
+                st.table(summary_df.set_index("Metric"))
         
     if right_panel:
         with right_panel:
