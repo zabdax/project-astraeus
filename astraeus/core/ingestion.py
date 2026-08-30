@@ -94,9 +94,13 @@ class RemoteDiscoveryEngine:
         )
 
         data = None
-        mast_error = None
         chosen_mission = None
+        # Audit fix 9 (2026-08-21): per-mission errors are accumulated —
+        # the last-write-wins scalar previously let a real TESS diagnostic
+        # (e.g. a timeout) be overwritten by a silent Kepler (None, None).
+        mission_errors: dict[str, str | None] = {}
         for mission_type in _TIME_SERIES_MISSIONS:
+            mast_error = None
             try:
                 data, mast_error = LightkurveClient.download_pipeline(resolved_target, mission_type)
             except Exception as exc:
@@ -107,29 +111,42 @@ class RemoteDiscoveryEngine:
                     f"raised for '{resolved_target}': {exc}",
                     file=sys.stderr,
                 )
+            mission_errors[mission_type] = mast_error
             if data is not None:
                 chosen_mission = mission_type
                 break
 
         if data is None:
-            # Classify the reason for the UI's custom warning.
-            err_lower = (mast_error or "").lower()
+            # Classify the reason for the UI's custom warning. Audit fix 9:
+            # classify from ALL joined per-mission messages, preferring any
+            # timeout / download-failure signal over a generic not-observed.
+            messages = [
+                f"{mission_type}: {err}"
+                for mission_type, err in mission_errors.items()
+                if err
+            ]
+            joined_errors = "; ".join(messages)
+            err_lower = joined_errors.lower()
+            hard_failures = [
+                m for m in messages
+                if not ("not observed" in m.lower() or "no data" in m.lower())
+            ]
             if "timeout" in err_lower or "timed out" in err_lower:
                 reason = "Network Timeout"
-            elif "not observed" in err_lower or "no data" in err_lower or not mast_error:
-                reason = "Target not observed"
+            elif hard_failures:
+                reason = "Download failed"
             else:
                 reason = "Target not observed"
             print(
                 f"[RemoteDiscoveryEngine] NASA Archive bridge: no time-series "
-                f"coverage for '{resolved_target}' (reason={reason}; mast_error={mast_error!r}).",
+                f"coverage for '{resolved_target}' (reason={reason}; mast_error={joined_errors!r}).",
                 file=sys.stderr,
             )
             return {
                 "status": "no_time_series",
                 "metadata": meta,
                 "archive_error": archive_error,
-                "mast_error": mast_error,
+                "mast_error": joined_errors or None,
                 "reason": reason,
                 "resolved_target": resolved_target,
             }
@@ -190,6 +207,11 @@ class RemoteDiscoveryEngine:
             elif mast_error:
                 reason = "Download failed"
             else:
+                # Audit fix 8 (2026-08-21): an empty mast_error means the
+                # search genuinely returned nothing — "Target not observed".
+                # The old duplicate-branch version collapsed this classifier
+                # into "Target not observed" for every case, losing the
+                # "Download failed" distinction the payload contract carries.
                 reason = "Target not observed"
             return {
                 "status": "error" if mast_error else "no_time_series",

@@ -161,8 +161,13 @@ class RealDataPipeline:
 
         # TrES-2b known parameter assumptions
         period_days = 2.470613
-        
-        smoothed_flux = savgol_filter(flux_detrended, window_length=101, polyorder=2)
+
+        # Audit fix (2026-08-21): scipy requires window_length <= len(x);
+        # short downloads crashed the whole workflow here.
+        savgol_window = min(101, len(flux_detrended))
+        if savgol_window % 2 == 0:
+            savgol_window -= 1
+        smoothed_flux = savgol_filter(flux_detrended, window_length=savgol_window, polyorder=2)
         t0_guess = time_raw[np.argmin(smoothed_flux)]
         print(f"Estimated transit epoch t0: {t0_guess:.4f}")
         
@@ -175,7 +180,11 @@ class RealDataPipeline:
         folded_flux_err = np.full_like(folded_flux, noise_std)
 
         print("Phase 2: Setting up MCMC parameter retrieval...")
-        time = folded_time * u.day
+        # Audit fix C6 (2026-08-21): the model dips at periapsis + P/4 while
+        # the folded data dips at phase 0 — shift model time so fit and plot
+        # share one aligned convention (see preprocessing.folded_time_to_model_time).
+        from astraeus.data.preprocessing import folded_time_to_model_time
+        time = folded_time_to_model_time(folded_time, period_days) * u.day
         
         fixed_params = {
             "R_star": 1.0 * u.R_sun,

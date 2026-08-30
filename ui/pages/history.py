@@ -52,14 +52,21 @@ def render(main_panel, right_panel) -> None:
                     if st.button("Restore", key=f"restore_{exp.get('id')}"):
                         current_hash = st.session_state.get('current_dataset_hash')
                         exp_hash = exp.get("dataset_hash")
-                        
+
                         if not current_hash or current_hash != exp_hash:
                             st.warning("Warning: Active dataset missing or mismatch. Ensure the correct dataset is loaded first.")
                         else:
+                            # Audit fix A7: namespace restored params so a
+                            # blind write can never hijack unrelated widgets
+                            # (e.g. the Simulator's "snr" slider).
                             params = exp.get("params", {})
                             for k, v in params.items():
-                                st.session_state[k] = v
-                            st.success(f"Restored state from experiment {exp.get('id')[:8]}")
+                                st.session_state[f"restored_param_{k}"] = v
+                            restored_preview = ", ".join(sorted(params)) or "(no parameters)"
+                            st.success(
+                                f"Restored {len(params)} parameter(s) from experiment "
+                                f"{exp.get('id', '')[:8]}: {restored_preview}"
+                            )
 
     if right_panel:
         with right_panel:

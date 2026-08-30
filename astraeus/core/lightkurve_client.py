@@ -11,6 +11,7 @@ module therefore carries an explicit ``dtype=np.float64`` guard.
 """
 
 import os
+import re
 import sys
 import shutil
 import tempfile
@@ -20,6 +21,8 @@ import random
 import numpy as np
 import requests
 import lightkurve as lk
+
+from astraeus.core.time_units import bjd_offset_for_mission
 
 _LIGHTKURVE_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".lightkurve", "cache")
 _ASTRAEUS_LIGHTKURVE_CACHE_DIR = os.environ.get(
@@ -34,6 +37,12 @@ _ASTRAEUS_LIGHTKURVE_CACHE_DIR = os.environ.get(
 # 2.5 * longest_target_period with margin. Bounded (not "delete the cap") to
 # keep download time predictable for the multi-target matrix.
 _MAX_DOWNLOAD_SEGMENTS = 12         # Kepler row-by-row fallback limit (H1 patch 2026-07-06)
+
+# Audit fix 3 (2026-08-21): _call_with_timeout previously returned None both
+# for a genuine empty result and for a worker-thread overrun, so ingestion
+# reported "Target not observed" for network stalls. Timeouts now return this
+# sentinel; download_pipeline translates it into (None, "Network Timeout").
+_TIMEOUT_SENTINEL = object()
 
 # TESS FFI cutouts can be 10GB+; the default 180s read timeout aborts mid-stream.
 # The streaming helper stages files directly into lightkurve's mastDownload cache
@@ -77,8 +86,12 @@ _TARGET_TIC_TABLE: dict[str, str] = {
     # rejects any resolved KIC shorter than 9 digits, so the wrong
     # resolution silently returned (None, None) and the orchestrator fell
     # back to live MAST downloads (slow) for every Kepler-90 run.
-    "Kepler-4": "006541920",
-    "Kepler-11": "010209133",   # real KIC for Kepler-11 (6-planet transiting system)
+    # Audit fix C2 (2026-08-21, SIMBAD-verified): that same R8 rewrite left
+    # "Kepler-4" pointing at 006541920 — which is KEPLER-11's real KIC —
+    # and invented a nonexistent KIC 010209133 for Kepler-11. Real IDs:
+    # Kepler-4 = KIC 11853905, Kepler-11 = KIC 6541920.
+    "Kepler-4": "011853905",
+    "Kepler-11": "006541920",   # real KIC for Kepler-11 (6-planet transiting system)
     "Kepler-20": "006850504",
     "Kepler-90": "011442793",   # real KIC for Kepler-90 (8-planet transiting system, KOI-351)
     "K2-138": "211315939",
@@ -93,8 +106,16 @@ def _resolve_target_to_tic(t_name: str) -> str:
     if t_name in _TARGET_TIC_TABLE:
         return _TARGET_TIC_TABLE[t_name]
     # Substring match for planets whose host name is the key (e.g. "WASP-12 b").
+    # Audit fix M6 (2026-08-21): the match must end at a name boundary so
+    # "Kepler-9" cannot resolve to "Kepler-90"'s entry (or "Kepler-1" to
+    # "Kepler-11"/"Kepler-90") — the previous bare startswith() silently
+    # served the WRONG STAR's cached FITS files from the cache fallback.
     for host, tic in _TARGET_TIC_TABLE.items():
-        if t_name.startswith(host.rstrip()) or host.startswith(t_name):
+        longer, shorter = (t_name, host) if len(t_name) >= len(host) else (host, t_name)
+        if not longer.startswith(shorter):
+            continue
+        rest = longer[len(shorter):]
+        if rest == "" or re.fullmatch(r"\s+[a-z]{1,2}\b", rest):
             return tic
     return ""
 
@@ -139,7 +160,9 @@ class LightkurveClient:
 
         if t.is_alive():
             print(f"[LightkurveClient] TIMEOUT: {label} exceeded {timeout:.0f}s — skipping.", file=sys.stderr)
-            return None
+            # Audit fix 3: distinguishable timeout signal (never None, which
+            # means "genuine empty result" elsewhere).
+            return _TIMEOUT_SENTINEL
 
         if error_box:
             raise error_box[0]
@@ -537,7 +560,18 @@ class LightkurveClient:
                 lc = LightkurveClient._download_with_timeout(
                     row, timeout=30.0, download_dir=download_dir
                 )
-                
+
+                # Audit fix 3: a timed-out sector download must not be fed
+                # into the validation path (sentinel has no .flux).
+                if lc is _TIMEOUT_SENTINEL:
+                    print(
+                        f"[LightkurveClient] TESS sector {idx}: "
+                        f"download timed out — skipped.",
+                        file=sys.stderr,
+                    )
+                    last_error = "row.download() timed out"
+                    continue
+
                 if lc is None or len(lc.flux) == 0:
                     print(
                         f"[LightkurveClient] TESS sector {idx}: "
@@ -705,7 +739,11 @@ class LightkurveClient:
             # with no error signal. Convert to BJD full at the
             # ingestion boundary and tag the dict so this class of
             # bug cannot recur silently.
-            bjd_epoch_offset = 2454833.0 if mission_type == "Kepler" else 2457000.0
+            # Audit fix 4 (2026-08-21): the offset must come from the single
+            # source of truth in time_units — the previous inline ternary
+            # applied the TESS (BTJD) offset to every non-Kepler mission,
+            # which would mis-scale K2 (BKJD) by 2167 days.
+            bjd_epoch_offset = bjd_offset_for_mission(mission_type)
             t = t + bjd_epoch_offset
             f = np.asarray(flat.flux.value, dtype=np.float64)
             e = np.asarray(flat.flux_err.value, dtype=np.float64)
@@ -767,6 +805,11 @@ class LightkurveClient:
             else:
                 return None, "Invalid mission_type"
 
+            if search is _TIMEOUT_SENTINEL:
+                # Audit fix 3: a 90s search stall must surface as a network
+                # timeout, not as "Target not observed" ((None, None)).
+                return None, "Network Timeout"
+
             if search is None or len(search) == 0:
                 return None, None
 
@@ -811,12 +854,21 @@ class LightkurveClient:
                                 timeout=row_read_timeout,
                                 download_dir=download_dir,
                             )
+                            # Audit fix 3: timeout now arrives as the
+                            # sentinel (never None) and must be retried.
+                            if lc is _TIMEOUT_SENTINEL:
+                                last_download_error = "row.download() timed out"
+                                continue
                             if lc is not None:
                                 lc_list.append(lc)
                                 break
                             else:
                                 last_download_error = "row.download() timed out or returned no light curve"
-                            break
+                            # Audit fix 2 (2026-08-21): the unconditional
+                            # `break` that used to sit here killed the 3-attempt
+                            # retry loop on the timeout branch — timeouts were
+                            # never retried. Falling through now re-enters the
+                            # attempt loop.
                         except Exception as e:
                             last_download_error = LightkurveClient._classify_stream_failure(e)
                             if LightkurveClient._is_fits_corruption(e):
@@ -827,8 +879,11 @@ class LightkurveClient:
                                         print(f"[LightkurveClient] CACHE EVICT: removed corrupt file {bad_path}", file=sys.stderr)
                                     except OSError:
                                         pass
-                    if lc_list:
-                        break
+                    # Audit fix 1 (2026-08-21): no early exit after the first
+                    # successful quarter. The documented baseline (module
+                    # header, H1 evidence) needs up to _MAX_DOWNLOAD_SEGMENTS
+                    # quarters stitched; the old `if lc_list: break` here
+                    # silently truncated the Kepler baseline to ONE quarter.
 
                 if not lc_list:
                     return None, last_download_error
@@ -852,7 +907,11 @@ class LightkurveClient:
             # full) was silently off by ~2454833 days. The dict also
             # carries `time_unit` / `bjd_epoch_offset_applied` so this
             # class of bug cannot recur silently elsewhere later.
-            bjd_epoch_offset = 2454833.0 if mission_type == "Kepler" else 2457000.0
+            # Audit fix 4 (2026-08-21): use the time_units single source of
+            # truth (Kepler/K2 = BKJD 2454833, TESS = BTJD 2457000) instead
+            # of an inline ternary that applied the TESS offset to every
+            # non-Kepler mission (K2 would be wrong by 2167 days).
+            bjd_epoch_offset = bjd_offset_for_mission(mission_type)
             t = t + bjd_epoch_offset
 
             valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)

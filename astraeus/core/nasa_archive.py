@@ -33,9 +33,14 @@ class NASAExoplanetArchive:
             number = m.group(2)
             letter = m.group(3).lower() if m.group(3) else ""
             canonical_prefix = _PREFIX_CASE.get(prefix_raw, prefix_raw.upper())
+            # Audit fix 5 (2026-08-21, verified live against the TAP
+            # service): pscomppars stores HD/HIP/GJ designations
+            # SPACE-separated ("HD 209458 b"); the hyphenated form matches
+            # zero rows. Catalog-style prefixes keep the hyphen.
+            separator = " " if prefix_raw in ("hd", "hip", "gj") else "-"
             if letter:
-                return f"{canonical_prefix}-{number} {letter}"
-            return f"{canonical_prefix}-{number}"
+                return f"{canonical_prefix}{separator}{number} {letter}"
+            return f"{canonical_prefix}{separator}{number}"
 
         return name
 
@@ -81,9 +86,11 @@ class NASAExoplanetArchive:
 
             if data and len(data) > 0:
                 row = data[0]
+                # Audit fix 7: the dead 'pl_period' / 'pl_orbpererr1'
+                # fallbacks were removed here too — the query already
+                # filters `pl_orbper is not null`, so anything else is
+                # garbage, not a period.
                 period = row.get('pl_orbper')
-                if period is None:
-                    period = row.get('pl_orbpererr1')
                 if period is not None:
                     return float(period)
         except Exception as exc:
@@ -127,6 +134,23 @@ class NASAExoplanetArchive:
         if alias:
             names.append(alias)
 
+        # Audit fix 5 (2026-08-21): HD/HIP/GJ designations are stored
+        # SPACE-separated in pscomppars (hyphen form matches zero rows).
+        # The normalizer emits the space form; also offer the opposite
+        # separator as a fallback candidate so either historical spelling
+        # of the same designation resolves.
+        m_catalog = re.match(
+            r"^(HD|HIP|GJ)([-\s])(\d+)(\s+[a-z])?$",
+            canonical_name,
+            re.IGNORECASE,
+        )
+        if m_catalog:
+            pfx, sep, num, letter = m_catalog.groups()
+            other_sep = " " if sep == "-" else "-"
+            names.append(
+                f"{pfx.upper()}{other_sep}{num}{letter.lower() if letter else ''}"
+            )
+
         kepler_component_match = re.match(r"^(Kepler-\d+)\s+([a-z])$", canonical_name, re.IGNORECASE)
         if kepler_component_match:
             host, planet_letter = kepler_component_match.groups()
@@ -168,7 +192,13 @@ class NASAExoplanetArchive:
             data = []
             matched_canonical = safe_canonical
             for candidate_name in NASAExoplanetArchive._metadata_name_candidates(safe_canonical):
-                query = f"select pl_name, pl_orbper, pl_orbpererr1, st_rad, st_raderr1, st_lum, st_teff, st_mass, sy_jmag, pl_trandep, pl_ratror from pscomppars where pl_name='{candidate_name}' or hostname='{candidate_name}'"
+                # Audit fix 6 (2026-08-21, verified live: a hostname query
+                # for Kepler-11 returned "Kepler-11 d" first): without an
+                # ORDER BY the row order is arbitrary, so a hostname match
+                # bound a RANDOM planet's period/depth to system-level
+                # metadata. The innermost planet (smallest pl_orbper) is a
+                # deterministic choice.
+                query = f"select pl_name, pl_orbper, pl_orbpererr1, st_rad, st_raderr1, st_lum, st_teff, st_mass, sy_jmag, pl_trandep, pl_ratror from pscomppars where pl_name='{candidate_name}' or hostname='{candidate_name}' order by pl_orbper asc"
                 params = {"query": query, "format": "json"}
 
                 for attempt in range(3):
@@ -190,12 +220,24 @@ class NASAExoplanetArchive:
             if data and len(data) > 0:
                 row = data[0]
 
-                pl_orbper = row.get('pl_orbper')
-                if pl_orbper is None:
-                    pl_orbper = row.get('pl_period')
-                if pl_orbper is None:
-                    pl_orbper = row.get('pl_orbpererr1')
+                # Audit fix 6: when the query matched on hostname, the row's
+                # pl_name is the planet the metadata actually belongs to —
+                # record it instead of the queried candidate so consumers
+                # know which planet's period/depth they received.
+                row_pl_name = row.get('pl_name')
+                if (
+                    isinstance(row_pl_name, str)
+                    and row_pl_name
+                    and row_pl_name != matched_canonical
+                ):
+                    matched_canonical = row_pl_name
 
+                # Audit fix 7 (2026-08-21): the previous fallback chain read
+                # the nonexistent 'pl_period' column and then adopted the
+                # ERROR column 'pl_orbpererr1' as a period — garbage values
+                # were silently accepted. A null pl_orbper now goes straight
+                # to the ps-table fallback (which filters nulls properly).
+                pl_orbper = row.get('pl_orbper')
                 if pl_orbper is not None:
                     pl_orbper = float(pl_orbper)
                 else:
@@ -243,24 +285,29 @@ class NASAExoplanetArchive:
                 # exact source so consumers can distinguish "no data"
                 # from "we didn't check" (which is the same class of
                 # bug as the original ingestion bug).
-                pl_trandep = row.get('pl_trandep')
+                pl_trandep_raw = row.get('pl_trandep')
+                depth_fraction = None   # fraction of normalized flux (consumer contract)
+                depth_percent = None    # pscomppars percent value (consumer contract)
                 depth_source = None
-                if pl_trandep is not None and not (
-                    isinstance(pl_trandep, float) and np.isnan(pl_trandep)
+                if pl_trandep_raw is not None and not (
+                    isinstance(pl_trandep_raw, float) and np.isnan(pl_trandep_raw)
                 ):
-                    pl_trandep = float(pl_trandep)
-                    if pl_trandep >= 1.0:
-                        # Percent → fraction  (e.g. 0.459 % → 0.00459)
-                        pl_trandep = pl_trandep / 100.0
-                    # else: already a fraction, use as-is
+                    # pscomppars stores pl_trandep in PERCENT, unconditionally.
+                    # Verified live 2026-08-21 against the TAP service:
+                    # TRAPPIST-1 b -> 0.7378 (= 7378 ppm), HD 209458 b -> 1.5.
+                    # The previous `>= 1.0` value-sniffing heuristic left every
+                    # planet shallower than 1% (most known planets) unconverted,
+                    # so transit_depth came out 100x too large as a fraction.
+                    depth_percent = float(pl_trandep_raw)
+                    depth_fraction = depth_percent / 100.0
                     depth_source = "pl_trandep"
                 else:
                     pl_ratror = row.get('pl_ratror')
                     if pl_ratror is not None and not (
                         isinstance(pl_ratror, float) and np.isnan(pl_ratror)
                     ):
-                        pl_ratror = float(pl_ratror)
-                        pl_trandep = pl_ratror ** 2  # already a fraction
+                        depth_fraction = float(pl_ratror) ** 2  # already a fraction
+                        depth_percent = depth_fraction * 100.0
                         depth_source = "pl_ratror_squared"
                     else:
                         # Geometric fallback: depth = (Rp / R★)^2 derived
@@ -278,24 +325,30 @@ class NASAExoplanetArchive:
                             rp_over_rstar = (
                                 float(pl_rade) / (_R_SUN_TO_R_EARTH * float(_st_rad_for_depth))
                             )
-                            pl_trandep = rp_over_rstar ** 2
+                            depth_fraction = rp_over_rstar ** 2
+                            depth_percent = depth_fraction * 100.0
                             depth_source = "pl_rade_over_st_rad_geometric"
                         else:
                             # No archive-derived depth available. Surface
                             # "unavailable" explicitly (depth = 0.0 is
                             # not the same as "we didn't check").
-                            pl_trandep = 0.0
+                            depth_fraction = 0.0
+                            depth_percent = 0.0
                             depth_source = "unavailable_no_archive_input"
 
                 meta = {
                     "pl_name": matched_canonical,
                     "orbital_period": pl_orbper,
                     "stellar_radius": st_rad if st_rad is not None else 1.0,
-                    "transit_depth": pl_trandep if pl_trandep is not None else 0.0,
+                    # Fraction of normalized flux — UI renders this * 1e6 as ppm.
+                    "transit_depth": depth_fraction if depth_fraction is not None else 0.0,
                     "transit_depth_source": depth_source,  # I3 fix
                     "pl_orbper": pl_orbper,
                     "st_rad": st_rad if st_rad is not None else 1.0,
-                    "pl_trandep": pl_trandep if pl_trandep is not None else 0.0,
+                    # Kept in pscomppars PERCENT so consumers that divide by
+                    # 100 (analysis/detection.py archive-depth cross-check)
+                    # stay correct. Distinct from transit_depth (fraction).
+                    "pl_trandep": depth_percent if depth_percent is not None else 0.0,
                     "st_teff": st_teff,
                     "st_mass": st_mass,
                     "sy_jmag": sy_jmag,

@@ -56,11 +56,14 @@ def main():
                     print(f"  Found 0 planets.")
                     results.append({"case": case, "planets": 0, "lowest_snr": 0, "periods": [], "cands": []})
             else:
+                # NOTE: this is a manual harness (``py tests/simulate_backend.py``),
+                # NOT collected by pytest. detect_transit_candidate returns a
+                # flat result dict today (a bare {} when no candidate passes
+                # the input guard), so read cands[0] directly instead of the
+                # stale nested 'candidate_1' key, which always yielded {} and
+                # mis-reported "0 planets" on success.
                 cands = detect_transit_candidate(time_arr, flux_arr, target_name=case['target'], data_source=case['source'], metadata=metadata)
-                if isinstance(cands, list) and len(cands) > 0:
-                    best = cands[0].get('candidate_1', {})
-                else:
-                    best = cands if isinstance(cands, dict) else {}
+                best = cands[0] if isinstance(cands, list) and cands else (cands if isinstance(cands, dict) else {})
                 
                 if best:
                     print(f"  Found 1 planet. Period: {best.get('period')}")

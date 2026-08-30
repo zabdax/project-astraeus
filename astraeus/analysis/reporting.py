@@ -469,6 +469,19 @@ def generate_academic_report(metrics_payload: Dict[str, Any], figures: Dict[str,
         spaceAfter=10,
         leading=14
     )
+
+    # Audit fix M9a (2026-08-21): table header cells are Paragraphs, and
+    # TableStyle TEXTCOLOR does not apply to Paragraph flowables — without
+    # an explicit white paragraph style the header text is invisible on the
+    # dark #1E293B header row.
+    table_header_style = ParagraphStyle(
+        'ReportTableHeader',
+        parent=normal_style,
+        fontName='Helvetica-Bold',
+        fontSize=11,
+        textColor=colors.white,
+        spaceAfter=0,
+    )
     
     story = []
     tracked_streams = []
@@ -532,21 +545,41 @@ def generate_academic_report(metrics_payload: Dict[str, Any], figures: Dict[str,
         story.append(Spacer(1, 10))
         
         header_row = ["Candidate ID", "Period (days)", "SNR", "Depth", "Epoch"]
+
+        def fmt(value, spec):
+            """Format a candidate metric; a present-but-None value renders as '-'.
+
+            Audit fix M9b (2026-08-21): f"{None:.4f}" raised TypeError when a
+            key existed with a None value.
+            """
+            if value is None:
+                return "-"
+            return format(value, spec)
+
         candidate_rows = []
         for cand in metrics_payload['candidates']:
             candidate_rows.append([
                 sanitize_text(str(cand.get('candidate_id', cand.get('planet_id', '-')))),
-                sanitize_text(f"{cand.get('period', 0.0):.4f}"),
-                sanitize_text(f"{cand.get('snr', 0.0):.2f}"),
-                sanitize_text(f"{cand.get('depth', 0.0):.6f}"),
-                sanitize_text(f"{cand.get('epoch', 0.0):.4f}")
+                sanitize_text(fmt(cand.get('period'), '.4f')),
+                sanitize_text(fmt(cand.get('snr'), '.2f')),
+                sanitize_text(fmt(cand.get('depth'), '.6f')),
+                sanitize_text(fmt(cand.get('epoch'), '.4f'))
             ])
-            
+
         def build_table(data_rows, is_first=False):
             table_data = [header_row] + data_rows
             wrapped_data = []
             for row in table_data:
-                wrapped_data.append([Paragraph(f"<b>{cell}</b>" if i == 0 else cell, normal_style) for i, cell in enumerate(row)])
+                wrapped_data.append([
+                    Paragraph(
+                        f"<b>{cell}</b>" if i == 0 else cell,
+                        # Row 0 sits on a dark background: Paragraphs ignore
+                        # the TableStyle TEXTCOLOR, so use the white style
+                        # explicitly (audit fix M9a, 2026-08-21).
+                        table_header_style if i == 0 else normal_style,
+                    )
+                    for i, cell in enumerate(row)
+                ])
                 
             col_w = usable_width / 5.0
             t = Table(wrapped_data, colWidths=[col_w]*5)
@@ -639,10 +672,13 @@ def generate_completeness_report(result, config, fig_paths):
     )
 
     flat = result.recovery_rate.flatten()
-    valid_flat = flat[_np.isfinite(flat)]
-    if valid_flat.size:
-        worst_idx = int(_np.argmin(flat))
-        best_idx = int(_np.argmax(flat))
+    # Audit fix M8 (2026-08-21): unsimulated cells are NaN-initialised
+    # (partial sweeps are supported), so argmin/argmax must run over finite
+    # entries only or both indices land on NaN cells.
+    valid_idx = _np.flatnonzero(_np.isfinite(flat))
+    if valid_idx.size:
+        worst_idx = int(valid_idx[_np.argmin(flat[valid_idx])])
+        best_idx = int(valid_idx[_np.argmax(flat[valid_idx])])
         stride_p = result.radius_ratios.size * result.snrs.size
         stride_d = result.snrs.size
         worst = {

@@ -68,17 +68,14 @@ def test_tls_rejected_candidate_cannot_be_tagged_verified() -> None:
     'Verified Planet Candidate'. Otherwise the orchestrator's string-
     prefix check accepts and bypasses the load-bearing TLS gate.
 
-    KNOWN FAILURE (round 8): this test currently FAILS because the
-    VettingEngine override at detection.py:328-329 sets
-    vetting_status='Verified Planet Candidate (Likely Planet)' for
-    geometric-vet-cleared candidates regardless of tls_valid. The
-    orchestrator's GUARDRAIL 1 string-prefix check (orchestrator.py:
-    168-170) accepts that, bypassing the load-bearing TLS gate that
-    round-3's J2c nested-pool fix specifically built to stop
-    confidently-wrong candidates. The round-8 fix will turn this
-    green; do not remove the @pytest.mark.xfail decorator until then.
-    See scratch/r8_repro_vetting_override.py for the minimal repro
-    and the round-7 J7c log for the real-curve evidence.
+    Status: this test PASSES today and is a permanent regression guard —
+    the R8 fix (2026-07-12) closed the bypass at both layers (the
+    VettingEngine override is gated on is_valid, and the orchestrator's
+    GUARDRAIL 1 requires tls_valid=True; see the module comment above
+    for the full story). If this test ever fails, the TLS gate has been
+    re-opened: fix the regression. Do NOT silence it with
+    @pytest.mark.xfail (strict=False especially) — that would convert
+    this guard back into the silent bypass it exists to prevent.
     """
     # Build a minimal synthetic curve with one planet (same shape as
     # the round-7 J7c run; TLS will be mocked to fail, so the only

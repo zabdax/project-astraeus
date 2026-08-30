@@ -73,7 +73,13 @@ def estimate_analytic_ttv_amplitude_min(
         
     mass_ratio = companion_mass_msun / stellar_mass_msun
     period_ratio = companion_period_days / known_period_days
-    
+
+    # Audit fix M6 (2026-08-21): identical periods are not a first-order
+    # j:j-1 resonance; the formulation below divides by (period_ratio - 1)
+    # and raised ZeroDivisionError for period_ratio == 1.0.
+    if abs(period_ratio - 1.0) < 1e-9:
+        return 0.0
+
     # Crude approximation of resonant amplification: identify nearest first-order resonance j:j-1
     if period_ratio > 1.0:
         j = round(1.0 / (1.0 - 1.0/period_ratio))

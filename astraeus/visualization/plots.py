@@ -175,6 +175,18 @@ def plot_real_retrieval(
     return output
 
 
+def _heatmap_grid(recovery_rate: np.ndarray, snr_index: int) -> np.ndarray:
+    """Return the 2-D recovery-rate slice oriented for imshow.
+
+    ``recovery_rate`` is indexed [period, radius_ratio, snr].  With
+    ``origin="lower"`` imshow maps rows to y and columns to x, and the
+    declared extent is x=period, y=radius_ratio, so the slice must be
+    transposed (audit fix M15, 2026-08-21) — otherwise every heatmap is
+    mirrored across the diagonal.
+    """
+    return np.asarray(recovery_rate)[:, :, snr_index].T
+
+
 def plot_completeness_map(
     result,
     output_dir,
@@ -197,7 +209,7 @@ def plot_completeness_map(
     if result.snrs.size == 1:
         fig, ax = plt.subplots(figsize=(8.0, 6.0), constrained_layout=True)
         im = ax.imshow(
-            result.recovery_rate[:, :, 0],
+            _heatmap_grid(result.recovery_rate, 0),
             origin="lower",
             aspect="auto",
             extent=(
@@ -229,7 +241,7 @@ def plot_completeness_map(
             axes = [axes]
         for idx, (ax_i, snr) in enumerate(zip(axes, result.snrs)):
             im = ax_i.imshow(
-                result.recovery_rate[:, :, idx],
+                _heatmap_grid(result.recovery_rate, idx),
                 origin="lower",
                 aspect="auto",
                 extent=(

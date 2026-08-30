@@ -26,17 +26,26 @@ class PhysicalPropertiesEngine:
 
         jwst_tsm_score = 0.0
         if planet_radius_earth > 0 and equilibrium_temp_k > 0 and st_rad > 0:
-            if planet_radius_earth < 1.5:
-                tsm_scale = 0.190
-            elif planet_radius_earth < 2.75:
-                tsm_scale = 1.26
-            elif planet_radius_earth < 4.0:
-                tsm_scale = 1.28
+            # Audit fix M5 (2026-08-21): the Kempton et al. 2018 TSM scale
+            # factors and the R^2.06 mass proxy are calibrated/defined only
+            # for R < 10 R_Earth; the TSM is *undefined* for giant planets
+            # (R >= 10 R_Earth), which are reported as 0.0 here (the dict's
+            # established "not computable" sentinel).
+            if planet_radius_earth >= 10.0:
+                jwst_tsm_score = 0.0
             else:
-                tsm_scale = 1.15
+                if planet_radius_earth < 1.5:
+                    tsm_scale = 0.190
+                elif planet_radius_earth < 2.75:
+                    tsm_scale = 1.26
+                elif planet_radius_earth < 4.0:
+                    tsm_scale = 1.28
+                else:
+                    # 1.15 scale + R^2.06 mass law valid for 4 <= R < 10
+                    # R_Earth only (see regime note above).
+                    tsm_scale = 1.15
 
-            planet_mass_earth = planet_radius_earth ** 2.06
-            if planet_mass_earth > 0:
+                planet_mass_earth = planet_radius_earth ** 2.06
                 jwst_tsm_score = float(
                     tsm_scale * (planet_radius_earth ** 3 * equilibrium_temp_k) /
                     (planet_mass_earth * st_rad ** 2) * 10.0 ** (-sy_jmag / 5.0)

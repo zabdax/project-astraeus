@@ -14,11 +14,14 @@ def load_config(filepath: str = "config.json") -> Dict[str, Any]:
     try:
         with open(filepath, "r") as f:
             config = json.load(f)
-            
+
         validate_config(config)
         return config
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse config.json: {e}")
+    except (json.JSONDecodeError, OSError) as e:
+        # Audit fix 10 (2026-08-21): load_config promises a defensive {} on
+        # any read failure; OSError/PermissionError previously escaped and
+        # crashed callers.
+        logger.error(f"Failed to read or parse config.json: {e}")
         return {}
 
 def validate_config(config: Dict[str, Any]) -> None:

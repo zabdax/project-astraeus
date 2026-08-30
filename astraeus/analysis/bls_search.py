@@ -77,6 +77,16 @@ class BLSSearchEngine:
         else:
             p_max = min(450.0, T_baseline / 2.0)
 
+        # Audit fix M2 (2026-08-21): the trial grid extends 10% BEYOND the
+        # scientific upper bound so a genuine signal sitting at/near p_max
+        # is an interior peak instead of being caught by the boundary
+        # guard below; candidates beyond p_max are still rejected. Before
+        # this, a real planet in [0.95*p_max, p_max] (e.g. 600d on a 1250d
+        # baseline) was unconditionally blacklisted as a "degenerate alias"
+        # even though a 2-transit signal at T_baseline/2 is physically
+        # detectable.
+        p_search_max = p_max * 1.1
+
         # J1b: Use rigorous astropy autoperiod instead of linear grid.
         # The default astropy grid is uniform in frequency with df = 1/baseline^2,
         # which gives ~795k periods on a 200d curve and ~44.95M on a 1500d curve
@@ -91,7 +101,7 @@ class BLSSearchEngine:
             frequency_factor = max(1.0, T_baseline ** 2 / 4500.0)
             if frequency_factor > 500.0:
                 frequency_factor = 500.0
-        periods = model.autoperiod(duration=0.1, minimum_period=p_min, maximum_period=p_max, frequency_factor=frequency_factor)
+        periods = model.autoperiod(duration=0.1, minimum_period=p_min, maximum_period=p_search_max, frequency_factor=frequency_factor)
 
         durations = np.array([0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0])
         durations = durations[durations < np.min(periods)] # Keep your astropy ValueError shield active
@@ -138,18 +148,21 @@ class BLSSearchEngine:
             cand_freq = 1.0 / cand_period
             is_alias = False
 
-            # J3 follow-up: skip candidates within 5% of the search bounds
-            # (p_min or p_max). The physical-mask in power_for_argmax covers
-            # unphysical (period, duration) pairs, but a candidate like
-            # (P=0.5002d, dur=0.1d) is at the duty-cycle boundary AND very
-            # near p_min=0.5d, where the autoperiod grid concentrates
-            # degenerate points. These are noise peaks, not real signals.
-            # The 5% margin matches the assertion in
+            # J3 follow-up: skip candidates within 5% of p_min, where the
+            # autoperiod grid concentrates degenerate points (the physical
+            # duty-cycle mask alone does not catch e.g. (P=0.5002d,
+            # dur=0.1d)). The 5% margin matches the assertion in
             # test_j3_bls_single_signal_regression.py and
             # test_j3_syn5p_small_recovery.py.
+            #
+            # Audit fix M2 (2026-08-21): the old blanket "within 5% of
+            # p_max" rejection is replaced by a hard cut at p_max — the
+            # grid now extends past p_max (see p_search_max), so genuine
+            # long-period signals just under the bound survive while
+            # super-bound degenerate peaks are still rejected.
             if abs(cand_period - p_min) / p_min <= 0.05:
                 is_alias = True
-            elif abs(cand_period - p_max) / p_max <= 0.05:
+            elif cand_period > p_max:
                 is_alias = True
 
             # First, check integer harmonics (e.g. 0.5x, 2.0x, 3.0x) against known periods
@@ -200,8 +213,13 @@ class BLSSearchEngine:
                 
                 break
 
-        # Fallback if everything was rejected
-        if best_period is None:
+        # Fallback if everything was rejected. Audit fix M2 (2026-08-21):
+        # this path usually re-admits the exact peak the loop just rejected
+        # (it is the global power maximum). The result dict now carries
+        # all_peaks_rejected=True so callers (detection/orchestrator) can
+        # treat the candidate with extra suspicion instead of trusting it.
+        all_peaks_rejected = best_period is None
+        if all_peaks_rejected:
             best_idx = sorted_indices[0]
             best_period = res.period[best_idx]
             best_power = res.power[best_idx]
@@ -220,6 +238,10 @@ class BLSSearchEngine:
             'snr': float(best_snr),
             'depth': float(best_depth),
             'confidence_score': confidence_score,
+            # Audit fix M2 (2026-08-21): True when every peak was rejected by
+            # the alias/boundary guards and the fallback re-admitted the
+            # global power maximum anyway.
+            'all_peaks_rejected': bool(all_peaks_rejected),
             'periodogram': {
                 'periods': res.period.tolist(),
                 'powers': res.power.tolist()

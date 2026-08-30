@@ -1,0 +1,25 @@
+  F:\solo_leveling_assistant\project-astraeus\astraeus\analysis\logging.py:116: DeprecationWarning:
+  
+  datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+
+tests/test_mcmc.py::test_mcmc_retrieval
+  F:\solo_leveling_assistant\project-astraeus\tests\test_mcmc.py:92: UserWarning:
+  
+  MCMC acceptance fraction is 0.527, which is poorly tuned (should be between 0.2 and 0.5). Consider adjusting step sizes or priors.
+
+tests/test_multi_planet_scaling.py::test_regression_mcmc
+  C:\Users\MIT\AppData\Local\Programs\Python\Python312\Lib\site-packages\emcee\moves\red_blue.py:99: RuntimeWarning:
+  
+  invalid value encountered in scalar subtract
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_experiment_history.py::test_experiment_history_cycle - Asse...
+FAILED tests/test_ingestion_audit_fixes.py::TestFix1KeplerMultiQuarterBaseline::test_all_segments_downloaded_not_just_first_quarter
+FAILED tests/test_ingestion_audit_fixes.py::TestFix2TimeoutRetryLoop::test_timeout_is_retried_and_succeeds_on_third_attempt
+FAILED tests/test_ingestion_audit_fixes.py::TestFix2TimeoutRetryLoop::test_persistent_timeout_reports_timed_out_reason
+FAILED tests/test_ingestion_audit_fixes.py::TestFix3TimeoutDistinguishable::test_call_with_timeout_returns_sentinel_on_overrun
+FAILED tests/test_ingestion_audit_fixes.py::TestFix3TimeoutDistinguishable::test_search_timeout_translates_to_network_timeout_error
+FAILED tests/test_ingestion_audit_fixes.py::TestFix4MissionOffsetSingleSource::test_kepler_pipeline_applies_bkjd_offset
+FAILED tools/diagnostics/test_exoplanet_ui_debug.py::TestExoplanetUIDebug::test_scenario_C_async_ingestion
+8 failed, 279 passed, 1 skipped, 36 deselected, 9 warnings in 2752.01s (0:45:52)

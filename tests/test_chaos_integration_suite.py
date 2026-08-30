@@ -432,6 +432,37 @@ def vector_c2_memory_hammer() -> None:
 
 
 # ===========================================================================
+# Pytest collection shim (audit fix C5, 2026-08-21)
+# ===========================================================================
+# This file doubles as a standalone script (``python tests/...``) and a
+# pytest module. Until 2026-08-21 it defined no ``test_*`` functions, so
+# ``pytest tests/`` collected ZERO tests from it and the entire adversarial
+# suite silently never ran in CI while the pipeline reported green.
+import pytest  # noqa: E402
+
+_FAST_VECTORS = [
+    vector_b1_sub_epsilon_collision,
+    vector_b2_hyperbolic_escape,
+    vector_a1_slider_rerun_dormancy,
+    vector_a2_malformed_figure_payloads,
+    vector_a3_frame_isolation_idempotency,
+    vector_c1_chaos_pagination,
+]
+
+
+@pytest.mark.parametrize("vector_fn", _FAST_VECTORS, ids=lambda fn: fn.__name__)
+def test_chaos_vector(vector_fn: Callable[[], None]) -> None:
+    """Run one adversarial vector; any assertion failure fails the test."""
+    vector_fn()
+
+
+@pytest.mark.slow
+def test_chaos_vector_c2_memory_hammer() -> None:
+    """200-compile Δ-RAM leak guard (minutes-long; kept out of the fast gate)."""
+    vector_c2_memory_hammer()
+
+
+# ===========================================================================
 # Runner
 # ===========================================================================
 def main() -> int:

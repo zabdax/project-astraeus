@@ -60,15 +60,28 @@ def test_astraeus_cache_dir_uses_tmp_fallback():
     import os
     import tempfile
     import importlib
-    # Force fallback by ensuring env var unset.
-    os.environ.pop("ASTRAEUS_LIGHTKURVE_CACHE_DIR", None)
-    # Re-import with env override to verify the env-overridable form is honoured.
-    os.environ["ASTRAEUS_LIGHTKURVE_CACHE_DIR"] = "/tmp/explicit_astraeus_cache"
-    reloaded = importlib.reload(lkc)
-    assert reloaded._ASTRAEUS_LIGHTKURVE_CACHE_DIR == "/tmp/explicit_astraeus_cache"
-    # Reset env so subsequent test runs aren't poisoned.
-    os.environ.pop("ASTRAEUS_LIGHTKURVE_CACHE_DIR", None)
-    importlib.reload(lkc)
+    # 2026-08-21 audit fix: importlib.reload() re-executes the module IN
+    # PLACE, rebinding every attribute (LightkurveClient,
+    # _TIMEOUT_SENTINEL, helper functions...). Tests that already hold
+    # collection-time references to the old objects diverge from the
+    # rebound module dict, which poisoned every later lightkurve_client
+    # test in the full suite (timeout-sentinel identity failures,
+    # '_FakeSearch has no attribute table' cache-fallback errors).
+    # Snapshot the module dict and restore it verbatim afterwards so the
+    # reload is observable HERE but invisible to every other test.
+    pre_reload_state = dict(lkc.__dict__)
+    try:
+        # Force fallback by ensuring env var unset.
+        os.environ.pop("ASTRAEUS_LIGHTKURVE_CACHE_DIR", None)
+        # Re-import with env override to verify the env-overridable form is honoured.
+        os.environ["ASTRAEUS_LIGHTKURVE_CACHE_DIR"] = "/tmp/explicit_astraeus_cache"
+        reloaded = importlib.reload(lkc)
+        assert reloaded._ASTRAEUS_LIGHTKURVE_CACHE_DIR == "/tmp/explicit_astraeus_cache"
+    finally:
+        # Reset env so subsequent test runs aren't poisoned.
+        os.environ.pop("ASTRAEUS_LIGHTKURVE_CACHE_DIR", None)
+        lkc.__dict__.clear()
+        lkc.__dict__.update(pre_reload_state)
 
 
 def test_target_tic_table_keys_and_count():
@@ -86,12 +99,11 @@ def test_target_tic_table_keys_and_count():
 # ---------------------------------------------------------------------------
 import numpy as np
 
-
-def test_float64_invariant_module_docstring():
-    """The np.float64 invariant is documented at the module level (lines 1-11)."""
-    doc = lkc.__doc__ or ""
-    assert "np.float64" in doc
-    assert "precision" in doc.lower()
+# The np.float64 invariant is also documented at the module level
+# (lightkurve_client.py docstring, lines 1-11: "np.float64" / "precision").
+# That is documentation, not behavior, so it is noted here as a comment
+# rather than asserted as a test — the enforceable invariant is the
+# source-token check below.
 
 
 def test_float64_invariant_array_construction_sites():
@@ -112,11 +124,10 @@ def test_float64_invariant_array_construction_sites():
     )
 
 
-def test_precision_guard_class_or_helper_exists_after_phase_2():
-    """Placeholder for Phase 2.1 — PrecisionGuard collaborator (re-checked then)."""
-    # Defer: this test passes trivially today; Phase 2.1 will tighten it
-    # by asserting PrecisionGuard is importable from its new location.
-    assert True
+# Phase 2.1 "PrecisionGuard" placeholder deleted (2026-08-21): no
+# ``PrecisionGuard`` symbol exists anywhere in the repo, so the placeholder's
+# ``assert True`` was a can't-fail test. Re-add a real assertion if/when that
+# collaborator actually lands.
 
 
 # ---------------------------------------------------------------------------

@@ -6,6 +6,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from astraeus.analysis.detection import detect_transit_candidate
+from astraeus.analysis.logging import generate_dataset_hash
 from astraeus.core.orchestrator import run_multi_planet_search
 from astraeus.core.ingestion import RemoteDiscoveryEngine, DataAdapter
 
@@ -151,6 +152,53 @@ div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div:hover {
 SVG_PLANET_SCALE = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>"""
 SVG_JWST = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>"""
 SVG_VETTING = """<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00bcd4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="12" x2="21" y2="12"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>"""
+
+
+def _resolve_stellar_mass(meta):
+    """Stellar-mass fallback chain (audit fix A8).
+
+    NASA Exoplanet Archive rows carry ``st_mass``; older pipeline dicts
+    may carry ``stellar_mass``. Try both before defaulting to 1.0 Msun —
+    the previous single-key lookup silently defaulted for every archive
+    target.
+    """
+    return (meta or {}).get('stellar_mass') or (meta or {}).get('st_mass') or 1.0
+
+
+def _secondary_eclipse_status(sec_snr, sec_depth, threshold_ppm):
+    """Secondary-eclipse verdict against the pipeline's adaptive threshold.
+
+    Audit fix A9: the threshold comes from the result dict
+    (``secondary_eclipse_threshold_ppm``, physically derived when inputs
+    allow, else the 800 ppm fallback) instead of a hardcoded 0.0008.
+    """
+    if sec_snr <= 3.0:
+        return "Pass"
+    if sec_depth < float(threshold_ppm) / 1.0e6:
+        return "Pass (Atmospheric Occultation Detected)"
+    return "Fail (Eclipse Detected)"
+
+
+def _build_workspace_planet_frame(results_list):
+    """Derive the Simulator N-body workspace frame from real candidates.
+
+    Audit fix A10: only genuine analysis output is published. Masses are
+    intentionally omitted (the detector does not derive them) — the
+    Simulator estimates them from radius via its existing fallback.
+    """
+    rows = []
+    for cand in results_list or []:
+        if not isinstance(cand, dict):
+            continue
+        period = cand.get('period_days', cand.get('period'))
+        if not period:
+            continue
+        rows.append({
+            'period_days': float(period),
+            'eccentricity': float(cand.get('eccentricity', 0.0) or 0.0),
+            'radius': float(cand.get('planet_radius_earth', 0.0) or 0.0),
+        })
+    return pd.DataFrame(rows) if rows else None
 
 def render_discovery_bar() -> tuple[pd.DataFrame | None, str, str]:
     if "search_target" not in st.session_state:
@@ -316,6 +364,25 @@ def render(main_panel, right_panel) -> None:
                         
                     st.session_state['active_time'] = data_time
                     st.session_state['active_flux'] = data_flux
+
+                    # Audit fix A10: publish the workspace dataset for the
+                    # Simulator's N-body sweep — real candidates only, never
+                    # synthetic filler; an empty result clears any previous
+                    # frame so the Simulator honestly falls back to defaults.
+                    planet_frame = _build_workspace_planet_frame(
+                        st.session_state.get('detective_results_list')
+                    )
+                    if planet_frame is not None and not planet_frame.empty:
+                        st.session_state['active_dataframe'] = planet_frame
+                    else:
+                        st.session_state.pop('active_dataframe', None)
+                    kic_label = (metadata or {}).get('pl_name') or t_name
+                    if kic_label:
+                        st.session_state['selected_kic'] = kic_label
+
+                    # Audit fix A7: stamp the exact hash save_experiment_log
+                    # derives from this metadata, enabling History restore.
+                    st.session_state['current_dataset_hash'] = generate_dataset_hash(metadata or {})
                 except Exception as e:
                     import traceback
                     st.markdown(f"<div style='color: #EF4444; display: flex; gap: 8px;'><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><circle cx='12' cy='12' r='10'></circle><line x1='15' y1='9' x2='9' y2='15'></line><line x1='9' y1='9' x2='15' y2='15'></line></svg> BLS Execution failed: {e}</div>", unsafe_allow_html=True)
@@ -347,6 +414,8 @@ def render(main_panel, right_panel) -> None:
             #   fetched_target_data (fetch), active_metadata (fetch + analyze),
             #   detective_results / detective_results_list (analyze),
             #   detective_plot_data / active_time / active_flux (analyze),
+            #   active_dataframe / selected_kic / current_dataset_hash
+            #     (analyze — audit fix A7/A10),
             #   stability_detective_results[_config_hash] (stability button).
             invalidate = (
                 'last_target' not in st.session_state
@@ -360,6 +429,8 @@ def render(main_panel, right_panel) -> None:
                     'detective_plot_data', 'detective_results',
                     'detective_results_list', 'fetched_target_data',
                     'active_metadata', 'active_time', 'active_flux',
+                    'active_dataframe', 'selected_kic',
+                    'current_dataset_hash',
                     'stability_detective_results',
                     'stability_detective_config_hash',
                 ]:
@@ -632,12 +703,11 @@ def render(main_panel, right_panel) -> None:
                     v_status = "Fail (V-Shaped)"
 
                 # ── Secondary eclipse: differentiate occultation vs binary ──
-                if sec_snr <= 3.0:
-                    sec_status = "Pass"
-                elif sec_dep < 0.0008:
-                    sec_status = "Pass (Atmospheric Occultation Detected)"
-                else:
-                    sec_status = "Fail (Eclipse Detected)"
+                # Audit fix A9: threshold comes from the pipeline result
+                # (adaptive / fallback), not a hardcoded 800 ppm.
+                sec_threshold_ppm = float(res.get('secondary_eclipse_threshold_ppm', 800.0))
+                sec_threshold_mode = res.get('secondary_eclipse_threshold_mode')
+                sec_status = _secondary_eclipse_status(sec_snr, sec_dep, sec_threshold_ppm)
                 
                 v_color = "#10B981" if v_status.startswith("Pass") else "#EF4444"
                 sec_color = "#10B981" if sec_status.startswith("Pass") else "#EF4444"
@@ -656,6 +726,7 @@ def render(main_panel, right_panel) -> None:
                         <div style="font-size: 16px; font-weight: bold; color: {sec_color}; margin-top: 4px;">{sec_status}</div>
                         <div style="font-size: 13px; color: #e6edf3; margin-top: 2px;">Depth: {sec_dep:.5f}</div>
                         <div style="font-size: 13px; color: #e6edf3;">SNR: {sec_snr:.3f}</div>
+                        <div style="font-size: 13px; color: #e6edf3;">Threshold: {sec_threshold_ppm:.1f} ppm{f' ({sec_threshold_mode})' if sec_threshold_mode else ''}</div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -739,7 +810,9 @@ def render(main_panel, right_panel) -> None:
                             # handles the legitimate re-run case.
                             from astraeus.core.nbody_solver import check_system_stability, estimate_mass_from_radius
 
-                            stellar_mass = st.session_state.get('active_metadata', {}).get('stellar_mass', 1.0)
+                            # Audit fix A8: archive metadata keys the stellar
+                            # mass 'st_mass'; 'stellar_mass' is the legacy key.
+                            stellar_mass = _resolve_stellar_mass(st.session_state.get('active_metadata', {}))
 
                             planet_dicts = []
                             n_candidates = len(candidates)

@@ -197,8 +197,13 @@ def run_injection_recovery(
     # 4. Core Signal Injection (using native geometry engine)
     a_rs_val = max(15.0, injected_b + 2.0)
     inclination_rad = np.arccos(injected_b / a_rs_val)
-    
-    time_quant = (local_time - injected_epoch) * u.day
+
+    # Audit fix M14 (2026-08-21): generate_model_flux dips at P/4 after
+    # whatever origin it is handed, so a quarter-period lead is required
+    # for `injected_epoch` to be the actual transit midpoint (previously
+    # the dip landed a quarter period away from injected_epoch). The sign
+    # is locked numerically by tests/test_science_audit_fixes.py.
+    time_quant = (local_time - injected_epoch + 0.25 * injected_period) * u.day
     period_quant = injected_period * u.day
     a_quant = a_rs_val * u.R_sun
     inc_quant = inclination_rad * u.rad

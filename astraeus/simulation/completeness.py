@@ -291,6 +291,9 @@ def _compute_cell_hash(
     use_full_pipeline: bool,
 ) -> str:
     payload = {
+        # Audit fix M14b (2026-08-21): bumped when cell methodology changes so
+        # stale cached cells (old double-injection behavior) are never reused.
+        "algo_version": 2,
         "period": period,
         "radius_ratio": radius_ratio,
         "snr": snr,
@@ -377,9 +380,18 @@ def _run_one_cell(
                 record = {"seed": per_inj_seed, "recovered": False, "error": str(exc)}
         else:
             try:
+                # Audit fix M14b (2026-08-21): the scenario curve already
+                # contains a transit of the SAME period/depth being tested.
+                # Injecting on top of it produced a two-dip light curve
+                # (coincident dips at short periods, primary+secondary-like
+                # pairs at long ones) that contaminated depth/SNR metrics and
+                # could fail vetting as an EB. Divide out the scenario model
+                # first so run_injection_recovery performs the sole injection
+                # into a pure-noise baseline.
+                flux_baseline = series.observed_flux / series.theoretical_flux
                 result = run_injection_recovery(
                     time=series.time_days,
-                    flux=series.observed_flux,
+                    flux=flux_baseline,
                     injected_period=period,
                     injected_r_ratio=radius_ratio,
                     injected_b=config.impact_parameter,
@@ -484,7 +496,12 @@ def run_completeness_sweep(
             _atomic_write_json(cell_path, cell_data)
             cache_misses += 1
 
-        manifest.setdefault("completed_cells", []).append(cell_hash)
+        # Audit fix (2026-08-21): record each cell once — the unconditional
+        # append re-added hashes on every resumed run, so completed_cells
+        # grew with duplicate entries after k resumes.
+        completed = manifest.setdefault("completed_cells", [])
+        if cell_hash not in completed:
+            completed.append(cell_hash)
         _atomic_write_manifest(sweep_dir, manifest)
 
         r = cell_data["result"]

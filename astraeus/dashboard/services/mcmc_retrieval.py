@@ -71,7 +71,11 @@ def run_retrieval(
     )
     folded_flux_err = estimate_folded_flux_error(folded_time, folded_flux)
 
-    time_u = folded_time * u.day
+    # Audit fix C6 (2026-08-21): the model dips at periapsis + P/4 while the
+    # folded data dips at phase 0 — shift model time so the optimizer, MCMC,
+    # and the verification model all share one aligned convention.
+    from astraeus.data.preprocessing import folded_time_to_model_time
+    time_u = folded_time_to_model_time(folded_time, config.period_days) * u.day
     fixed_params = build_fixed_params(config)
     param_names = ["radius_ratio", "inclination_deg", "u1", "u2"]
     initial_guess = (

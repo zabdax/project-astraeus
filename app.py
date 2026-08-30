@@ -7,6 +7,7 @@ import numpy as np
 import plotly.graph_objects as go
 from typing import Dict, Any, List
 import logging
+from astropy import units as u
 
 from astraeus.core.orchestrator import submit_multi_planet_search, get_job_status, cancel_job, JobState
 from astraeus.simulation.synthetic import SyntheticTransitScenario, generate_synthetic_transit_series
@@ -15,6 +16,7 @@ from astraeus.dashboard.ui.layout import workbench_layout
 from astraeus.dashboard.ui.styles import inject_page_styles
 from astraeus.dashboard.ui.components import render_floating_chat
 from astraeus.analysis.reporting import generate_academic_report
+from astraeus.analysis.logging import generate_dataset_hash
 from route import render_route
 
 logger = logging.getLogger(__name__)
@@ -179,23 +181,64 @@ def _build_adapted_metrics_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _vetting_verdict_display(cand):
+    """Map a candidate's pipeline verdict to a (color, label, bold) triple.
+
+    Audit fix A4: the Candidate Ledger must render ``vetting_status``
+    verbatim from the hardened pipeline result — SNR alone must never
+    re-derive the verdict at display level.
+    """
+    status = cand.get("vetting_status") if isinstance(cand, dict) else None
+    if not status:
+        return "orange", "Low SNR Candidate Baseline", False
+    if status.startswith("Verified Planet Candidate"):
+        return "green", status, True
+    if status.startswith("Eclipsing Binary Detected"):
+        return "red", status, False
+    return "orange", status, False
+
+
+def _needs_terminal_rerun(state, flagged_job_id, job_id):
+    """True only when a job first reaches a terminal state (audit fix A5).
+
+    The job-status fragment mutates the payload, but KPI cards and the
+    ledger render in the full-app pass, so a single full-app rerun is
+    required once the job finishes; ``flagged_job_id`` guards it to fire
+    exactly once per job.
+    """
+    terminal = (JobState.DONE, JobState.FAILED, JobState.CANCELLED)
+    return state in terminal and flagged_job_id != job_id
+
+
 @st.fragment(run_every=2)
 def render_job_status(job_id):
     status = get_job_status(job_id)
     if not status:
         st.error("Job not found")
+        # Audit fix A6: when JOB_REGISTRY lost the job (e.g. server restart)
+        # the Run button stays unreachable until active_job_id is cleared.
+        if st.button("Clear Stale Job", key=f"clear_stale_{job_id}"):
+            st.session_state.pop("active_job_id", None)
+            st.session_state.pop("_job_final_rerun_done_for", None)
+            st.rerun()
         return
-        
+
     state = status.get("status")
     candidates = status.get("candidates", [])
     iteration = status.get("iteration", 0)
-    
+
     # Update payload in session state for rendering below
     payload = st.session_state["discovery_payload"]
     payload["total_iterations_executed"] = iteration
     payload["candidates"] = candidates
     st.session_state["discovery_payload"] = payload
-    
+
+    # Audit fix A5: refresh the whole app exactly once when the job lands
+    # in a terminal state, so KPI cards / ledger leave the fragment pass.
+    if _needs_terminal_rerun(state, st.session_state.get("_job_final_rerun_done_for"), job_id):
+        st.session_state["_job_final_rerun_done_for"] = job_id
+        st.rerun(scope="app")
+
     st.markdown("### Search Progress")
     if state in [JobState.PENDING, JobState.RUNNING]:
         st.info(f"Running iteration {iteration}...")
@@ -265,7 +308,10 @@ def main():
                 else:
                     if st.button("Run Live Analysis"):
                         # Generate a synthetic multi-planet system for demo
-                        scenario = SyntheticTransitScenario(duration=100.0)
+                        # Audit fix C3 (2026-08-21): duration must be an astropy
+                        # Quantity — a bare float crashed _generate_time_grid
+                        # with AttributeError on every button click.
+                        scenario = SyntheticTransitScenario(duration=100.0 * u.day)
                         series = generate_synthetic_transit_series(scenario)
                         raw_lc = {
                             "time": series.time_days,
@@ -273,6 +319,11 @@ def main():
                             "target_name": target,
                             "metadata": {}
                         }
+                        # Audit fix A7: stamp the same dataset hash the
+                        # experiment log stores (generate_dataset_hash of the
+                        # exact metadata dict handed to the detector) so
+                        # History restore can validate the active dataset.
+                        st.session_state["current_dataset_hash"] = generate_dataset_hash(raw_lc["metadata"])
                         
                         # Reset payload candidates
                         st.session_state["discovery_payload"]["candidates"] = []
@@ -347,10 +398,12 @@ def main():
 
                         with status_col:
                             st.caption("Vetting Status")
-                            if cand.get("snr", 0.0) >= snr_threshold:
-                                st.markdown(":green[**Verified Planet Candidate**]")
-                            else:
-                                st.markdown(":orange[**Low SNR Candidate Baseline**]")
+                            # Audit fix A4: render the pipeline's hardened
+                            # verdict directly (SNR-only recomputation bypassed
+                            # the TLS / secondary-eclipse vetting gates).
+                            v_color, v_label, v_bold = _vetting_verdict_display(cand)
+                            v_text = f"**{v_label}**" if v_bold else v_label
+                            st.markdown(f":{v_color}[{v_text}]")
 
                         # Live interactive phase-folded transit plot.  Built from
                         # a defensive copy so the session payload is never

@@ -42,7 +42,9 @@ R_EARTH_IN_RSUN: float = 0.00917
 """Earth radius in solar radii."""
 
 # Gravitational softening parameter (ε² in AU²) to prevent singularities
-# during close encounters.  Value ≈ 10⁻⁴ AU² as specified.
+# during close encounters.  Value ≈ 10⁻⁴ AU² as specified.  Applied ONLY to
+# planet–planet pairs; star–planet gravity is unsoftened (audit fix M1,
+# 2026-08-21 — see _pair_softening_sq).
 SOFTENING_SQ: float = 1.0e-4
 
 # Energy drift threshold for numerical early-exit
@@ -165,6 +167,19 @@ def _hill_radius(m_planet: float, m_star: float, semi_major_axis: float) -> floa
     return semi_major_axis * (m_planet / (3.0 * m_star)) ** (1.0 / 3.0)
 
 
+def _pair_softening_sq(i: int, j: int) -> float:
+    """Return the gravitational softening ε² [AU²] for one body pair.
+
+    Audit fix M1 (2026-08-21): softening exists only to protect the
+    planet–planet coincident-body singularity.  Body 0 is the star, so any
+    pair involving index 0 keeps the unsoftened Newtonian distance — for
+    compact orbits (a ≲ 0.09 AU) an ε = 0.01 AU star–planet softening
+    destroys the Keplerian dynamics the initial conditions assume and
+    falsely flags stable systems as ``energy_divergence``.
+    """
+    return SOFTENING_SQ if (i > 0 and j > 0) else 0.0
+
+
 # ---------------------------------------------------------------------------
 # Vectorized gravitational acceleration with softening
 # ---------------------------------------------------------------------------
@@ -175,7 +190,9 @@ def _compute_accelerations(
     """Compute gravitational accelerations on all bodies.
 
     Uses pairwise Newton's law with a softening parameter to prevent
-    singularities:  F ∝ 1 / (r² + ε²).
+    singularities:  F ∝ 1 / (r² + ε²).  Softening is applied only to
+    planet–planet pairs; star–planet gravity is unsoftened (audit fix M1,
+    see :func:`_pair_softening_sq`).
 
     Parameters:
         positions : (N, 3) array of body positions [AU].
@@ -186,18 +203,23 @@ def _compute_accelerations(
     """
     n = len(masses)
     acc = np.zeros_like(positions)
+    body_idx = np.arange(n)
 
     for i in range(n):
         # Displacement vectors from body i to all other bodies
         # Shape: (N, 3) but we mask out self-interaction
         dx = positions - positions[i]  # (N, 3)
         dist_sq = np.sum(dx**2, axis=1)
-        
+
         # Enforce upstream validation clip ensuring distance > 10^-5 AU
         if np.any((dist_sq > 0.0) & (dist_sq < 1.0e-10)):
             raise ValueError("Physical Boundary Breach: Distance delta check failed (distance < 10^-5 AU).")
-            
-        r_sq = dist_sq + SOFTENING_SQ  # (N,)
+
+        # Per-pair softening: planet–planet only.  The self-term gets a safe
+        # placeholder so the division below never sees r_sq == 0 (the star's
+        # self-term is unsoftened); it is zeroed out right after.
+        r_sq = dist_sq + np.where((body_idx > 0) & (i > 0), SOFTENING_SQ, 0.0)
+        r_sq[i] = 1.0
 
         # Gravitational acceleration magnitude: G * m_j / (r² + ε²)^(3/2)
         inv_r3 = 1.0 / (r_sq * np.sqrt(r_sq))  # (N,)
@@ -256,7 +278,10 @@ def _compute_total_energy(
     E = Σ_i ½ m_i v_i² − G Σ_{i<j} m_i m_j / r_ij
 
     Used to monitor numerical integration quality.  A symplectic integrator
-    should keep |ΔE/E₀| bounded over the entire run.
+    should keep |ΔE/E₀| bounded over the entire run.  The pair softening
+    mirrors :func:`_compute_accelerations` exactly (planet–planet only,
+    audit fix M1) so the diagnostic measures drift of the actual
+    Hamiltonian being integrated.
     """
     n = len(masses)
 
@@ -268,7 +293,7 @@ def _compute_total_energy(
     for i in range(n):
         for j in range(i + 1, n):
             dx = positions[j] - positions[i]
-            r = np.sqrt(np.sum(dx**2) + SOFTENING_SQ)
+            r = np.sqrt(np.sum(dx**2) + _pair_softening_sq(i, j))
             pe -= G_AU3_MSUN_YR2 * masses[i] * masses[j] / r
 
     return float(ke + pe)
@@ -448,6 +473,7 @@ def run_stability_integration(
     step = -1
     try:
         acc = _compute_accelerations(positions, masses)
+        prev_positions = positions.copy()
 
         for step in range(n_steps):
             positions += velocities * dt + 0.5 * acc * dt**2
@@ -472,13 +498,33 @@ def run_stability_integration(
                     dx = positions[j] - positions[i]
                     dist = np.sqrt(np.sum(dx**2))
                     mutual_hill = hill_radii[i] + hill_radii[j]
-                    if mutual_hill > 0.0 and dist < mutual_hill:
+                    hit = mutual_hill > 0.0 and dist < mutual_hill
+                    if not hit and mutual_hill > 0.0:
+                        # Audit fix (2026-08-21): endpoint sampling alone
+                        # lets a fast encounter tunnel through the Hill
+                        # zone between two steps (head-on crossing orbits
+                        # registered energy_divergence instead of
+                        # collision). Also test the minimum distance of the
+                        # relative-motion segment swept during this step.
+                        delta0 = prev_positions[i] - prev_positions[j]
+                        rel_d = (positions[i] - prev_positions[i]) - (
+                            positions[j] - prev_positions[j]
+                        )
+                        dd2 = float(np.sum(rel_d**2))
+                        if dd2 > 0.0:
+                            s = -float(np.dot(delta0, rel_d)) / dd2
+                            s = min(1.0, max(0.0, s))
+                            closest = delta0 + s * rel_d
+                            hit = float(np.sqrt(np.sum(closest**2))) < mutual_hill
+                    if hit:
                         survival_step = step + 1
                         termination_reason = "collision"
                         colliding_pair = (i - 1, j - 1)
                         break
                 if termination_reason == "collision":
                     break
+
+            prev_positions[:] = positions
 
             if termination_reason != "completed":
                 break

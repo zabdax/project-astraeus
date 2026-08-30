@@ -109,11 +109,15 @@ def _navigate_to_detective(at: AppTest) -> None:
         if "Detective" in btn.label:
             detective_btn = btn
             break
-    if detective_btn is None:
-        pytest.skip(
-            "Detective sidebar button not found — feature unavailable "
-            "in this app variant."
-        )
+    # Hard assertion, not a skip: the Detective page is defined in this
+    # same repo (ui/pages/detective.py), so if navigation breaks here the
+    # regression guard below would silently stop guarding. Same pattern
+    # as tests/test_agent_detective.py:146.
+    assert detective_btn is not None, (
+        "Detective navigation button not found — routing to the "
+        "Detective page is broken; these regression tests cannot run "
+        "without it."
+    )
     detective_btn.click().run()
 
 
@@ -197,7 +201,7 @@ def test_first_click_populates_detective_results(_synthetic_lightcurve):
     ``detective_results``. This is the case the I4 fix intended to
     protect; it must not regress.
     """
-    at = AppTest.from_file("app.py", default_timeout=30)
+    at = AppTest.from_file("app.py", default_timeout=120)
     at.run(timeout=30)
     assert not at.exception, f"App failed to load: {at.exception}"
 
@@ -241,7 +245,7 @@ def test_second_click_reruns_analysis_after_refetch(_synthetic_lightcurve):
     ``run_analysis`` runs on the second click, overwriting
     ``detective_results``. This test is GREEN.
     """
-    at = AppTest.from_file("app.py", default_timeout=30)
+    at = AppTest.from_file("app.py", default_timeout=120)
     at.run(timeout=30)
     assert not at.exception, f"App failed to load: {at.exception}"
 

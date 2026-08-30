@@ -16,20 +16,22 @@ def generate_dataset_hash(metadata: Dict[str, Any]) -> str:
 def save_experiment_log(params: Dict[str, Any], metadata: Dict[str, Any], fig_paths: List[str]) -> str:
     """
     Save the experiment details to the JSON log file.
-    
+
     Args:
         params (dict): Parameters of the experiment.
         metadata (dict): Metadata associated with the experiment/dataset.
         fig_paths (list): List of paths to saved figures.
-        
+
     Returns:
         str: The unique UUID of the experiment run.
     """
-    os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
-    
+    log_dir = os.path.dirname(LOG_FILE)
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+
     exp_uuid = str(uuid.uuid4())
     dataset_hash = generate_dataset_hash(metadata)
-    
+
     experiment_entry = {
         "id": exp_uuid,
         "timestamp": datetime.utcnow().isoformat() + "Z",
@@ -38,13 +40,38 @@ def save_experiment_log(params: Dict[str, Any], metadata: Dict[str, Any], fig_pa
         "metadata": metadata,
         "fig_paths": fig_paths
     }
-    
-    history = load_experiment_history()
+
+    # Audit fix M10 (2026-08-21): load_experiment_history returns [] on ANY
+    # parse error; blindly appending to that would overwrite a corrupt (but
+    # possibly recoverable) log and destroy the entire history.  Back the
+    # corrupt file up before writing instead.
+    history: List[Dict[str, Any]] = []
+    if os.path.exists(LOG_FILE):
+        loaded = None
+        read_error = ""
+        try:
+            with open(LOG_FILE, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+        except (json.JSONDecodeError, IOError) as e:
+            loaded = None
+            read_error = str(e)
+        if isinstance(loaded, list):
+            history = loaded
+        else:
+            timestamp_tag = datetime.utcnow().strftime("%Y%m%dT%H%M%S%f")
+            backup_path = f"{LOG_FILE}.corrupt-{timestamp_tag}"
+            os.replace(LOG_FILE, backup_path)
+            print(
+                f"[Warning] Experiment log '{LOG_FILE}' was unreadable "
+                f"({read_error or 'content is not a JSON list'}); "
+                f"original backed up to '{backup_path}'."
+            )
+
     history.append(experiment_entry)
-    
+
     with open(LOG_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, indent=4)
-        
+
     return exp_uuid
 
 def load_experiment_history() -> List[Dict[str, Any]]:
@@ -66,7 +93,11 @@ def load_experiment_history() -> List[Dict[str, Any]]:
 class ExperimentLedger:
     def __init__(self, ledger_path: str = "logs/experiments.json"):
         self.ledger_path = ledger_path
-        os.makedirs(os.path.dirname(self.ledger_path), exist_ok=True)
+        # Audit fix M10 (2026-08-21): a bare filename has an empty dirname;
+        # os.makedirs("") raises FileNotFoundError.
+        ledger_dir = os.path.dirname(self.ledger_path)
+        if ledger_dir:
+            os.makedirs(ledger_dir, exist_ok=True)
 
     def log_candidate(
         self,

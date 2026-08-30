@@ -17,6 +17,7 @@ def run_mcmc(
     n_steps: int = 2000,
     progress_callback: callable = None,
     return_acceptance: bool = False,
+    seed: int | None = None,
 ):
     """Run an MCMC simulation to quantify the uncertainty of recovered parameters.
 
@@ -30,6 +31,9 @@ def run_mcmc(
         n_steps: Number of MCMC steps to run.
         progress_callback: Optional callback for progress updates.
         return_acceptance: If True, returns the mean acceptance fraction.
+        seed: Optional RNG seed for reproducible walker initialization
+            (audit fix M11, 2026-08-21).  When None, the legacy unseeded
+            global-RNG behavior is kept.
 
     Returns:
         If return_acceptance is False:
@@ -38,10 +42,15 @@ def run_mcmc(
             tuple[np.ndarray, np.ndarray, float]: The flattened chain, percentiles array, and mean acceptance fraction.
     """
     ndim = len(best_fit_theta)
-    
+
     # Initialize the starting positions of the walkers in a tiny Gaussian ball
-    # tightly clustered around the best_fit_theta
-    pos = best_fit_theta + 1e-4 * np.random.randn(n_walkers, ndim)
+    # tightly clustered around the best_fit_theta.  A supplied seed makes the
+    # posterior reproducible from identical inputs (audit fix M11).
+    if seed is not None:
+        rng = np.random.default_rng(seed)
+        pos = best_fit_theta + 1e-4 * rng.normal(size=(n_walkers, ndim))
+    else:
+        pos = best_fit_theta + 1e-4 * np.random.randn(n_walkers, ndim)
     
     # Instantiate the EnsembleSampler passing in log_probability
     sampler = emcee.EnsembleSampler(

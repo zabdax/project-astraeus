@@ -147,7 +147,10 @@ def generate_model_flux(
     flux_drop = flux_drop_quantity.to_value(u.dimensionless_unscaled)
 
     z_values = z.to_value(semi_major_axis.unit)
-    flux_drop[z_values < 0] = 0.0
+    # Audit fix M2 (2026-08-21): np.where works for 0-d/scalar time inputs
+    # where in-place masked assignment (flux_drop[mask] = 0.0) raised
+    # TypeError on np.float64.  Array semantics are bit-identical.
+    flux_drop = np.where(z_values < 0, 0.0, flux_drop)
 
     return 1.0 - flux_drop
 

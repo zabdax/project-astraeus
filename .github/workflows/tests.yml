@@ -8,6 +8,9 @@ on:
   schedule:
     # Nightly at 03:00 UTC
     - cron: "0 3 * * *"
+    # Weekly full-suite gate: Sunday 03:00 UTC. Drives the blocking
+    # full-suite-weekly job below (matched via github.event.schedule).
+    - cron: "0 3 * * 0"
 
 jobs:
   fast-gate:
@@ -55,4 +58,29 @@ jobs:
       - name: Install test deps
         run: pip install -r requirements-dev.txt
       - name: Run full test suite (may hit network)
+        run: python -m pytest tests/ -v --tb=short
+
+  full-suite-weekly:
+    name: Full suite weekly (network + slow, blocking)
+    runs-on: ubuntu-latest
+    # The full-suite job above sets continue-on-error: true, so network+slow
+    # regressions can never block a merge and produce no signal. This weekly
+    # scheduled job runs the identical suite WITHOUT continue-on-error so
+    # those regressions surface as a red, blocking result.
+    if: github.event_name == 'schedule' && github.event.schedule == '0 3 * * 0'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install runtime deps
+        run: pip install -r requirements.txt
+      - name: Install test deps
+        run: pip install -r requirements-dev.txt
+      - name: Run full test suite (blocking)
         run: python -m pytest tests/ -v --tb=short

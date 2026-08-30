@@ -229,19 +229,42 @@ def _record_one(client: RequestsHttpClient, url: str, *, timeout: float = 30.0) 
     }
 
 
-def _record_fixture(target: str, mission: str, out_dir: Path) -> list[Path]:
+def _record_fixture(
+    target: str,
+    mission: str,
+    out_dir: Path,
+    data_uri: str | None = None,
+) -> list[Path]:
     """Capture one or more HTTP responses for ``target``/``mission``.
 
     Phase 0 ships a minimal recorder: it captures a single MAST
     download URL. Subsequent phases extend the URL table as
     characterisation expands.
+
+    Audit fix 11 (2026-08-21): the recorder previously called the MAST
+    Download endpoint with invented query params
+    (``?target=...&mission=...``) — the endpoint's real contract is
+    ``?uri=mast:...`` (see ``_MAST_DOWNLOAD_URL`` usage in
+    lightkurve_client) — and hardcoded "200" into the fixture filename
+    regardless of the actual response status. The URL is now built from
+    a real ``data_uri`` and the filename carries the recorded status.
     """
+    if not data_uri:
+        raise ValueError(
+            "data_uri is required: pass the MAST product URI "
+            "(e.g. 'mast:TESS/product/tess...fits') to record against the "
+            "Download endpoint's real ?uri= contract."
+        )
     out_dir.mkdir(parents=True, exist_ok=True)
     client = RequestsHttpClient()
     captured: list[Path] = []
-    url = f"https://mast.stsci.edu/api/v0/Download/file?target={target}&mission={mission}"
-    fixture_path = out_dir / f"mast_{mission.lower()}_{target.lower()}_200.json"
-    fixture_path.write_text(json.dumps(_record_one(client, url), indent=2))
+    url = f"https://mast.stsci.edu/api/v0/Download/file?uri={data_uri}"
+    record = _record_one(client, url)
+    fixture_path = (
+        out_dir
+        / f"mast_{mission.lower()}_{target.lower()}_{record['status']}.json"
+    )
+    fixture_path.write_text(json.dumps(record, indent=2))
     captured.append(fixture_path)
     return captured
 
@@ -256,6 +279,12 @@ def main(argv: list[str] | None = None) -> int:
     rec = sub.add_parser("record", help="Capture HTTP fixtures for a target.")
     rec.add_argument("--target", required=True, help="Canonical target name, e.g. TRAPPIST-1")
     rec.add_argument("--mission", required=True, choices=["TESS", "Kepler", "K2"])
+    # Audit fix 11: the Download endpoint needs the real product URI.
+    rec.add_argument(
+        "--data-uri",
+        required=True,
+        help="MAST dataURI to record, e.g. mast:TESS/product/tess....fits",
+    )
     rec.add_argument(
         "--out-dir",
         default="tests/_fixtures/http_responses",
@@ -265,7 +294,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.cmd == "record":
         out_dir = Path(args.out_dir)
-        paths = _record_fixture(args.target, args.mission, out_dir)
+        paths = _record_fixture(args.target, args.mission, out_dir, data_uri=args.data_uri)
         for p in paths:
             print(p)
         return 0

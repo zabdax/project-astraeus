@@ -59,7 +59,20 @@ def test_known_stable_system():
 
 
 def test_forced_collision():
-    """Test 3 — Forced collision (crossing orbits)."""
+    """Test 3 — Forced close encounter (grazing orbits).
+
+    2026-08-21 audit note: with dt = min_period/100 the Hill-zone of this
+    configuration is traversed in LESS than one timestep, so whether the
+    encounter registers as "collision" (Hill-zone contact sampled) or
+    "energy_divergence" (unresolved encounter blows up the energy check
+    first) depends on chaotic trajectory detail — it flipped when the
+    star–planet softening fix (audit M1) changed the trajectory at the
+    1e-4 level. Both verdicts mean "system destroyed by the encounter";
+    what this test really guards is that the solver terminates unstably
+    with finite diagnostics and never silently reports stability or a
+    NaN leak. test_collision_detection_fires_deterministically below locks
+    the collision machinery itself.
+    """
     planets = [
         PlanetParams(mass_msun=0.001, semi_major_axis_au=1.0, eccentricity=0.0, initial_phase_rad=0.0),
         PlanetParams(mass_msun=0.001, semi_major_axis_au=1.01, eccentricity=0.0, initial_phase_rad=np.pi),
@@ -69,10 +82,35 @@ def test_forced_collision():
         planets=planets,
         n_steps=50_000,
     )
-    
+
+    assert result.is_stable is False
+    assert result.termination_reason in ("collision", "energy_divergence"), (
+        f"close-encounter system terminated as {result.termination_reason!r}"
+    )
+    if result.termination_reason == "collision":
+        assert result.colliding_pair is not None
+
+
+def test_collision_detection_fires_deterministically():
+    """Bodies initialised inside each other's mutual Hill zone must be
+    flagged as colliding on the first step — deterministic lock for the
+    collision machinery (pair indices, unstable verdict, finite payload).
+    """
+    planets = [
+        PlanetParams(mass_msun=0.001, semi_major_axis_au=1.0, eccentricity=0.0, initial_phase_rad=0.0),
+        PlanetParams(mass_msun=0.001, semi_major_axis_au=1.01, eccentricity=0.0, initial_phase_rad=0.05),
+    ]
+    result = run_stability_analysis(
+        stellar_mass_msun=1.0,
+        planets=planets,
+        n_steps=1_000,
+    )
+
     assert result.is_stable is False
     assert result.termination_reason == "collision"
-    assert result.colliding_pair is not None
+    assert result.colliding_pair == (0, 1)
+    assert np.all(np.isfinite(result.final_eccentricities))
+    assert np.isfinite(result.energy_relative_error)
 
 
 def test_forced_ejection():

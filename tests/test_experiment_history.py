@@ -93,11 +93,14 @@ def test_experiment_history_cycle():
     at.session_state['current_dataset_hash'] = correct_hash
     restore_btn.click().run()
     
-    # Verify bit-for-bit identical restoration in session_state
-    assert 'planet_radius' in at.session_state, "Params failed to restore with correct hash."
-    assert at.session_state['planet_radius'] == params['planet_radius']
-    assert at.session_state['inclination'] == params['inclination']
-    assert at.session_state['period'] == params['period']
+    # Verify bit-for-bit identical restoration in session_state.
+    # 2026-08-21 audit: restored params are namespaced under restored_param_*
+    # so a blind restore can never hijack unrelated widget state (e.g. the
+    # Simulator's "snr" slider) — see ui/pages/history.py.
+    assert 'restored_param_planet_radius' in at.session_state, "Params failed to restore with correct hash."
+    assert at.session_state['restored_param_planet_radius'] == params['planet_radius']
+    assert at.session_state['restored_param_inclination'] == params['inclination']
+    assert at.session_state['restored_param_period'] == params['period']
     
     # Clean up
     if os.path.exists(LOG_FILE):

@@ -1,5 +1,7 @@
 """Simulation module for the dashboard."""
 
+import uuid
+
 import streamlit as st
 import streamlit.components.v1 as components
 import numpy as np
@@ -18,13 +20,61 @@ from astraeus.data.preprocessing import inject_gaussian_noise
 from astraeus.core.orbital_models import calculate_orbital_position
 
 
+# Audit fixes U1/U2 (2026-08-21): per-planet widgets must be keyed by a
+# stable per-planet id ("uid"), never the list index — after
+# multi_planets.pop(i) index keys make surviving planets inherit stale
+# widget state from removed ones.
+_PLANET_WIDGET_PREFIXES = (
+    "rr_", "pd_", "ecc_", "inc_",
+    "edit_name_", "name_input_", "save_", "edit_btn_", "remove_",
+)
+
+
+def _make_planet(name, radius_ratio, period_days, eccentricity, inclination_degrees):
+    """Create a planet dict carrying a stable unique id under ``"uid"``."""
+    return {
+        "uid": uuid.uuid4().hex,
+        "name": name,
+        "radius_ratio": radius_ratio,
+        "period_days": period_days,
+        "eccentricity": eccentricity,
+        "inclination_degrees": inclination_degrees,
+    }
+
+
+def _default_planet():
+    return _make_planet("Planet 1", 0.10, 3.0, 0.0, 88.5)
+
+
+def _planet_widget_keys(uid):
+    """Every session_state key bound to one planet's uid."""
+    return {prefix + uid for prefix in _PLANET_WIDGET_PREFIXES}
+
+
+def _reset_simulator_defaults():
+    """Restore factory defaults, evicting ALL persisted widget state.
+
+    Audit fix U2: explicit-key sliders ignore their ``value=`` argument
+    while old session_state entries exist, so Reset must pop every
+    per-planet widget key and the keyed SNR slider before re-running.
+    """
+    for p in st.session_state.get("multi_planets", []):
+        uid = p.get("uid") if isinstance(p, dict) else None
+        if uid:
+            for k in _planet_widget_keys(uid):
+                st.session_state.pop(k, None)
+    st.session_state.multi_planets = [_default_planet()]
+    st.session_state.pop("simulator_snr", None)
+    st.session_state.snr = 200
+    st.session_state.pop("_orbit_html_key", None)
+    st.session_state.pop("_orbit_html", None)
+
+
 def render(main_panel, right_panel) -> None:
     """Render the Simulation module."""
     
     if "multi_planets" not in st.session_state:
-        st.session_state.multi_planets = [
-            {"name": "Planet 1", "radius_ratio": 0.10, "period_days": 3.0, "eccentricity": 0.0, "inclination_degrees": 88.5}
-        ]
+        st.session_state.multi_planets = [_default_planet()]
         
     if "snr" not in st.session_state:
         st.session_state.snr = 200
@@ -57,61 +107,67 @@ div[data-testid="stButton"] > button[kind="secondary"]:has(p:-webkit-any(*, *)) 
 </style>
 """, unsafe_allow_html=True)
 
-            st.session_state.snr = st.slider("Target Signal-to-Noise Ratio (SNR)", 50, 500, st.session_state.snr, 10)
+            # Audit fix U2: explicit key so the Reset handler can evict the
+            # widget's persisted state (an unkeyed slider ignores
+            # session_state writes).
+            st.session_state.snr = st.slider(
+                "Target Signal-to-Noise Ratio (SNR)", 50, 500, st.session_state.snr, 10,
+                key="simulator_snr",
+            )
 
             st.markdown('<div class="sim-btn-add">', unsafe_allow_html=True)
             if st.button("Add Planet", key="simulator_add_planet", use_container_width=True):
                 new_period = 5.0 + 2.0 * len(st.session_state.multi_planets)
                 new_name = f"Planet {len(st.session_state.multi_planets) + 1}"
                 st.session_state.multi_planets.append(
-                    {"name": new_name, "radius_ratio": 0.05, "period_days": new_period, "eccentricity": 0.0, "inclination_degrees": 90.0}
+                    _make_planet(new_name, 0.05, new_period, 0.0, 90.0)
                 )
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
             st.markdown('<div class="sim-btn-reset">', unsafe_allow_html=True)
             if st.button("Reset to Default", key="simulator_reset_to_default", use_container_width=True):
-                st.session_state.multi_planets = [
-                    {"name": "Planet 1", "radius_ratio": 0.10, "period_days": 3.0, "eccentricity": 0.0, "inclination_degrees": 88.5}
-                ]
-                st.session_state.snr = 200
-                st.session_state.pop("_orbit_html_key", None)
-                st.session_state.pop("_orbit_html", None)
+                _reset_simulator_defaults()
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
             for i, p in enumerate(list(st.session_state.multi_planets)):
                 st.markdown("---")
 
-                edit_key = f"edit_name_{i}"
+                # Audit fix U1: every widget below binds to the planet's
+                # stable uid, so removing a planet never re-binds another
+                # planet's widgets to the removed one's persisted state.
+                uid = p["uid"]
+
+                edit_key = f"edit_name_{uid}"
                 if edit_key not in st.session_state:
                     st.session_state[edit_key] = False
 
                 if st.session_state[edit_key]:
-                    p["name"] = st.text_input("Name", p.get("name", f"Planet {i+1}"), key=f"name_input_{i}", label_visibility="collapsed")
+                    p["name"] = st.text_input("Name", p.get("name", f"Planet {i+1}"), key=f"name_input_{uid}", label_visibility="collapsed")
                     st.markdown('<div class="sim-btn-save">', unsafe_allow_html=True)
-                    if st.button("Save", key=f"save_{i}", use_container_width=True):
+                    if st.button("Save", key=f"save_{uid}", use_container_width=True):
                         st.session_state[edit_key] = False
                         st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     st.markdown(f"**{p.get('name', f'Planet {i+1}')}**")
                     st.markdown('<div class="sim-btn-edit">', unsafe_allow_html=True)
-                    if st.button("Edit", key=f"edit_btn_{i}", use_container_width=True):
+                    if st.button("Edit", key=f"edit_btn_{uid}", use_container_width=True):
                         st.session_state[edit_key] = True
                         st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
 
                 st.markdown('<div class="sim-btn-remove">', unsafe_allow_html=True)
-                if st.button("Remove", key=f"remove_{i}", use_container_width=True):
+                if st.button("Remove", key=f"remove_{uid}", use_container_width=True):
                     st.session_state.multi_planets.pop(i)
                     st.rerun()
                 st.markdown('</div>', unsafe_allow_html=True)
 
-                p["radius_ratio"] = st.slider("Radius Ratio", 0.01, 0.20, p["radius_ratio"], 0.005, key=f"rr_{i}")
-                p["period_days"] = st.slider("Period (days)", 0.5, 20.0, float(p["period_days"]), 0.1, key=f"pd_{i}")
-                p["eccentricity"] = st.slider("Eccentricity", 0.0, 0.9, p["eccentricity"], 0.01, key=f"ecc_{i}")
-                p["inclination_degrees"] = st.slider("Inclination", 80.0, 90.0, p["inclination_degrees"], 0.1, key=f"inc_{i}")
+                p["radius_ratio"] = st.slider("Radius Ratio", 0.01, 0.20, p["radius_ratio"], 0.005, key=f"rr_{uid}")
+                p["period_days"] = st.slider("Period (days)", 0.5, 20.0, float(p["period_days"]), 0.1, key=f"pd_{uid}")
+                p["eccentricity"] = st.slider("Eccentricity", 0.0, 0.9, p["eccentricity"], 0.01, key=f"ecc_{uid}")
+                p["inclination_degrees"] = st.slider("Inclination", 80.0, 90.0, p["inclination_degrees"], 0.1, key=f"inc_{uid}")
 
 
         # Simulation
@@ -189,10 +245,13 @@ div[data-testid="stButton"] > button[kind="secondary"]:has(p:-webkit-any(*, *)) 
 
             
             st.subheader("Light Curve")
-            st.plotly_chart(make_light_curve_figure(simulation), width="stretch")
-            
+            # Audit fix U3: st.plotly_chart has no width= parameter in
+            # streamlit 1.41.1 (silently ignored) — use_container_width is
+            # the supported full-bleed option used everywhere else.
+            st.plotly_chart(make_light_curve_figure(simulation), use_container_width=True)
+
             st.subheader("Residuals")
-            st.plotly_chart(make_residuals_figure(simulation), width="stretch")
+            st.plotly_chart(make_residuals_figure(simulation), use_container_width=True)
             
         st.markdown("---")
         st.markdown("### N-body Simulation")
@@ -203,7 +262,20 @@ div[data-testid="stButton"] > button[kind="secondary"]:has(p:-webkit-any(*, *)) 
             "**2. The Breaking Point:** Keep the steps at 10,000, but increase the `Base Timestep (dt)` to 0.0010 or higher. You'll see the simulation automatically stop because the time jumps are too big to be accurate!"
         )
         with st.expander("Global N-Body Integration Settings", expanded=True):
+            # Audit fix A10: state honestly whether the sweep will consume
+            # real workspace analysis data or the hardcoded defaults.
+            _ws_df = st.session_state.get('active_dataframe')
+            _use_workspace_data = (
+                _ws_df is not None
+                and hasattr(_ws_df, 'columns')
+                and not getattr(_ws_df, 'empty', True)
+            )
             active_kic_id = st.session_state.get('selected_kic', 'KIC 11442793 (Kepler-90)')
+            data_source_desc = (
+                f"the active workspace analysis for <strong>{active_kic_id}</strong>"
+                if _use_workspace_data else
+                "hardcoded default system parameters (no workspace dataset active)"
+            )
             st.markdown(
                 f"""
                 <div style="display: flex; align-items: center; opacity: 0.85; margin-bottom: 14px; font-size: 0.95rem;">
@@ -212,7 +284,7 @@ div[data-testid="stButton"] > button[kind="secondary"]:has(p:-webkit-any(*, *)) 
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
-                    <span><strong>Data Pipeline Status:</strong> Core engine is dynamically retrieving initial state vectors and mass matrices from active workspace target <strong>{active_kic_id}</strong>.</span>
+                    <span><strong>Data Pipeline Status:</strong> Core engine retrieves initial state vectors and mass matrices from {data_source_desc}.</span>
                 </div>
                 """,
                 unsafe_allow_html=True

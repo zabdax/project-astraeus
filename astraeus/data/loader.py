@@ -62,9 +62,15 @@ def _resolve_columns(df: pd.DataFrame, column_map: dict = None) -> tuple[str, st
     err_col = column_map.get('flux_err')
     
     if not time_col:
+        # Audit fix M13 (2026-08-21): substring patterns mirror
+        # DataAdapter.TIME_PATTERNS (astraeus/data/adapter.py) so both
+        # loaders agree on the canonical schema; exact-only matching could
+        # not map e.g. 'bjd_tdb'.  'bjd' as a substring also covers
+        # 'bjd_tdb', so the tuple stays coverage-equivalent.
+        time_patterns = ('time', 'bjd', 'hjd', 'mjd')
         for col in df.columns:
             c_lower = str(col).lower()
-            if 'time' in c_lower or c_lower in ['bjd', 'hjd', 'mjd']:
+            if any(pat in c_lower for pat in time_patterns):
                 time_col = col
                 break
                 
@@ -170,26 +176,39 @@ class DataFactory:
 
     @classmethod
     def load(cls, source_type: str, source_path_or_id: str, **kwargs) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Loads data using the appropriate strategy and enforces astropy units."""
+        """Loads data using the appropriate strategy and enforces astropy units.
+
+        Unit contract (audit fix M12, 2026-08-21):
+            ``time_unit`` — the time column is genuinely *converted* to days
+            (``u.day``); e.g. ``time_unit='hour'`` returns values divided by
+            24.  ``flux_unit`` is accepted but must be dimensionless-
+            compatible (normalized-flux convention); flux and flux_err are
+            converted to ``u.dimensionless_unscaled``.  An invalid unit
+            string or a non-convertible unit raises ``ValueError`` naming
+            the affected column and unit.
+        """
         strategy = cls._strategies.get(source_type)
         if not strategy:
             raise ValueError(f"Unsupported source_type: '{source_type}'. Expected one of {list(cls._strategies.keys())}.")
-            
+
         t, f, e = strategy.load(source_path_or_id, **kwargs)
-        
+
         # Ensure numpy arrays for cleaning
         t = np.asarray(t, dtype=np.float64)
         f = np.asarray(f, dtype=np.float64)
         e = np.asarray(e, dtype=np.float64)
-        
-        # 1. Clean NaNs
-        valid = ~(np.isnan(t) | np.isnan(f) | np.isnan(e))
+
+        # 1. Clean non-finite values.  Audit fix M14 (2026-08-21): ±inf
+        # poisons downstream chi2/MCMC just like NaN (the DataAdapter
+        # already filters with np.isfinite); isnan alone let infinities
+        # through.
+        valid = np.isfinite(t) & np.isfinite(f) & np.isfinite(e)
         t, f, e = t[valid], f[valid], e[valid]
-        
+
         # 2. Check negative flux
         if (f < 0).any():
             raise AssertionError("Negative flux values detected in light curve.")
-            
+
         # 3. Sort by time indices
         if len(t) > 0:
             sort_idx = np.argsort(t)
@@ -197,19 +216,27 @@ class DataFactory:
 
         time_unit = kwargs.get('time_unit')
         flux_unit = kwargs.get('flux_unit')
-        
+
         if time_unit is not None:
             try:
-                t = u.Quantity(t, unit=time_unit).value
-            except u.UnitConversionError as exc:
-                raise u.UnitsError(f"Time unit {time_unit} error: {exc}")
-        
+                # Audit fix M12: actually convert to days — wrapping in a
+                # Quantity and reading .value back was a no-op.
+                t = u.Quantity(t, unit=time_unit).to(u.day).value
+            except (u.UnitsError, ValueError) as exc:
+                raise ValueError(
+                    f"Time column: cannot convert values from unit "
+                    f"'{time_unit}' to days: {exc}"
+                ) from exc
+
         if flux_unit is not None:
             try:
-                f = u.Quantity(f, unit=flux_unit).value
-                e = u.Quantity(e, unit=flux_unit).value
-            except u.UnitConversionError as exc:
-                raise u.UnitsError(f"Flux unit {flux_unit} error: {exc}")
+                f = u.Quantity(f, unit=flux_unit).to(u.dimensionless_unscaled).value
+                e = u.Quantity(e, unit=flux_unit).to(u.dimensionless_unscaled).value
+            except (u.UnitsError, ValueError) as exc:
+                raise ValueError(
+                    f"Flux column: unit '{flux_unit}' is not dimensionless-"
+                    f"compatible (normalized-flux convention required): {exc}"
+                ) from exc
 
         return np.asarray(t, dtype=np.float64), np.asarray(f, dtype=np.float64), np.asarray(e, dtype=np.float64)
 

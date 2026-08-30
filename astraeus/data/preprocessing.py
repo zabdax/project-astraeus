@@ -84,6 +84,23 @@ def phase_fold_data(
     return phase[sort_mask], flux_array[sort_mask]
 
 
+def folded_time_to_model_time(folded_time: np.ndarray, period: float) -> np.ndarray:
+    """Map phase-folded time (transit dip at phase 0) to model time.
+
+    ``generate_model_flux`` places the transit dip at P/4 after whatever
+    time origin it is handed (the time origin is periapsis; see
+    ``astraeus.core.orbits``), while ``phase_fold_data`` centers the
+    observed dip at phase 0. Evaluating the model on folded time without
+    adding the quarter-period offset misaligns model and data and drives
+    the fitted radius ratio toward the prior floor (audit fix C6,
+    2026-08-21; the +P/4 sign is locked numerically by
+    tests/test_science_audit_fixes.py).
+
+    Returns time in days (no units attached); callers multiply by u.day.
+    """
+    return np.asarray(folded_time, dtype=float) + 0.25 * float(period)
+
+
 def standardize_imported_data(
     time: np.ndarray,
     flux: np.ndarray,

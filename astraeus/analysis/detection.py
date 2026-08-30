@@ -173,12 +173,34 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     # Hoisted out of the Physical Properties block below so that any
     # future (or current) physical-input-dependent vetting branch can
     # reference them without re-reading the archive dict.
-    st_teff = float(archive_metadata.get('st_teff', 5778.0))
-    st_mass = float(archive_metadata.get('st_mass', 1.0))
-    sy_jmag = float(archive_metadata.get('sy_jmag', 10.0))
+    # Audit fix (2026-08-21): `.get(key, default)` returns None when the key
+    # exists with a JSON-null value, and float(None) raises TypeError.
+    # NOTE: an `or`-chain cannot be used here — an explicit 0.0 (e.g. the
+    # st_teff=0 fallback-forcing contract in
+    # tests/test_vetting_threshold_hardening.py) is falsy and must be
+    # preserved, only None/invalid are replaced by the defaults.
+    def _metadata_float(key, default):
+        value = archive_metadata.get(key)
+        if value is None:
+            return default
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
 
-    raw_depth = float(best_depth)
-    transit_depth_fraction = raw_depth / 100.0 if raw_depth > 0.1 else raw_depth
+    st_teff = _metadata_float('st_teff', 5778.0)
+    st_mass = _metadata_float('st_mass', 1.0)
+    sy_jmag = _metadata_float('sy_jmag', 10.0)
+
+    # Audit fix M1 (2026-08-21): BLSSearchEngine.search returns `depth` as a
+    # flux FRACTION (median out-of-transit minus median in-transit on
+    # normalized flux; the astropy fallback res.depth is likewise a
+    # fraction). The previous value-sniffing heuristic divided depths
+    # > 0.1 by 100 — i.e. it corrupted exactly the deep events (eclipsing
+    # binaries) that the vetting depth ceiling exists to catch, shrinking
+    # their depth 100x and their radius 10x and waving them through the
+    # 3% ceiling.
+    transit_depth_fraction = float(best_depth)
 
     archive_depth_percent = float(archive_metadata.get('pl_trandep', 0.0))
     if archive_depth_percent > 0:
@@ -296,7 +318,22 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     is_ultra_short_period = float(best_period) < VETTING_ULTRA_SHORT_PERIOD_DAYS
     sec_depth = geom_metrics.get('secondary_eclipse_depth', 0.0)
 
-    if transit_depth_fraction < VETTING_PLANET_CANDIDATE_MAX_DEPTH_FRACTION:
+    if (
+        transit_depth_fraction < VETTING_PLANET_CANDIDATE_MAX_DEPTH_FRACTION
+        # Audit fix M10 (2026-08-21): the depth-only pass must not override
+        # contradicting false-positive evidence. Because this branch headed
+        # the if/elif chain, EVERY shallow candidate that cleared `is_valid`
+        # was stamped "Verified Planet Candidate" before the secondary-
+        # eclipse and V-shape classifications could speak — leaving those
+        # EB gates unreachable for the shallow population (<3% depth) where
+        # most planets AND most blended eclipsing binaries live. A shallow
+        # candidate with a detected phase-0.5 secondary or an ambiguous/V
+        # shape now falls through to the evidence-based branches below (the
+        # atmospheric-occultation branch still verifies shallow secondaries
+        # that are below the physically-derived threshold).
+        and not geom_metrics.get('secondary_eclipse_detected', False)
+        and vetting_metrics['vetting_status'] != "Ambiguous/False Positive"
+    ):
         # R8 fix (2026-07-12): gate the "depth-only pass" override on
         # the production emission gate (`is_valid`). Previously this
         # branch unconditionally set vetting_status to "Verified Planet

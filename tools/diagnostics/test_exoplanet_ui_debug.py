@@ -1,5 +1,6 @@
 import unittest
 import time
+import pytest
 from streamlit.testing.v1 import AppTest
 import traceback
 
@@ -86,6 +87,10 @@ class TestExoplanetUIDebug(unittest.TestCase):
             self._report_failure(step_name, e, "text_input='search_target', selectbox='data_route'")
             raise
 
+    # 2026-08-21 audit: this scenario performs a LIVE NASA Exoplanet
+    # Archive fetch; under full-suite load it intermittently exceeds the
+    # AppTest timeout and was polluting the fast gate with flaky failures.
+    @pytest.mark.network
     def test_scenario_C_async_ingestion(self):
         print("\n--- Test Scenario C: Asynchronous Ingestion & State-Locking Action ---")
         
