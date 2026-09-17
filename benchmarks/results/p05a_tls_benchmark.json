@@ -1,0 +1,763 @@
+{
+  "schema": "p05a-tls-benchmark-v1",
+  "arms": {
+    "TRAPPIST-1": {
+      "n_cadences": 94910,
+      "baseline_d": 23.809,
+      "best_period_d": 4.7941,
+      "windows": {
+        "narrow": {
+          "use_threads_1": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 338.817,
+                "sde": 5.214589002575733,
+                "fap": NaN,
+                "period": 9.498741439489455,
+                "depth": 0.9952274288989541,
+                "n_periods": 2117
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 338.817,
+            "wall_s_min": 338.817,
+            "wall_s_max": 338.817,
+            "sde": 5.214589002575733,
+            "fap": NaN,
+            "period": 9.498741439489455,
+            "depth": 0.9952274288989541,
+            "n_periods": 2117
+          },
+          "use_threads_2": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 302.742,
+                "sde": 5.214589002575733,
+                "fap": NaN,
+                "period": 9.498741439489455,
+                "depth": 0.9952274288989541,
+                "n_periods": 2117
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 302.742,
+            "wall_s_min": 302.742,
+            "wall_s_max": 302.742,
+            "sde": 5.214589002575733,
+            "fap": NaN,
+            "period": 9.498741439489455,
+            "depth": 0.9952274288989541,
+            "n_periods": 2117,
+            "measured_speedup_vs_serial": 1.119,
+            "fraction_of_ideal": 0.56,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_4": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 214.544,
+                "sde": 5.214589002575733,
+                "fap": NaN,
+                "period": 9.498741439489455,
+                "depth": 0.9952274288989541,
+                "n_periods": 2117
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 214.544,
+            "wall_s_min": 214.544,
+            "wall_s_max": 214.544,
+            "sde": 5.214589002575733,
+            "fap": NaN,
+            "period": 9.498741439489455,
+            "depth": 0.9952274288989541,
+            "n_periods": 2117,
+            "measured_speedup_vs_serial": 1.579,
+            "fraction_of_ideal": 0.395,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_8": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 188.072,
+                "sde": 5.214589002575733,
+                "fap": NaN,
+                "period": 9.498741439489455,
+                "depth": 0.9952274288989541,
+                "n_periods": 2117
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 188.072,
+            "wall_s_min": 188.072,
+            "wall_s_max": 188.072,
+            "sde": 5.214589002575733,
+            "fap": NaN,
+            "period": 9.498741439489455,
+            "depth": 0.9952274288989541,
+            "n_periods": 2117,
+            "measured_speedup_vs_serial": 1.802,
+            "fraction_of_ideal": 0.225,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          }
+        }
+      }
+    },
+    "Kepler-11": {
+      "n_cadences": 47100,
+      "baseline_d": 1050.509,
+      "best_period_d": 13.0246,
+      "windows": {
+        "narrow": {
+          "use_threads_1": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 109.952,
+                "sde": 16.00798225176184,
+                "fap": 8.0032e-05,
+                "period": 13.025240027893592,
+                "depth": 0.9992633772951782,
+                "n_periods": 1774
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 109.952,
+            "wall_s_min": 109.952,
+            "wall_s_max": 109.952,
+            "sde": 16.00798225176184,
+            "fap": 8.0032e-05,
+            "period": 13.025240027893592,
+            "depth": 0.9992633772951782,
+            "n_periods": 1774
+          },
+          "use_threads_2": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 134.395,
+                "sde": 16.00798225176184,
+                "fap": 8.0032e-05,
+                "period": 13.025240027893592,
+                "depth": 0.9992633772951782,
+                "n_periods": 1774
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 134.395,
+            "wall_s_min": 134.395,
+            "wall_s_max": 134.395,
+            "sde": 16.00798225176184,
+            "fap": 8.0032e-05,
+            "period": 13.025240027893592,
+            "depth": 0.9992633772951782,
+            "n_periods": 1774,
+            "measured_speedup_vs_serial": 0.818,
+            "fraction_of_ideal": 0.409,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_4": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 101.871,
+                "sde": 16.00798225176184,
+                "fap": 8.0032e-05,
+                "period": 13.025240027893592,
+                "depth": 0.9992633772951782,
+                "n_periods": 1774
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 101.871,
+            "wall_s_min": 101.871,
+            "wall_s_max": 101.871,
+            "sde": 16.00798225176184,
+            "fap": 8.0032e-05,
+            "period": 13.025240027893592,
+            "depth": 0.9992633772951782,
+            "n_periods": 1774,
+            "measured_speedup_vs_serial": 1.079,
+            "fraction_of_ideal": 0.27,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_8": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 89.869,
+                "sde": 16.00798225176184,
+                "fap": 8.0032e-05,
+                "period": 13.025240027893592,
+                "depth": 0.9992633772951782,
+                "n_periods": 1774
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 89.869,
+            "wall_s_min": 89.869,
+            "wall_s_max": 89.869,
+            "sde": 16.00798225176184,
+            "fap": 8.0032e-05,
+            "period": 13.025240027893592,
+            "depth": 0.9992633772951782,
+            "n_periods": 1774,
+            "measured_speedup_vs_serial": 1.223,
+            "fraction_of_ideal": 0.153,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          }
+        }
+      }
+    },
+    "Kepler-90": {
+      "n_cadences": 45853,
+      "baseline_d": 1239.809,
+      "best_period_d": 517.2414,
+      "windows": {
+        "default": {
+          "use_threads_1": {
+            "runs": [
+              {
+                "status": "timeout",
+                "wall_s": 900.023,
+                "error": "exceeded 900s budget; terminated"
+              }
+            ],
+            "repeats": 1,
+            "status": "timeout",
+            "error": "exceeded 900s budget; terminated"
+          }
+        },
+        "narrow": {
+          "use_threads_1": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 123.696,
+                "sde": 5.777157370594111,
+                "fap": 0.081232493,
+                "period": 517.3806051908172,
+                "depth": 0.9939074471903396,
+                "n_periods": 613
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 123.696,
+            "wall_s_min": 123.696,
+            "wall_s_max": 123.696,
+            "sde": 5.777157370594111,
+            "fap": 0.081232493,
+            "period": 517.3806051908172,
+            "depth": 0.9939074471903396,
+            "n_periods": 613
+          },
+          "use_threads_2": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 98.008,
+                "sde": 5.777157370594111,
+                "fap": 0.081232493,
+                "period": 517.3806051908172,
+                "depth": 0.9939074471903396,
+                "n_periods": 613
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 98.008,
+            "wall_s_min": 98.008,
+            "wall_s_max": 98.008,
+            "sde": 5.777157370594111,
+            "fap": 0.081232493,
+            "period": 517.3806051908172,
+            "depth": 0.9939074471903396,
+            "n_periods": 613,
+            "measured_speedup_vs_serial": 1.262,
+            "fraction_of_ideal": 0.631,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_4": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 111.586,
+                "sde": 5.777157370594111,
+                "fap": 0.081232493,
+                "period": 517.3806051908172,
+                "depth": 0.9939074471903396,
+                "n_periods": 613
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 111.586,
+            "wall_s_min": 111.586,
+            "wall_s_max": 111.586,
+            "sde": 5.777157370594111,
+            "fap": 0.081232493,
+            "period": 517.3806051908172,
+            "depth": 0.9939074471903396,
+            "n_periods": 613,
+            "measured_speedup_vs_serial": 1.109,
+            "fraction_of_ideal": 0.277,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_8": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 116.818,
+                "sde": 5.777157370594111,
+                "fap": 0.081232493,
+                "period": 517.3806051908172,
+                "depth": 0.9939074471903396,
+                "n_periods": 613
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 116.818,
+            "wall_s_min": 116.818,
+            "wall_s_max": 116.818,
+            "sde": 5.777157370594111,
+            "fap": 0.081232493,
+            "period": 517.3806051908172,
+            "depth": 0.9939074471903396,
+            "n_periods": 613,
+            "measured_speedup_vs_serial": 1.059,
+            "fraction_of_ideal": 0.132,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          }
+        }
+      }
+    },
+    "HD 80606 b": {
+      "n_cadences": 35159,
+      "baseline_d": 736.505,
+      "best_period_d": 17.2216,
+      "windows": {
+        "narrow": {
+          "use_threads_1": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 65.971,
+                "sde": 8.41875596941239,
+                "fap": 0.000720288,
+                "period": 18.081012946765952,
+                "depth": 0.9906544691212374,
+                "n_periods": 1133
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 65.971,
+            "wall_s_min": 65.971,
+            "wall_s_max": 65.971,
+            "sde": 8.41875596941239,
+            "fap": 0.000720288,
+            "period": 18.081012946765952,
+            "depth": 0.9906544691212374,
+            "n_periods": 1133
+          },
+          "use_threads_2": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 56.78,
+                "sde": 8.41875596941239,
+                "fap": 0.000720288,
+                "period": 18.081012946765952,
+                "depth": 0.9906544691212374,
+                "n_periods": 1133
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 56.78,
+            "wall_s_min": 56.78,
+            "wall_s_max": 56.78,
+            "sde": 8.41875596941239,
+            "fap": 0.000720288,
+            "period": 18.081012946765952,
+            "depth": 0.9906544691212374,
+            "n_periods": 1133,
+            "measured_speedup_vs_serial": 1.162,
+            "fraction_of_ideal": 0.581,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_4": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 56.866,
+                "sde": 8.41875596941239,
+                "fap": 0.000720288,
+                "period": 18.081012946765952,
+                "depth": 0.9906544691212374,
+                "n_periods": 1133
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 56.866,
+            "wall_s_min": 56.866,
+            "wall_s_max": 56.866,
+            "sde": 8.41875596941239,
+            "fap": 0.000720288,
+            "period": 18.081012946765952,
+            "depth": 0.9906544691212374,
+            "n_periods": 1133,
+            "measured_speedup_vs_serial": 1.16,
+            "fraction_of_ideal": 0.29,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_8": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 51.706,
+                "sde": 8.41875596941239,
+                "fap": 0.000720288,
+                "period": 18.081012946765952,
+                "depth": 0.9906544691212374,
+                "n_periods": 1133
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 51.706,
+            "wall_s_min": 51.706,
+            "wall_s_max": 51.706,
+            "sde": 8.41875596941239,
+            "fap": 0.000720288,
+            "period": 18.081012946765952,
+            "depth": 0.9906544691212374,
+            "n_periods": 1133,
+            "measured_speedup_vs_serial": 1.276,
+            "fraction_of_ideal": 0.159,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          }
+        }
+      }
+    },
+    "Kepler-20": {
+      "n_cadences": 47098,
+      "baseline_d": 1050.509,
+      "best_period_d": 10.8538,
+      "windows": {
+        "narrow": {
+          "use_threads_1": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 256.736,
+                "sde": 17.28901492243051,
+                "fap": 8.0032e-05,
+                "period": 10.854245198265033,
+                "depth": 0.9989551867952777,
+                "n_periods": 1885
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 256.736,
+            "wall_s_min": 256.736,
+            "wall_s_max": 256.736,
+            "sde": 17.28901492243051,
+            "fap": 8.0032e-05,
+            "period": 10.854245198265033,
+            "depth": 0.9989551867952777,
+            "n_periods": 1885
+          },
+          "use_threads_2": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 175.843,
+                "sde": 17.28901492243051,
+                "fap": 8.0032e-05,
+                "period": 10.854245198265033,
+                "depth": 0.9989551867952777,
+                "n_periods": 1885
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 175.843,
+            "wall_s_min": 175.843,
+            "wall_s_max": 175.843,
+            "sde": 17.28901492243051,
+            "fap": 8.0032e-05,
+            "period": 10.854245198265033,
+            "depth": 0.9989551867952777,
+            "n_periods": 1885,
+            "measured_speedup_vs_serial": 1.46,
+            "fraction_of_ideal": 0.73,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_4": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 142.699,
+                "sde": 17.28901492243051,
+                "fap": 8.0032e-05,
+                "period": 10.854245198265033,
+                "depth": 0.9989551867952777,
+                "n_periods": 1885
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 142.699,
+            "wall_s_min": 142.699,
+            "wall_s_max": 142.699,
+            "sde": 17.28901492243051,
+            "fap": 8.0032e-05,
+            "period": 10.854245198265033,
+            "depth": 0.9989551867952777,
+            "n_periods": 1885,
+            "measured_speedup_vs_serial": 1.799,
+            "fraction_of_ideal": 0.45,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_8": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 125.396,
+                "sde": 17.28901492243051,
+                "fap": 8.0032e-05,
+                "period": 10.854245198265033,
+                "depth": 0.9989551867952777,
+                "n_periods": 1885
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 125.396,
+            "wall_s_min": 125.396,
+            "wall_s_max": 125.396,
+            "sde": 17.28901492243051,
+            "fap": 8.0032e-05,
+            "period": 10.854245198265033,
+            "depth": 0.9989551867952777,
+            "n_periods": 1885,
+            "measured_speedup_vs_serial": 2.047,
+            "fraction_of_ideal": 0.256,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          }
+        }
+      }
+    },
+    "Kepler-4d": {
+      "n_cadences": 42053,
+      "baseline_d": 1152.517,
+      "best_period_d": 3.2136,
+      "windows": {
+        "narrow": {
+          "use_threads_1": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 352.012,
+                "sde": 24.18840930007512,
+                "fap": 8.0032e-05,
+                "period": 3.213652484853342,
+                "depth": 0.9992872620987464,
+                "n_periods": 3103
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 352.012,
+            "wall_s_min": 352.012,
+            "wall_s_max": 352.012,
+            "sde": 24.18840930007512,
+            "fap": 8.0032e-05,
+            "period": 3.213652484853342,
+            "depth": 0.9992872620987464,
+            "n_periods": 3103
+          },
+          "use_threads_2": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 250.667,
+                "sde": 24.18840930007512,
+                "fap": 8.0032e-05,
+                "period": 3.213652484853342,
+                "depth": 0.9992872620987464,
+                "n_periods": 3103
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 250.667,
+            "wall_s_min": 250.667,
+            "wall_s_max": 250.667,
+            "sde": 24.18840930007512,
+            "fap": 8.0032e-05,
+            "period": 3.213652484853342,
+            "depth": 0.9992872620987464,
+            "n_periods": 3103,
+            "measured_speedup_vs_serial": 1.404,
+            "fraction_of_ideal": 0.702,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_4": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 197.235,
+                "sde": 24.18840930007512,
+                "fap": 8.0032e-05,
+                "period": 3.213652484853342,
+                "depth": 0.9992872620987464,
+                "n_periods": 3103
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 197.235,
+            "wall_s_min": 197.235,
+            "wall_s_max": 197.235,
+            "sde": 24.18840930007512,
+            "fap": 8.0032e-05,
+            "period": 3.213652484853342,
+            "depth": 0.9992872620987464,
+            "n_periods": 3103,
+            "measured_speedup_vs_serial": 1.785,
+            "fraction_of_ideal": 0.446,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          },
+          "use_threads_8": {
+            "runs": [
+              {
+                "status": "ok",
+                "wall_s": 168.83,
+                "sde": 24.18840930007512,
+                "fap": 8.0032e-05,
+                "period": 3.213652484853342,
+                "depth": 0.9992872620987464,
+                "n_periods": 3103
+              }
+            ],
+            "repeats": 1,
+            "status": "ok",
+            "wall_s_median": 168.83,
+            "wall_s_min": 168.83,
+            "wall_s_max": 168.83,
+            "sde": 24.18840930007512,
+            "fap": 8.0032e-05,
+            "period": 3.213652484853342,
+            "depth": 0.9992872620987464,
+            "n_periods": 3103,
+            "measured_speedup_vs_serial": 2.085,
+            "fraction_of_ideal": 0.261,
+            "sde_delta_vs_serial": 0.0,
+            "period_delta_vs_serial_d": 0.0
+          }
+        }
+      }
+    },
+    "AU Mic": {
+      "n_cadences": 242237,
+      "baseline_d": 2581.186,
+      "best_period_d": 4.8353,
+      "windows": {
+        "narrow": {
+          "use_threads_1": {
+            "runs": [
+              {
+                "status": "timeout",
+                "wall_s": 1200.03,
+                "error": "exceeded 1200s budget; terminated"
+              }
+            ],
+            "repeats": 1,
+            "status": "timeout",
+            "error": "exceeded 1200s budget; terminated"
+          }
+        }
+      }
+    }
+  },
+  "nested_pool_probe": {
+    "target": "Kepler-90",
+    "arms": {
+      "daemon_True_use_threads_1": {
+        "status": "ok",
+        "sde": 5.777157370594111,
+        "period": 517.3806051908172,
+        "wall_s": 84.682
+      },
+      "daemon_True_use_threads_8": {
+        "status": "error",
+        "error": "AssertionError: daemonic processes are not allowed to have children",
+        "wall_s": 3.139
+      },
+      "daemon_False_use_threads_1": {
+        "status": "ok",
+        "sde": 5.777157370594111,
+        "period": 517.3806051908172,
+        "wall_s": 115.307
+      },
+      "daemon_False_use_threads_8": {
+        "status": "ok",
+        "sde": 5.777157370594111,
+        "period": 517.3806051908172,
+        "wall_s": 101.783
+      }
+    },
+    "verdict": {
+      "daemon_true_blocked_from_nested_pool": true,
+      "daemon_false_allows_nested_pool": true,
+      "mechanism_confirmed": true,
+      "daemon_true_error": "AssertionError: daemonic processes are not allowed to have children"
+    }
+  },
+  "machine": {
+    "python": "3.12.10",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 142 Stepping 12, GenuineIntel",
+    "cpu_count": 8,
+    "mp_start_method": "spawn",
+    "tls_version": "1.32",
+    "numpy_version": "2.2.6",
+    "scipy_version": "1.15.3"
+  },
+  "completed_at": "2026-09-17T13:36:44.552139+00:00"
+}

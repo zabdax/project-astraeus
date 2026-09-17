@@ -2,8 +2,12 @@
 
 **The execution map for the remaining migration.**
 
-Created at the close of Phase 0 (2026-09-17), branch `v.0.0.2`, commit
-`3eafbd4` + Phase 0 work. Governing specification: `PRD_v4.1_web_platform.md`.
+Created at the close of Phase 0 (2026-09-17). **Phase 0 checkpoint: branch
+`v.0.0.3`, commit `ac82a56`** (full SHA
+`ac82a564acff6347282a14517b200f23d47f4b57`, 2026-09-17 14:24:35 +0600,
+`feat(core): complete Phase 0 foundation and fail-closed hardening`). That
+commit is the tip of `v.0.0.3` and is the state every bucket below branches
+from. Governing specification: `PRD_v4.1_web_platform.md`.
 
 This document is the **execution map**: it decomposes the remaining
 ASTRAEUS migration (PRD v4.1 §16, Phases 0.5→5) into independent,
@@ -19,10 +23,10 @@ separately (see §11) and run in its own session.
 ## 1. Dependency graph
 
 ```
-Phase 0 [COMPLETE]  foundation, fail-closed science, packaging
+Phase 0 [COMPLETE @ v.0.0.3 / ac82a56]  foundation, fail-closed science, packaging
    │
-   ├── P05-A  TLS multiprocessing benchmark        [VALIDATION]
-   │     └── decides: land daemon=False + use_threads unlock, or not
+   ├── P05-A  TLS multiprocessing benchmark        [COMPLETE -- measured]
+   │     └── measured 1.06x-2.08x (not 6-8x); unlock deferred to P4-G
    │
    ▼
 Phase 1  CONTRACTS (sequential — they import each other)
@@ -35,7 +39,7 @@ Phase 1  CONTRACTS (sequential — they import each other)
    ├── P1-E  Job persistence (SQLite WAL)     ── depends on nothing
    ├── P1-F  Worker / IPC (Popen + JSONL)     ── depends on P05-A's decision
    ├── P1-G  Real-data async integration      ── depends on P1-D + P1-F
-   ├── P1-H  FastAPI + JWT API layer          ── depends on P1-B + P1-E
+   ├── P1-H  FastAPI + JWT API layer          ── depends on P1-B + P1-C + P1-E
    ├── P1-I  Search-loop unification          ── depends on P1-F
    │
    ▼
@@ -60,8 +64,8 @@ Phase 4  SCIENTIFIC ACCURACY  (versioned, flag-guarded, validated vs baseline)
    ├── P4-A  MCMC convergence gates
    ├── P4-B  Detection-floor FAP calibration
    ├── P4-C  Weighted χ² + odd/even + ephemeris matching
-   ├── P4-D  Limb-darkening single source of truth
-   ├── P4-E  Subtraction geometry + detrending window
+   ├── P4-D  Limb-darkening single source of truth   ◄── [DEC-LIC gate]
+   ├── P4-E  Subtraction geometry + detrending window ◄── [DEC-LIC gate]
    ├── P4-F  Inference wiring (Candidate → MCMC)
    └── P4-G  TLS multiprocessing unlock landing   ── depends on P05-A
    │
@@ -70,12 +74,38 @@ Phase 5  VALIDATION & RELEASE
    P5-A  Validation corpus + injection-recovery CI gate
    P5-B  Deployment (Docker Compose + Caddy + Fly/Hetzner)
    P5-C  Research credibility (ASCL + Zenodo + JOSS)
-   P5-D  Licensing resolution (batman GPL — USER DECISION)
+```
+
+```
+══════════════════════════════════════════════════════════════
+DEC-LIC  batman licensing decision          [USER DECISION — external gate]
+
+  NOT a bucket. NOT in the sequence above. Owns no code, has no exit
+  gate, and is never executed by a session. It is a decision the user
+  must make and record.
+
+  BLOCKS: any bucket that would make `batman` a required runtime
+  dependency, or that changes the transit-subtraction implementation —
+  most importantly P4-D and P4-E, and any packaging/release bucket
+  (P5-B, P5-C) that ships a license declaration covering it.
+
+  Resolving it early is strongly recommended (see §5): it gates Phase 4
+  science, so deciding it at Phase 5 is too late.
+══════════════════════════════════════════════════════════════
 ```
 
 **Vertical arrows = hard dependency.** A bucket may not start until its
 predecessor's handoff manifest exists. **Parallel markers (║)** = the
 buckets touch disjoint file sets and may run concurrently.
+
+**Edge types** (applied to the dependency map in §2 and explained in §3):
+
+* `HARD` — the predecessor bucket must *complete* first (its handoff
+  manifest must exist). The successor is blocked on delivered work.
+* `CONTRACT` — a shared contract the successor imports must exist first.
+  The predecessor need not be fully done, but the contract is frozen.
+* `VALIDATION` — the successor requires a *verified measurement or
+  baseline* before it may start. Measured numbers, not intent.
 
 ---
 
@@ -87,74 +117,109 @@ others depend on, `[UX]` user-facing, `[SCIENCE]` changes numerical
 behaviour, `[VALIDATION]` measurement/verification, `[RELEASE]` packaging,
 distribution, or credibility.
 
-| ID | Bucket | Phase | Tag | Effort | Depends on |
-|---|---|---|---|---|---|
-| P05-A | TLS multiprocessing benchmark | 0.5 | `[VALIDATION]` | 3–5 d | Phase 0 |
-| P1-A | Canonical `Dataset` contract | 1 | `[CONTRACT]` | 3–4 d | Phase 0 |
-| P1-B | `AnalysisResult` v1 schema + alias map | 1 | `[CONTRACT]` | 4–5 d | P1-A |
-| P1-C | Provenance contract | 1 | `[CONTRACT]` | 2–3 d | P1-B |
-| P1-D | Ingestion consolidation onto the seam | 1 | `[INFRA]` | 3–4 d | Phase 0 |
-| P1-E | Job persistence (SQLite WAL) | 1 | `[INFRA]` | 3 d | — |
-| P1-F | Worker / IPC architecture | 1 | `[INFRA]` | 5–7 d | P05-A |
-| P1-G | Real-data async integration | 1 | `[INFRA]` | 3–4 d | P1-D, P1-F |
-| P1-H | FastAPI + JWT API layer | 1 | `[INFRA]` | 4–5 d | P1-B, P1-E |
-| P1-I | Search-loop unification | 1 | `[INFRA]` | 2–3 d | P1-F |
-| P2-A | Vertical slice backend | 2 | `[VALIDATION]` | 3–4 d | P1-G, P1-H |
-| P2-B | Vertical slice frontend | 2 | `[UX]` | 3 d | P2-A |
-| P3-A | Frontend foundation | 3 | `[UX]` | 4–5 d | P2-B |
-| P3-B | Investigate route | 3 | `[UX]` | 5–7 d | P3-A |
-| P3-C | Analyses route | 3 | `[UX]` | 3–4 d | P3-A, P1-H |
-| P3-D | Simulate route | 3 | `[UX]` | 4–5 d | P3-A |
-| P3-E | Settings route + BYOK | 3 | `[UX]` | 2–3 d | P3-A |
-| P3-F | Visualization integration | 3 | `[UX]` | 4–5 d | P3-A |
-| P3-G | Copilot (SSE) | 3 | `[UX]` | 4–5 d | P3-A, P1-H |
-| P3-H | E2E QA + Streamlit side-by-side | 3 | `[VALIDATION]` | 3–4 d | P3-B…G |
-| P3-I | Streamlit freeze (`--legacy`) | 3 | `[INFRA]` | 1–2 d | P3-H |
-| P4-A | MCMC convergence gates | 4 | `[SCIENCE]` | 4–5 d | P3-H |
-| P4-B | Detection-floor FAP calibration | 4 | `[SCIENCE]` | 3–4 d | P3-H |
-| P4-C | Weighted χ² + odd/even + ephemeris | 4 | `[SCIENCE]` | 3–4 d | P3-H |
-| P4-D | Limb-darkening single source of truth | 4 | `[SCIENCE]` | 4–5 d | P3-H |
-| P4-E | Subtraction geometry + detrending window | 4 | `[SCIENCE]` | 2–3 d | P4-D |
-| P4-F | Inference wiring (Candidate → MCMC) | 4 | `[SCIENCE]` | 5–7 d | P4-A |
-| P4-G | TLS multiprocessing unlock landing | 4 | `[SCIENCE]` | 1–2 d | P05-A, P1-F |
-| P5-A | Validation corpus + IR CI gate | 5 | `[VALIDATION]` | 4–5 d | P4-* |
-| P5-B | Deployment (Compose + Caddy + Fly) | 5 | `[RELEASE]` | 3–4 d | P5-A |
-| P5-C | Research credibility (ASCL/Zenodo/JOSS) | 5 | `[RELEASE]` | 3–4 d | P5-B |
-| P5-D | Licensing resolution (batman) | 5 | `[RELEASE]` | user decision | — |
+| ID | Bucket | Phase | Tag | Effort | Dep type | Depends on |
+|---|---|---|---|---|---|---|
+| P05-A | TLS multiprocessing benchmark | 0.5 | `[VALIDATION]` | 3–5 d | VALIDATION | Phase 0 — **COMPLETE**: measured 1.06x-2.08x at 8 threads (not the projected 6-8x); nested-pool mechanism confirmed; unlock deferred to P4-G. See `benchmarks/results/P05A_HANDOFF.md`. |
+| P1-A | Canonical `Dataset` contract | 1 | `[CONTRACT]` | 3–4 d | HARD | Phase 0 |
+| P1-B | `AnalysisResult` v1 schema + alias map | 1 | `[CONTRACT]` | 4–5 d | CONTRACT | P1-A |
+| P1-C | Provenance contract | 1 | `[CONTRACT]` | 2–3 d | CONTRACT | P1-B |
+| P1-D | Ingestion consolidation onto the seam | 1 | `[INFRA]` | 3–4 d | HARD | Phase 0 |
+| P1-E | Job persistence (SQLite WAL) | 1 | `[INFRA]` | 3 d | — | — |
+| P1-F | Worker / IPC architecture | 1 | `[INFRA]` | 5–7 d | VALIDATION | P05-A |
+| P1-G | Real-data async integration | 1 | `[INFRA]` | 3–4 d | HARD | P1-D, P1-F |
+| P1-H | FastAPI + JWT API layer | 1 | `[INFRA]` | 4–5 d | CONTRACT | P1-B, P1-C, P1-E |
+| P1-I | Search-loop unification | 1 | `[INFRA]` | 2–3 d | HARD | P1-F |
+| P2-A | Vertical slice backend | 2 | `[VALIDATION]` | 3–4 d | HARD | P1-G, P1-H |
+| P2-B | Vertical slice frontend | 2 | `[UX]` | 3 d | HARD | P2-A |
+| P3-A | Frontend foundation | 3 | `[UX]` | 4–5 d | HARD | P2-B |
+| P3-B | Investigate route | 3 | `[UX]` | 5–7 d | CONTRACT | P3-A |
+| P3-C | Analyses route | 3 | `[UX]` | 3–4 d | CONTRACT | P3-A, P1-H |
+| P3-D | Simulate route | 3 | `[UX]` | 4–5 d | CONTRACT | P3-A |
+| P3-E | Settings route + BYOK | 3 | `[UX]` | 2–3 d | CONTRACT | P3-A |
+| P3-F | Visualization integration | 3 | `[UX]` | 4–5 d | CONTRACT | P3-A |
+| P3-G | Copilot (SSE) | 3 | `[UX]` | 4–5 d | CONTRACT | P3-A, P1-H |
+| P3-H | E2E QA + Streamlit side-by-side | 3 | `[VALIDATION]` | 3–4 d | HARD | P3-B…G |
+| P3-I | Streamlit freeze (`--legacy`) | 3 | `[INFRA]` | 1–2 d | HARD | P3-H |
+| P4-A | MCMC convergence gates | 4 | `[SCIENCE]` | 4–5 d | VALIDATION | P3-H |
+| P4-B | Detection-floor FAP calibration | 4 | `[SCIENCE]` | 3–4 d | VALIDATION | P3-H |
+| P4-C | Weighted χ² + odd/even + ephemeris | 4 | `[SCIENCE]` | 3–4 d | VALIDATION | P3-H |
+| P4-D | Limb-darkening single source of truth | 4 | `[SCIENCE]` | 4–5 d | VALIDATION | P3-H, `[DEC-LIC]` |
+| P4-E | Subtraction geometry + detrending window | 4 | `[SCIENCE]` | 2–3 d | CONTRACT | P4-D, `[DEC-LIC]` |
+| P4-F | Inference wiring (Candidate → MCMC) | 4 | `[SCIENCE]` | 5–7 d | HARD | P4-A |
+| P4-G | TLS multiprocessing unlock landing | 4 | `[SCIENCE]` | 1–2 d | VALIDATION | P05-A, P1-F |
+| P5-A | Validation corpus + IR CI gate | 5 | `[VALIDATION]` | 4–5 d | VALIDATION | P4-* |
+| P5-B | Deployment (Compose + Caddy + Fly) | 5 | `[RELEASE]` | 3–4 d | HARD | P5-A |
+| P5-C | Research credibility (ASCL/Zenodo/JOSS) | 5 | `[RELEASE]` | 3–4 d | HARD | P5-B |
 
-**Total ≈ 20 buckets, ≈ 100 working days** — consistent with PRD §16's
+**Total: 32 entries — 31 implementation buckets + 1 user decision gate.**
+Summing the effort ranges above gives **100–133 working days (≈116 at the
+midpoint)**, excluding the decision gate — consistent with PRD §16's
 "plausible but tight" 14–17 week envelope with parallelism.
+
+`[DEC-LIC]` in the *Depends on* column is **not a bucket dependency** — it
+marks a decision gate the user must resolve before that bucket starts (see
+§2.1 below). A bracketed gate never contributes to the `Dep type`.
+
+### 2.1 Decision gate (not an implementation bucket)
+
+| ID | Item | Kind | Resolved by | Blocks | Effort |
+|---|---|---|---|---|---|
+| DEC-LIC | `batman` licensing decision — whether the GPL-licensed `batman` package may become a required runtime dependency, or must stay optional/behind a flag, or be replaced | **USER DECISION / decision gate** | the user (with legal review as needed) — recorded in `AUDIT_LOGBOOK.md` | P4-D, P4-E (subtraction implementation), and any P5-B/P5-C step that ships a license declaration covering `batman` | user decision, no engineering estimate |
+
+**Rules that make this a gate rather than a bucket:**
+
+* it owns no files, ships no code, and produces no handoff manifest, so it
+  cannot satisfy the bucket exit gate (§9);
+* it is **excluded from the sequential execution chain in §5** and from all
+  parallel groups in §6 — no session is ever assigned it;
+* it is not a `[RELEASE]` bucket and is no longer counted as Phase 5 work;
+* until resolved, the status quo holds: `batman` remains optional and the
+  subtraction implementation is unchanged.
 
 ---
 
 ## 3. Bucket dependencies (why each edge exists)
 
-* **P1-A → P1-B** — `AnalysisResult` carries `dataset_id` as a foreign key
-  to the `Dataset` contract, so the dataset's identity (content hash *over
-  the arrays*, not metadata — PRD §5) must be defined first.
-* **P1-B → P1-C** — provenance records which config + capability snapshot
-  produced which `AnalysisResult`; it references the result schema.
-* **P05-A → P1-F** — the worker/IPC redesign (`Process`→`Popen`,
-  `Queue`→JSONL) is *scoped from measured numbers*. Landing the unlock
-  without a benchmark is forbidden (PRD §17 risk register).
-* **P1-D + P1-F → P1-G** — real data has never crossed the async subprocess
-  boundary (PRD §18); the worker needs both the consolidated ingestion and
-  the new IPC to do it.
-* **P1-B + P1-E → P1-H** — the API serialises `AnalysisResult` and persists
-  jobs; both contracts must exist or the endpoints are invented ad hoc.
-* **P1-F → P1-I** — the sync/async search loops have drifted (PRD §2.5);
-  unifying them only makes sense once the worker topology is final,
-  otherwise the unified target keeps moving.
-* **P3-A → (P3-B…G)** — routes share the shell, the generated API client,
-  and the theme; foundation first prevents five incompatible shells.
-* **P3-H → P4-*** — accuracy changes are validated *against the Streamlit
-  baseline*, which must still be live and green until Phase 3 exits (PRD
-  §16 constraint). Science buckets may not start before the reference is
-  frozen and comparable.
-* **P4-D → P4-E** — subtraction geometry and the detrending window both
-  consume limb-darkening coefficients; a single LD source of truth must
-  exist first (PRD §16.1 items 4–6).
-* **P4-A → P4-F** — inference wiring needs the seeded, gated sampler.
+* **P1-A → P1-B** `[CONTRACT]` — `AnalysisResult` carries `dataset_id` as
+  a foreign key to the `Dataset` contract, so the dataset's identity
+  (content hash *over the arrays*, not metadata — PRD §5) must be defined
+  first.
+* **P1-B → P1-C** `[CONTRACT]` — provenance records which config +
+  capability snapshot produced which `AnalysisResult`; it references the
+  result schema.
+* **P05-A → P1-F** `[VALIDATION]` — the worker/IPC redesign
+  (`Process`→`Popen`, `Queue`→JSONL) is *scoped from measured numbers*.
+  Landing the unlock without a benchmark is forbidden (PRD §17 risk
+  register).
+* **P1-D + P1-F → P1-G** `[HARD]` — real data has never crossed the async
+  subprocess boundary (PRD §18); the worker needs both the consolidated
+  ingestion and the new IPC to do it.
+* **P1-B + P1-C + P1-E → P1-H** `[CONTRACT]` — the API serialises
+  `AnalysisResult`, **attaches the provenance record that P1-C defines**
+  (every API result must carry provenance, PRD §5), and persists jobs.
+  All three contracts must exist or the endpoints are invented ad hoc —
+  omitting P1-C would force the API layer to invent a throwaway
+  provenance shape that later has to be migrated.
+* **P1-F → P1-I** `[HARD]` — the sync/async search loops have drifted
+  (PRD §2.5); unifying them only makes sense once the worker topology is
+  final, otherwise the unified target keeps moving.
+* **P3-A → (P3-B…G)** `[CONTRACT]` — routes share the shell, the generated
+  API client, and the theme; foundation first prevents five incompatible
+  shells.
+* **P3-H → P4-*** `[VALIDATION]` — accuracy changes are validated *against
+  the Streamlit baseline*, which must still be live and green until Phase 3
+  exits (PRD §16 constraint). Science buckets may not start before the
+  reference is frozen and comparable.
+* **P4-D → P4-E** `[CONTRACT]` — subtraction geometry and the detrending
+  window both consume limb-darkening coefficients; a single LD source of
+  truth must exist first (PRD §16.1 items 4–6).
+* **P4-A → P4-F** `[HARD]` — inference wiring needs the seeded, gated
+  sampler.
+* **`[DEC-LIC]` on P4-D / P4-E** — *not* a dependency edge. It is the user
+  decision gate of §2.1: until it is resolved, no bucket may make `batman`
+  a required runtime dependency or alter the subtraction implementation.
+  This is why P4-D and P4-E carry a bracketed gate rather than an extra
+  bucket in their `Depends on`.
 
 ---
 
@@ -193,8 +258,15 @@ P05-A → P1-A → P1-B → P1-C → P1-D → P1-E → P1-F → P1-G → P1-H �
       → P5-A → P5-B → P5-C
 ```
 
-(P5-D, the licensing decision, can be resolved by the user at any point
-and should be **before** P4-D/P4-E if batman is to become required.)
+**DEC-LIC is deliberately absent from this chain.** It is the external user
+decision gate of §2.1, not an implementation bucket, so no session is
+assigned it and it never appears in the sequence. But it is a *hard
+prerequisite on the decision axis*: it must be resolved **before** any
+bucket that makes `batman` a required runtime dependency or changes the
+subtraction implementation — most importantly **P4-D and P4-E**. Resolving
+it during Phase 5 is too late, because Phase 4 science has already baked in
+the answer; resolve it before Phase 4 starts, ideally at the same time as
+P1-A (it needs no engineering prerequisite at all).
 
 **Why this order:** contracts before implementations (directive §46);
 measurement before the IPC redesign; the frontend foundation before any
@@ -214,7 +286,8 @@ sessions:
    (P1-A → P1-B → P1-C)**.
 2. **During Phase 1 infrastructure:** after `P1-E` and `P1-F` land,
    `P1-G` and `P1-H` touch disjoint layers (worker internals vs the API
-   surface) and can overlap once `P1-B`/`P1-E` handoffs exist.
+   surface) and can overlap once the `P1-B`/`P1-C`/`P1-E` contract
+   handoffs exist (`P1-H`'s `[CONTRACT]` edge needs all three).
 3. **Frontend routes:** `P3-B/C/D/E/F/G` each own a distinct route
    directory and are parallel **after `P3-A`**. Coordination contract: the
    generated API client and the route registry in `P3-A`.
@@ -388,8 +461,9 @@ Do not execute the next bucket. Report which bucket is recommended next.
 Rules: MUST NOT CHANGE is mandatory (directive §49). Never reference
 "our previous discussion". Never auto-continue into the next bucket
 (directive §53). State unresolved user decisions explicitly (§51) —
-notably the `batman` licensing decision (P5-D) and the perf unlock
-(P05-A).
+notably the `batman` licensing decision, which is the **DEC-LIC** user
+decision gate of §2.1 (not a bucket; it blocks P4-D/P4-E and must be
+resolved before Phase 4), and the perf unlock (P05-A).
 
 ---
 
@@ -414,6 +488,28 @@ Phase 0 delivered the prerequisites every bucket above assumes:
   unexplained failure. Every bucket below inherits that gate as its
   no-regression contract.
 
-The repository is **ready for P05-A** (the TLS multiprocessing benchmark)
-as the next isolated task. That benchmark is *not* part of Phase 0 and has
-not been started.
+**P05-A (the TLS multiprocessing benchmark) is COMPLETE.** The harness,
+measured data, written result, and handoff manifest live under
+`benchmarks/`; the unlock decision they support is recorded there and
+summarised in the P05-A row of §2.
+
+The headline correction to the plan: the projected **6-8x** speedup from
+`daemon=False` + `use_threads=cpu_count()` measures at **1.06x-2.08x** on
+the production BLS-narrowed window (geometric mean ~1.4x, i.e. 13%-26% of
+the ideal Amdahl bound), with some arms non-monotonic in thread count and
+one slower than serial. Serial and parallel return bit-identical SDE /
+period, so the unlock is a performance change rather than a scientific one.
+The nested-pool mechanism (`daemon=True` cannot create the Pool TLS needs,
+`daemon=False` can) is confirmed on the real Kepler-90 call stack.
+
+Two caveats that downstream buckets must honour: the measurement was taken
+on Windows (spawn), so PRD v4.1's Linux scope means the production number
+must be re-measured on the deployment platform before P4-G ships; and the
+plan's "~149.7 s on Kepler-90 defaults" was measured under a BLS-narrowed
+828-period window, not TLS defaults -- true defaults exceeded a 900 s
+budget single-threaded on the 1240 d baseline.
+
+The next isolated task is **P1-A**, the canonical `Dataset` contract. P1-F
+(worker/IPC) may now be scoped from the measured numbers rather than from
+the projected speedup, and the unlock lands only as P4-G behind a feature
+flag.

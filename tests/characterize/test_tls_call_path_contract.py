@@ -496,3 +496,165 @@ def test_detect_transit_candidate_surfaces_tls_environment_error(monkeypatch, ca
         "scientific-failure branch (or removed entirely)."
     )
 
+
+# ===========================================================================
+# P05-A (Phase 0.5) — the measured-baseline contract.
+#
+# The locks above (use_threads=1, daemon=True) stay in force until the
+# unlock lands as bucket P4-G. What P05-A adds is the reason any future
+# unlock decision is allowed to be made at all: PRD v4.1 Phase 0.5
+# ("Benchmark before you believe") forbids acting on the projected
+# ``6-8x`` speedup, which was a *computed* Amdahl bound
+# (scratch/j2c_tls_profiling_result.json,
+# ``A_default_8iter_multi_threaded_lower_bound_min``), never a
+# measurement.
+#
+# These tests pin that the measurement exists and is well-formed, so the
+# plan carries a measured number instead of a division. They do NOT pin
+# the numeric value: a re-run on a faster or slower machine must be able
+# to replace it without failing here. What is contractual is that some
+# measured serial baseline and some measured parallel speedup are
+# present, and that the harness that produced them is in the tree.
+# ===========================================================================
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+BENCH_DIR = PROJECT_ROOT / "benchmarks"
+BENCH_HARNESS = BENCH_DIR / "tls_multiprocessing_benchmark.py"
+BENCH_RESULT = BENCH_DIR / "results" / "p05a_tls_benchmark.json"
+
+
+def test_p05a_benchmark_harness_is_committed():
+    """The P05-A harness must live in the tree at the documented path.
+
+    A benchmark that only ever existed in a scratch directory is not a
+    deliverable: scratch/ is gitignored regenerable output. The harness
+    is the reusable instrument, so it must be a committed source file."""
+    assert BENCH_HARNESS.exists(), (
+        f"P05-A benchmark harness missing at {BENCH_HARNESS}. The Phase 0.5 "
+        "exit gate requires a re-runnable benchmark, not a one-off script."
+    )
+    src = BENCH_HARNESS.read_text(encoding="utf-8")
+    # The four stages the harness documents in its module docstring. If a
+    # contributor splits or renames them, this forces the docstring and the
+    # CLI to be reconciled rather than drifting.
+    for stage in ("def acquire", "def bench", "def nested", "def report"):
+        assert stage in src, (
+            f"harness must define `{stage}`; the P05-A stages are "
+            "acquire / bench / nested / report"
+        )
+    # The harness must not mutate production topology: it measures, it
+    # does not unlock. Concretely, its own TLS power() call must pass a
+    # variable for use_threads, not hardcode the production lock value 1
+    # -- otherwise it could not measure the very arm the lock forbids.
+    # (A plain substring check is not enough: the harness docstring
+    # legitimately quotes the lock while describing it.)
+    power_calls = _find_tls_power_calls(src)
+    assert power_calls, "harness must contain a model.power(...) call"
+    for call in power_calls:
+        kwargs = {kw.arg: kw.value for kw in call.keywords}
+        assert "use_threads" in kwargs, (
+            "harness model.power(...) must pass use_threads explicitly so "
+            "the arm can be varied"
+        )
+        value = kwargs["use_threads"]
+        assert not (isinstance(value, ast.Constant) and value.value == 1), (
+            "harness must pass a *variable* use_threads, not the literal "
+            "production lock value 1; it cannot measure the unlock otherwise"
+        )
+
+
+def test_p05a_measured_result_is_present_and_well_formed():
+    """The committed benchmark result must carry measured numbers.
+
+    This is the Phase 0.5 exit gate in test form: 'a measured number in
+    the plan'. A missing or malformed result means the unlock decision
+    would fall back on the computed Amdahl bound, which is exactly what
+    Phase 0.5 exists to prevent."""
+    import json
+
+    assert BENCH_RESULT.exists(), (
+        f"P05-A benchmark result missing at {BENCH_RESULT}. Run "
+        "`py benchmarks/tls_multiprocessing_benchmark.py bench` then "
+        "`... report`, and commit the result. The unlock is gated on it."
+    )
+    data = json.loads(BENCH_RESULT.read_text(encoding="utf-8"))
+
+    assert data.get("schema") == "p05a-tls-benchmark-v1", (
+        f"unexpected benchmark schema: {data.get('schema')!r}"
+    )
+    machine = data.get("machine") or {}
+    assert machine.get("cpu_count"), (
+        "machine.cpu_count must be recorded — a speedup is meaningless "
+        "without knowing how many cores it was measured against"
+    )
+
+    # 1. At least one measured SERIAL baseline exists.
+    serials = [
+        arm
+        for tgt in (data.get("arms") or {}).values()
+        for w in tgt.get("windows", {}).values()
+        for k, arm in w.items()
+        if k == "use_threads_1" and arm.get("status") == "ok"
+    ]
+    assert serials, (
+        "no measured use_threads=1 baseline in the result; the serial "
+        "baseline is the reference the parallel arm is compared against"
+    )
+
+    # 2. At least one measured PARALLEL arm with a computed-from-measurement
+    #    speedup exists. measured_speedup_vs_serial is derived from two
+    #    wall-clock readings, never from cpu_count.
+    parallels = [
+        arm
+        for tgt in (data.get("arms") or {}).values()
+        for w in tgt.get("windows", {}).values()
+        for k, arm in w.items()
+        if k != "use_threads_1"
+        and arm.get("status") == "ok"
+        and arm.get("measured_speedup_vs_serial") is not None
+    ]
+    assert parallels, (
+        "no measured parallel arm in the result; without it the speedup "
+        "is the computed Amdahl bound that Phase 0.5 forbids acting on"
+    )
+    for arm in parallels:
+        sp = arm["measured_speedup_vs_serial"]
+        assert sp > 0, f"measured speedup must be positive, got {sp}"
+        # A measured speedup above the core count is physically
+        # impossible for a CPU-bound pool and would signal a measurement
+        # bug rather than a result.
+        assert sp <= machine["cpu_count"], (
+            f"measured speedup {sp} exceeds cpu_count {machine['cpu_count']}; "
+            "this indicates a measurement error, not a result"
+        )
+
+
+def test_p05a_nested_pool_mechanism_is_resolved():
+    """The result must record whether daemon=False is the unlock mechanism.
+
+    The whole unlock premise rests on one claim: a daemonic worker cannot
+    create the Pool that TLS parallelism needs, and a non-daemonic worker
+    can. That claim is testable, so it must be tested and recorded, not
+    inherited from a comment."""
+    import json
+
+    assert BENCH_RESULT.exists(), (
+        f"P05-A benchmark result missing at {BENCH_RESULT}; the nested-pool "
+        "mechanism verdict is part of the Phase 0.5 deliverable"
+    )
+    data = json.loads(BENCH_RESULT.read_text(encoding="utf-8"))
+    probe = data.get("nested_pool_probe")
+    assert probe is not None, (
+        "nested_pool_probe absent from the result. Run "
+        "`py benchmarks/tls_multiprocessing_benchmark.py nested` so the "
+        "daemon=True/daemon=False mechanism is recorded, not assumed"
+    )
+    verdict = probe.get("verdict") or {}
+    assert verdict.get("mechanism_confirmed") is True, (
+        "The nested-pool mechanism was NOT confirmed: either the daemonic "
+        "worker failed to reproduce the block, or the non-daemonic worker "
+        "also failed. The daemon=False unlock premise does not hold as "
+        "measured; do not land P4-G on this result. Probe arms: "
+        f"{json.dumps(probe.get('arms'))}"
+    )
+

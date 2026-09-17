@@ -109,6 +109,11 @@ AGENTS.md
 !/logs/research_log.md
 /runs/*
 !/runs/kepler90_blind_search.py
+# P05-A benchmark curve cache: downloaded + stitched real light curves.
+# Regenerable via `py benchmarks/tls_multiprocessing_benchmark.py acquire`;
+# the measured RESULTS under benchmarks/results/ are the tracked artifact,
+# not the input data they were taken on.
+/benchmarks/cache/*
 # Root-level regenerable diagnostic junk.
 /out.txt
 /out2.txt

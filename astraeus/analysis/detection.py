@@ -130,11 +130,19 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
                 # threaded inside the worker, which the J2c profile
                 # (logs/j2c_tls_profiling_result.json, scratch/
                 # nested_pool_check.py, logs/nested_pool_check_*.json)
-                # measured at ~80s per call on a 45,853-cadence curve with
-                # the 0.95x-1.05x BLS-narrowed window. Do NOT remove this
+                # threaded inside the worker. Cost: the J2c profile measured
+                # ~80s per call on a synthetic 45,853-cadence curve in the
+                # 0.95x-1.05x BLS-narrowed window; on the real Kepler-90
+                # stitch the same profile measured ~149.7s single-threaded
+                # for the 828-period narrowed window (its "A_default_full"
+                # arm -- despite the label, NOT TLS defaults). The
+                # authoritative, re-runnable measurement on all 8 cached real
+                # targets is benchmarks/tls_multiprocessing_benchmark.py
+                # (bucket P05-A, PRD v4.1 Phase 0.5). Do NOT remove this
                 # kwarg or relax it to cpu_count(): it is a contract, not
                 # a perf preference. Locked by tests/characterize/
-                # test_tls_call_path_contract.py.
+                # test_tls_call_path_contract.py. The unlock is gated on the
+                # P05-A measurement and lands only as bucket P4-G.
                 results = model.power(
                     period_min=tls_period_min,
                     period_max=tls_period_max,
