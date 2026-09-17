@@ -1,3 +1,15 @@
+# Development convenience mirror of the authoritative dependency
+# declaration in pyproject.toml. If you change a dependency, change it
+# THERE first and mirror it here; these two files must not contradict.
+#
+# Phase 0 (PRD v4.1 §2.3): wotan and transitleastsquares were previously
+# MISSING from this file entirely, which let their absence silently
+# change scientific output (fail-open behaviour). They are now required.
+# batman is intentionally ABSENT from the required set: it is GPL-3.0 and
+# its adoption is an unresolved user-level licensing decision (PRD
+# §13.3). Install it explicitly with `pip install batman` or
+# `pip install -e ".[batman]"` to enable high-precision subtraction.
+
 numpy==2.2.6
 scipy==1.15.3
 matplotlib==3.10.9
@@ -11,3 +23,5 @@ pandas==2.2.3
 requests==2.32.3
 emcee==3.1.6
 boto3>=1.28.0
+wotan>=1.10
+transitleastsquares>=1.32

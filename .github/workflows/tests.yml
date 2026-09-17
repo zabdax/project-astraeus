@@ -18,22 +18,65 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # Phase 0: the matrix covers exactly the Python versions the
+      # package declares support for (requires-python = ">=3.12" in
+      # pyproject.toml). The 282-test baseline is verified on 3.12 only;
+      # widen this matrix ONLY after the added version has actually
+      # passed the gate -- do not claim support that is not tested
+      # (PRD v4.1 §27).
+      matrix:
+        python-version: ["3.12"]
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.12
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
-      - name: Install runtime deps
-        run: pip install -r requirements.txt
-      - name: Install test deps
-        run: pip install -r requirements-dev.txt
+          cache-dependency-path: pyproject.toml
+      # Phase 0: install through the package (pyproject.toml is now the
+      # authoritative dependency declaration) so CI exercises the real
+      # installation path, including the scientific backends that were
+      # previously undeclared and could silently fail open.
+      - name: Install package with dev extras
+        run: pip install -e ".[dev]"
       - name: Run fast-gate test suite
         run: python -m pytest tests/ -m "not network and not slow" -v --tb=short
+
+  package:
+    name: Package install + CLI (clean environment)
+    runs-on: ubuntu-latest
+    # Phase 0 Objective B / Gates 2-4: prove ASTRAEUS is a real installable
+    # package whose CLI works from a directory that is NOT the repo, and
+    # that a clean install carries the scientific backends.
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Build and install the package (non-editable)
+        run: pip install .
+      - name: CLI works from a non-repository working directory
+        run: |
+          set -e
+          cd "$(mktemp -d)"
+          python -m astraeus --version
+          python -m astraeus --help
+          python -m astraeus capabilities
+      - name: Console script entrypoint
+        run: |
+          set -e
+          cd "$(mktemp -d)"
+          astraeus --version
+      - name: Run Phase 0 foundation tests
+        run: python -m pytest tests/phase0 -q --tb=short
 
   full-suite:
     name: Full suite (network + slow, non-blocking)
@@ -50,13 +93,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
-      - name: Install runtime deps
-        run: pip install -r requirements.txt
-      - name: Install test deps
-        run: pip install -r requirements-dev.txt
+          cache-dependency-path: pyproject.toml
+      - name: Install package with dev extras
+        run: pip install -e ".[dev]"
       - name: Run full test suite (may hit network)
         run: python -m pytest tests/ -v --tb=short
 
@@ -75,12 +114,8 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: |
-            requirements.txt
-            requirements-dev.txt
-      - name: Install runtime deps
-        run: pip install -r requirements.txt
-      - name: Install test deps
-        run: pip install -r requirements-dev.txt
+          cache-dependency-path: pyproject.toml
+      - name: Install package with dev extras
+        run: pip install -e ".[dev]"
       - name: Run full test suite (blocking)
         run: python -m pytest tests/ -v --tb=short

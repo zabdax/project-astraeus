@@ -1,9 +1,22 @@
 import numpy as np
 import json
+
 from astraeus.analysis.detection import detect_transit_candidate
 from astraeus.analysis.bls_search import BLSSearchEngine
+from astraeus.core.capabilities import (
+    SUBTRACTION_BACKEND_BATMAN,
+    SUBTRACTION_BACKEND_TRAPEZOID,
+    BackendId,
+    BackendUnavailable,
+    TlsOutcome,
+    get_logger,
+    is_backend_available,
+)
 
-def subtract_planetary_signal(flux, time, period, epoch, duration, depth_ppm, metadata=None):
+logger = get_logger("orchestrator")
+
+
+def subtract_planetary_signal(flux, time, period, epoch, duration, depth_ppm, metadata=None, record=None):
     """
     Subtracts the transit signal of a planet from the flux timeline without altering noise.
     Uses a hybrid approach: attempts batman-package high-precision subtraction first, 
@@ -17,76 +30,126 @@ def subtract_planetary_signal(flux, time, period, epoch, duration, depth_ppm, me
         duration (float): The transit duration.
         depth_ppm (float): The transit depth in parts-per-million.
         metadata (dict, optional): Target metadata (stellar parameters, etc.).
+        record (dict, optional): If given, populated with the subtraction
+            provenance under ``subtraction_backend`` (``"batman"`` or
+            ``"trapezoid"``) and ``subtraction_backend_available``. This
+            is how Phase 0 makes a fallback execution distinguishable
+            from the preferred scientific backend (PRD §10) without
+            changing the function's return contract.
         
     Returns:
         np.ndarray: The new flux array with the transit signal subtracted.
     """
     cleaned_flux = flux.copy()
-    
+
+    def _record(backend: str, available: bool) -> None:
+        if record is not None:
+            record["subtraction_backend"] = backend
+            record["subtraction_backend_available"] = available
+
     # Dynamic window scaling: Add 25% safety buffer on each wing (50% total increase)
     padded_duration = duration * 1.5
-    print(f"[Orchestrator] Dynamically scaling subtraction window: BLS duration {duration:.4f}d -> {padded_duration:.4f}d (25% padding on wings)")
+    logger.info(
+        "Dynamically scaling subtraction window: BLS duration %.4fd -> %.4fd "
+        "(25%% padding on wings)", duration, padded_duration,
+    )
     duration = padded_duration
-    
-    try:
-        import batman
-        print(f"[Orchestrator] Initializing high-precision batman engine for period {period:.3f}")
-        
-        # Initialize batman parameters
-        params = batman.TransitParams()
-        params.t0 = epoch
-        params.per = period
-        params.rp = np.sqrt(depth_ppm / 1e6)
-        
-        # Estimate semi-major axis 'a' from duration and period
-        # Using small angle approximation: a = period / (pi * duration)
-        params.a = max(1.0, period / (np.pi * duration))
-        params.inc = 90.
-        params.ecc = 0.
-        params.w = 90.
-        
-        # Attempt to get limb darkening from metadata, else default
-        if metadata and 'u' in metadata:
-            params.u = metadata['u']
-        else:
-            params.u = [0.1, 0.3]
-            
-        params.limb_dark = "quadratic"
-        
-        # Generate model
-        m = batman.TransitModel(params, time)
-        transit_model = m.light_curve(params)
-        
-        # batman returns relative flux where out of transit is 1.0.
-        # We need to add the dip (1.0 - transit_model) to our flux to flatten it.
-        cleaned_flux += (1.0 - transit_model)
-        
-    except Exception as e:
-        print(f"[Fallback] batman failed or unavailable ({e}). Initializing Trapezoidal module for period {period:.3f}")
-        # Fallback Countermeasure (Trapezoidal Engine)
-        # Shift time by epoch to center the transit at phase 0
-        phase = (time - epoch + 0.5 * period) % period - 0.5 * period
-        abs_phase = np.abs(phase)
-        
-        # Compute linear ingress and egress ramps (defaulting to 10% of total transit duration)
-        ramp_duration = 0.1 * duration
-        flat_duration = duration - 2 * ramp_duration
-        
-        transit_dip = depth_ppm / 1e6
-        trapezoid_model = np.zeros_like(flux)
-        
-        # Flat bottom
-        in_flat = abs_phase <= (flat_duration / 2.0)
-        trapezoid_model[in_flat] = transit_dip
-        
-        # Ingress / Egress ramps
-        in_ramp = (abs_phase > (flat_duration / 2.0)) & (abs_phase <= (duration / 2.0))
-        ramp_x = abs_phase[in_ramp] - (flat_duration / 2.0)
-        trapezoid_model[in_ramp] = transit_dip * (1.0 - (ramp_x / ramp_duration))
-        
-        # Add the trapezoidal dip to flatten the transit
-        cleaned_flux += trapezoid_model
-        
+
+    # PHASE 0 (PRD v4.1 §10): batman availability is probed explicitly
+    # so the two failure modes are distinguishable and observable:
+    # "not installed" is an environment state; "installed but raised"
+    # is a runtime failure. Previously a single broad `except Exception`
+    # merged the two and hid both behind one message.
+    batman_available = is_backend_available(BackendId.BATMAN)
+
+    if batman_available:
+        try:
+            import batman
+            logger.info("Initializing high-precision batman engine for period %.3f", period)
+
+            # Initialize batman parameters
+            params = batman.TransitParams()
+            params.t0 = epoch
+            params.per = period
+            params.rp = np.sqrt(depth_ppm / 1e6)
+
+            # Estimate semi-major axis 'a' from duration and period
+            # Using small angle approximation: a = period / (pi * duration)
+            params.a = max(1.0, period / (np.pi * duration))
+            params.inc = 90.
+            params.ecc = 0.
+            params.w = 90.
+
+            # Attempt to get limb darkening from metadata, else default
+            if metadata and 'u' in metadata:
+                params.u = metadata['u']
+            else:
+                params.u = [0.1, 0.3]
+
+            params.limb_dark = "quadratic"
+
+            # Generate model
+            m = batman.TransitModel(params, time)
+            transit_model = m.light_curve(params)
+
+            # batman returns relative flux where out of transit is 1.0.
+            # We need to add the dip (1.0 - transit_model) to our flux to flatten it.
+            cleaned_flux += (1.0 - transit_model)
+            _record(SUBTRACTION_BACKEND_BATMAN, True)
+            return cleaned_flux
+
+        except Exception as e:
+            # INSTALLED-BUT-FAILING backend. This is not a silent
+            # substitution: it is logged at ERROR, and the trapezoid
+            # result is labelled as such via _record() so no caller can
+            # mistake it for a batman subtraction (PRD §9 / §10).
+            logger.error(
+                "[BATMAN] Installed batman backend failed during signal "
+                "subtraction (%s: %s). The trapezoid fallback differs "
+                "scientifically (zero limb darkening, no curvature); the "
+                "result is recorded as a trapezoid subtraction, NOT as "
+                "batman.", type(e).__name__, e,
+            )
+
+    elif not batman_available:
+        # batman is GPL-3.0 and its adoption is an unresolved user-level
+        # licensing decision (PRD §13.3). It is therefore NOT a hard
+        # runtime dependency, and its absence is not a failure -- but it
+        # must be visible, because the trapezoid model is a scientific
+        # regression, not a cosmetic fallback.
+        logger.warning(
+            "[BATMAN] batman is not installed; using the trapezoid "
+            "subtraction model. This is a scientifically different model "
+            "(zero limb darkening, hardcoded 10%% ingress ramps, no "
+            "curvature) and is recorded as such. See PRD §13.3 for the "
+            "licensing decision that would make batman mandatory."
+        )
+
+    # Fallback Countermeasure (Trapezoidal Engine)
+    _record(SUBTRACTION_BACKEND_TRAPEZOID, batman_available)
+    # Shift time by epoch to center the transit at phase 0
+    phase = (time - epoch + 0.5 * period) % period - 0.5 * period
+    abs_phase = np.abs(phase)
+
+    # Compute linear ingress and egress ramps (defaulting to 10% of total transit duration)
+    ramp_duration = 0.1 * duration
+    flat_duration = duration - 2 * ramp_duration
+
+    transit_dip = depth_ppm / 1e6
+    trapezoid_model = np.zeros_like(flux)
+
+    # Flat bottom
+    in_flat = abs_phase <= (flat_duration / 2.0)
+    trapezoid_model[in_flat] = transit_dip
+
+    # Ingress / Egress ramps
+    in_ramp = (abs_phase > (flat_duration / 2.0)) & (abs_phase <= (duration / 2.0))
+    ramp_x = abs_phase[in_ramp] - (flat_duration / 2.0)
+    trapezoid_model[in_ramp] = transit_dip * (1.0 - (ramp_x / ramp_duration))
+
+    # Add the trapezoidal dip to flatten the transit
+    cleaned_flux += trapezoid_model
+
     return cleaned_flux
 
 def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
@@ -163,7 +226,25 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
         depth = result.get('depth')
         
         print(f"[Orchestrator] Iteration {iteration} result: Period={best_period:.4f}d, SNR={snr:.2f}, Duration={duration:.4f}d, Depth={depth:.6f}, Status={vetting_status}")
-        
+
+        # PHASE 0 FAIL-CLOSED GATE (PRD v4.1 §4.2 / §4.3 / §7).
+        # Before this, the orchestrator never read tls_environment_error
+        # or tls_scientific_error, so an infrastructure failure ended the
+        # run as DONE with `candidates: []` and `error: None` -- every
+        # "no planets found" result was indistinguishable from a broken
+        # pipeline. Now: if the required TLS gate could not EXECUTE, the
+        # run fails closed with a structured reason. This is an
+        # environment failure, not a scientific negative, and it must
+        # never be reported as "zero candidates".
+        if result.get('tls_outcome') == TlsOutcome.ENV_UNAVAILABLE.value:
+            reason = result.get('tls_environment_error') or "TLS gate could not execute"
+            logger.error(
+                "[Orchestrator] The required TLS cross-validation gate "
+                "could not execute (environment failure: %s). Halting and "
+                "failing closed: this is NOT 'no candidates found'.", reason,
+            )
+            raise BackendUnavailable(BackendId.TLS, reason)
+
         # GUARDRAIL 1 (The SNR/Vetting Break)
         # R8 fix (2026-07-12): also require tls_valid=True on the accept
         # path. The VettingEngine's "Likely Planet" override in
@@ -225,18 +306,23 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
         discovered_planetary_properties.append(result)
         discovered_periods.append(best_period)
         print(f"[Orchestrator] [OK] ACCEPTED candidate #{len(discovered_planetary_properties)}: Period={best_period:.4f}d")
-        
+
         # Subtract the transit out of the current_working_flux for the next iteration
         if best_period is not None and transit_time is not None and duration is not None and depth is not None:
             depth_ppm = depth * 1e6
+            # `record=result` stamps the accepted candidate with which
+            # subtraction backend actually ran (batman vs trapezoid),
+            # so a fallback execution is never represented as the
+            # preferred scientific backend (PRD §10).
             current_working_flux = subtract_planetary_signal(
-                flux=current_working_flux, 
-                time=active_time, 
-                period=best_period, 
-                epoch=transit_time, 
+                flux=current_working_flux,
+                time=active_time,
+                period=best_period,
+                epoch=transit_time,
                 duration=duration,
                 depth_ppm=depth_ppm,
-                metadata=metadata
+                metadata=metadata,
+                record=result,
             )
         else:
             # If we don't have enough info to mask, we must break to prevent infinite loops finding the same signal
@@ -396,6 +482,29 @@ def _subprocess_search_worker(result_queue, raw_lightcurve, max_signals, snr_flo
             duration = result.get("duration")
             depth = result.get("depth")
 
+            # PHASE 0 FAIL-CLOSED GATE (PRD v4.1 §4.2 / §4.3). The async
+            # path is the one real data eventually crosses; an
+            # environment failure here must terminate as a FAILED job
+            # with an explicit reason, never as DONE / 0 candidates.
+            # See the matching gate in run_multi_planet_search above.
+            if result.get("tls_outcome") == TlsOutcome.ENV_UNAVAILABLE.value:
+                reason = result.get("tls_environment_error") or "TLS gate could not execute"
+                logger.error(
+                    "[Worker] The required TLS cross-validation gate could "
+                    "not execute (environment failure: %s). Reporting job "
+                    "FAILED: this is NOT 'no candidates found'.", reason,
+                )
+                result_queue.put({
+                    "type": "error",
+                    "error": (
+                        f"Required scientific backend unavailable: "
+                        f"transitleastsquares ({reason}). The TLS "
+                        f"cross-validation gate could not execute; this job "
+                        f"is FAILED, not 'no candidates found'."
+                    ),
+                })
+                return
+
             # GUARDRAIL 1
             # R8 fix (2026-07-12): also require tls_valid=True. See the
             # matching comment in run_multi_planet_search above for the
@@ -459,9 +568,12 @@ def _subprocess_search_worker(result_queue, raw_lightcurve, max_signals, snr_flo
 
             if best_period is not None and transit_time is not None and duration is not None and depth is not None:
                 depth_ppm = depth * 1e6
+                # record=result stamps the emitted candidate payload with
+                # the subtraction backend that actually ran (PRD §10).
                 current_working_flux = subtract_planetary_signal(
                     current_working_flux, active_time, best_period,
                     transit_time, duration, depth_ppm, metadata,
+                    record=result,
                 )
             else:
                 break

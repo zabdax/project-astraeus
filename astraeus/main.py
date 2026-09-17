@@ -1,4 +1,12 @@
-"""Integration script for real exoplanet parameter retrieval (TrES-2b)."""
+"""Integration runner for real exoplanet parameter retrieval (TrES-2b).
+
+NOT the package CLI. This is a hardcoded single-target integration
+script retained for historical reproducibility; the canonical package
+entrypoint is ``python -m astraeus`` (see ``astraeus/__main__.py``),
+which is an argparse CLI that works from any CWD and does not rely on
+this module's ``sys.path`` hack. Invoke this script directly only when
+you specifically want the TrES-2b / Kepler quarter-1 retrieval.
+"""
 
 import sys
 from pathlib import Path

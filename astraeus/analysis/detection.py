@@ -7,6 +7,13 @@ from astraeus.analysis.physical_properties import PhysicalPropertiesEngine
 from astraeus.analysis.ttv_analysis import TTVAnalyzer
 from astraeus.analysis.logging import save_experiment_log
 from astraeus.analysis.vetting import VettingEngine
+from astraeus.core.capabilities import (
+    BackendId,
+    CapabilitySnapshot,
+    TlsOutcome,
+    get_logger,
+    require_backend,
+)
 from astraeus.core.constants import (
     VETTING_PLANET_CANDIDATE_MAX_DEPTH_FRACTION,
     VETTING_SECONDARY_ECLIPSE_FALLBACK_PPM,
@@ -16,15 +23,45 @@ from astraeus.core.constants import (
     DETECTION_SNR_THRESHOLD_DEFAULT,
 )
 
-def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=DETECTION_SNR_THRESHOLD_DEFAULT, known_periods=None):
+logger = get_logger("detection")
+
+
+def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=DETECTION_SNR_THRESHOLD_DEFAULT, known_periods=None, require_backends: bool = True):
+    """Run the blind search + vetting pipeline on one light curve.
+
+    ``require_backends=True`` (the default) is the *production* contract:
+    a missing required scientific backend fails closed rather than
+    silently degrading the result (PRD v4.1 §4.2).  Set it to False only
+    for non-production diagnostics, and never report such a run as a
+    production scientific result.
+    """
     if known_periods is None:
         known_periods = []
 
     time = np.asarray(time)
     flux = np.asarray(flux)
-    
+
+    # Capability snapshot: recorded on the result so a caller can always
+    # determine which backends actually executed (PRD §22). Computed once
+    # per detection; cheap (importlib probes, no heavy imports).
+    _capability = CapabilitySnapshot.current()
+
+    # Fail closed BEFORE the numeric path runs: an unavailable backend is
+    # a structured error, not a different algorithm.  wotan is probed here
+    # because detrending has no other way to signal the substitution.
+    # TLS is deliberately NOT probed here: its absence surfaces through
+    # the except-ImportError arm of the TLS block below, which keeps the
+    # four-valued tls_outcome and its diagnostic context on the result.
+    if require_backends:
+        require_backend(BackendId.WOTAN)
+
     stellar_rotation_period_days = DetrendingEngine.estimate_stellar_rotation(time, flux)
-    flux = DetrendingEngine.detrend(time, flux, stellar_rotation_period_days)
+    # Production runs require the preferred wotan estimator; the method
+    # actually used is recorded on the result for provenance.
+    flux, detrend_method = DetrendingEngine.detrend_with_method(
+        time, flux, stellar_rotation_period_days,
+        require_wotan=require_backends,
+    )
 
     active_time = time.copy()
     active_flux = flux.copy()
@@ -45,6 +82,12 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     tls_sde = 0.0
     tls_period = best_period
     tls_valid = False
+    # Phase 0 (PRD v4.1 §4.2): the authoritative scientific state is the
+    # four-valued tls_outcome, NOT the boolean tls_valid. tls_valid is
+    # retained (derived from tls_outcome) for backwards compatibility
+    # with existing consumers; it can only be True on a genuine
+    # ran_pass. A missing or non-executing gate is NEVER True.
+    tls_outcome = TlsOutcome.NOT_ATTEMPTED
     # J2c nested-pool fix (2026-07-06): the TLS gate has THREE possible
     # outcomes, not two. tls_valid carries the boolean for the
     # emission-gate's branch on success/fail. tls_environment_error and
@@ -56,7 +99,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     # dict never see a KeyError on the success path.
     tls_environment_error = None  # set to a string if (AssertionError, RuntimeError)
     tls_scientific_error = None   # set to a string if any other Exception
-    
+
     if best_period > 0:
         try:
             import transitleastsquares as tls
@@ -104,9 +147,33 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
                 # Require TLS SDE >= 5.0 to validate the candidate
                 if tls_sde >= 5.0 and abs(tls_period - best_period) / best_period < 0.05:
                     tls_valid = True
+                    tls_outcome = TlsOutcome.RAN_PASS
+                else:
+                    tls_outcome = TlsOutcome.RAN_FAIL
         except ImportError:
-            print("WARNING: transitleastsquares not installed. Skipping TLS cross-validation.")
-            tls_valid = True # Fail open if missing
+            # PHASE 0 FAIL-CLOSED FIX (PRD v4.1 §4.2): this arm
+            # previously set tls_valid = True ("Fail open if missing"),
+            # which is the single worst silent-degradation site in the
+            # codebase. A fresh container had no transitleastsquares
+            # declared, so the only backstop against the worst
+            # false-positive class (the §4.2 grazing-EB / snr>10 chain)
+            # was marked *passed* in exactly the environment where it
+            # could not run. Now the gate fails closed: tls_valid stays
+            # False and the outcome records env_unavailable so the
+            # orchestrator can mark the run FAILED (not "0 candidates").
+            tls_outcome = TlsOutcome.ENV_UNAVAILABLE
+            tls_environment_error = (
+                "transitleastsquares is not installed; the TLS "
+                "cross-validation gate could not execute"
+            )
+            tls_valid = False
+            logger.error(
+                "[TLS-INFRA-ERROR] transitleastsquares is not installed. "
+                "The TLS gate cannot run: this candidate's tls_valid=False "
+                "reflects a missing backend, NOT a scientific rejection. "
+                "Install it (see pyproject.toml) and re-run; a production "
+                "run in this state is FAILED, never 'no candidates found'."
+            )
         except (AssertionError, RuntimeError) as e:
             # INFRASTRUCTURE / ENVIRONMENT failure — distinct from a
             # scientific rejection. Historically this branch has been
@@ -134,13 +201,23 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
             #
             # Locked by tests/characterize/test_tls_call_path_contract.py
             # (test_tls_except_block_distinguishes_infra_from_scientific).
+            tls_outcome = TlsOutcome.ENV_UNAVAILABLE
             tls_environment_error = f"{type(e).__name__}: {e}"
-            print(f"[TLS-INFRA-ERROR] TLS environment failure during validation: {tls_environment_error}")
-            print(f"[TLS-INFRA-ERROR] The TLS gate could not run. This candidate's `tls_valid=False`")
-            print(f"[TLS-INFRA-ERROR] reflects an infrastructure failure, NOT a scientific rejection.")
-            print(f"[TLS-INFRA-ERROR] Do not treat this as 'the candidate is bad' — fix the environment")
-            print(f"[TLS-INFRA-ERROR] and re-run. See astraeus/analysis/detection.py:except block and")
-            print(f"[TLS-INFRA-ERROR] tests/characterize/test_tls_call_path_contract.py for the contract.")
+            logger.error(
+                "[TLS-INFRA-ERROR] TLS environment failure during validation: %s",
+                tls_environment_error,
+            )
+            logger.error(
+                "[TLS-INFRA-ERROR] The TLS gate could not run. This "
+                "candidate's tls_valid=False reflects an infrastructure "
+                "failure, NOT a scientific rejection."
+            )
+            logger.error(
+                "[TLS-INFRA-ERROR] Do not treat this as 'the candidate is "
+                "bad' - fix the environment and re-run. See astraeus/"
+                "analysis/detection.py except block and tests/characterize/"
+                "test_tls_call_path_contract.py for the contract."
+            )
             tls_valid = False
         except Exception as e:
             # Genuine scientific failure (numba type error, malformed
@@ -149,9 +226,16 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
             # branch above; logged with its own sentinel so the
             # orchestrator can distinguish "gate couldn't run" from
             # "gate ran and couldn't produce a verdict".
+            tls_outcome = TlsOutcome.RAN_FAIL
             tls_scientific_error = f"{type(e).__name__}: {e}"
-            print(f"[TLS-SCI-ERROR] TLS scientific failure during validation: {tls_scientific_error}")
+            logger.error(
+                "[TLS-SCI-ERROR] TLS scientific failure during validation: %s",
+                tls_scientific_error,
+            )
             tls_valid = False
+    else:
+        # No BLS period to validate against: the gate was not attempted.
+        tls_outcome = TlsOutcome.NOT_ATTEMPTED
 
 
     # Emission gate. The SNR threshold is caller-tunable and a
@@ -206,7 +290,11 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
     if archive_depth_percent > 0:
         archive_depth_fraction = archive_depth_percent / 100.0
         if transit_depth_fraction < (archive_depth_fraction * 0.1):
-            print("WARNING: Measured depth is less than 10% of archival depth.")
+            logger.warning(
+                "Measured depth (%.6f) is less than 10%% of archival depth "
+                "(%.6f) for target '%s'.", transit_depth_fraction,
+                archive_depth_fraction, target_name,
+            )
 
     result = {
         'candidate_found': is_valid,
@@ -236,6 +324,12 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         'tls_sde': tls_sde,
         'tls_period': tls_period,
         'tls_valid': tls_valid,
+        # Phase 0 (PRD v4.1 §4.2 / §6): the authoritative TLS state.
+        # Four values make it impossible to confuse "passed",
+        # "scientifically rejected", "environment could not execute",
+        # and "not attempted". tls_valid above is derived from this and
+        # is retained only for existing consumers.
+        'tls_outcome': tls_outcome.value,
         # J2c nested-pool fix (2026-07-06): distinguish "gate ran and
         # said no" from "gate could not run". See tls_environment_error
         # and tls_scientific_error initialisers above and the matching
@@ -243,6 +337,13 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
         # test_tls_call_path_contract.py.
         'tls_environment_error': tls_environment_error,
         'tls_scientific_error': tls_scientific_error,
+        # Phase 0 (PRD §22): every result carries the scientific
+        # execution capability state, so a caller can always determine
+        # whether the backends that the verdict depends on actually ran.
+        'backends_available': _capability.to_dict(),
+        # Phase 0 (PRD §9): which detrending estimator actually ran.
+        # A scipy median-filter run is NOT equivalent to wotan biweight.
+        'detrend_method': detrend_method,
     }
 
     # Geometric Validation

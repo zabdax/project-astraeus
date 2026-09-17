@@ -74,11 +74,47 @@ htmlcov/
 
 
 .genome/
-.github/
+# NOTE: .github/ is intentionally NOT ignored. The CI workflows it holds
+# (tests.yml) are tracked source; ignoring the directory while shipping
+# tracked files inside it was the Phase 0 contradiction flagged in
+# PRD v4.1 §15 -- it silently ignored any NEW workflow file.
 reports/
 .agents/
 .windsurfrules
 AGENTS.md
+
+# --- Phase 0 repo hygiene (PRD v4.1 §15 / §26): generated artifacts ---
+# 87 generated artifacts were previously committed (outputs/ 70,
+# logs/ 10, root-level junk 7). They are regenerable: completeness-sweep
+# cell caches, UI QA screenshots/DOM dumps, diagnostic run JSON, the
+# experiment ledger, and scratch/diagnostic text files. Nothing in the
+# test suite READS any of these as a fixture -- every reference is a
+# write (tests/qa_*.py) or a historical docstring pointer. Keep them on
+# disk locally; they simply must not be treated as source.
+#
+# Two corrections to the first pass of this change:
+#  * The patterns are ANCHORED to the repo root (leading /) and match
+#    directory CONTENTS (/*) rather than the directory. An unanchored
+#    `logs/` also matched `astraeus/logs/` (which holds a tracked
+#    project document), and git cannot re-include a file whose parent
+#    directory is excluded -- so `dir/*` + `!dir/file` is the form that
+#    actually preserves the two hand-written files below.
+#  * `runs/kepler90_blind_search.py` and `logs/research_log.md` are NOT
+#    generated artifacts. The former is a 548-line source driver cited
+#    by docs/superpowers/specs/2026-06-30-data-ingestion-solid-refactor-design.md;
+#    the latter is created by scratch/init_project.py and listed in
+#    PROJECT_BRIEFING_v0.0.2.md. Both stay tracked.
+/outputs/*
+/logs/*
+!/logs/research_log.md
+/runs/*
+!/runs/kepler90_blind_search.py
+# Root-level regenerable diagnostic junk.
+/out.txt
+/out2.txt
+/qa_results.json
+/scratch_session_state.txt
+/pytest_out.txt
 
 # --- Bucket 7: untracked regenerable artifacts (root-only) ---
 # Sibling of the already-ignored test.html (Plotly debug export).

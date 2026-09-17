@@ -27,7 +27,13 @@ def test_cached_fetch_data_delegates_to_fetch_data_impl(monkeypatch):
         captured["call"] = (t, m)
         return {"status": "success", "time": [], "flux": [], "flux_err": []}
 
-    # 1. Reload ingestion so we get a fresh RemoteDiscoveryEngine class object
+    # 1. Reload ingestion so we get a fresh RemoteDiscoveryEngine class object.
+    # 2026-08-21 audit fix: importlib.reload() rebinds the module's
+    # attributes in place, leaving every other module/test that imported
+    # RemoteDiscoveryEngine or _cached_fetch_data earlier holding stale
+    # references. Snapshot and restore the module dict so this reload
+    # cannot leak into the rest of the suite.
+    pre_reload_state = dict(ing_mod.__dict__)
     importlib.reload(ing_mod)
 
     # 2. Patch sys.modules['streamlit'] BEFORE the function's lazy import fires.
@@ -42,9 +48,13 @@ def test_cached_fetch_data_delegates_to_fetch_data_impl(monkeypatch):
         staticmethod(fake_impl),
     )
 
-    out = ing_mod._cached_fetch_data("Kepler-11", "Kepler")
-    assert out["status"] == "success"
-    assert captured["call"] == ("Kepler-11", "Kepler")
+    try:
+        out = ing_mod._cached_fetch_data("Kepler-11", "Kepler")
+        assert out["status"] == "success"
+        assert captured["call"] == ("Kepler-11", "Kepler")
+    finally:
+        ing_mod.__dict__.clear()
+        ing_mod.__dict__.update(pre_reload_state)
 
 
 def test_remote_discovery_engine_fetch_data_is_staticmethod():

@@ -1,5 +1,7 @@
 import sys
 import re
+import threading
+import time
 
 from astraeus.data.adapter import DataAdapter
 from astraeus.core.nasa_archive import NASAExoplanetArchive
@@ -9,6 +11,17 @@ from astraeus.core.lightkurve_client import LightkurveClient
 # itself is metadata-only, so when a user picks "NASA Exoplanet Archive" we
 # transparently bridge into one of these via the resolved target name.
 _TIME_SERIES_MISSIONS = ("TESS", "Kepler")
+
+# Framework-neutral TTL cache state (see _cached_fetch_data below).
+# Preserves the original st.cache_data(ttl=3600) semantics without
+# importing Streamlit into the engine.
+_FETCH_CACHE: dict = {}
+_FETCH_CACHE_LOCK = threading.Lock()
+_FETCH_CACHE_TTL_S = 3600.0
+
+# monotonic() (not time()) so wall-clock changes can't expire or
+# extend entries; a TTL cache must be monotonic by construction.
+_monotonic_clock = time.monotonic
 
 # Recognises host-star designations resolvable by MAST (Kepler-N, K2-N, TIC,
 # TOI, WASP-N, HAT-P-N, ...). Prefix set mirrors NASAExoplanetArchive._PREFIX_CASE
@@ -237,11 +250,42 @@ class RemoteDiscoveryEngine:
         }
 
 def _cached_fetch_data(target_name: str, mission: str = "Kepler") -> dict:
-    import streamlit as st
-    @st.cache_data(ttl=3600, show_spinner=False)
-    def _inner_fetch(t_name, m_name):
-        return RemoteDiscoveryEngine._fetch_data_impl(t_name, m_name)
-    return _inner_fetch(target_name, mission)
+    """Framework-neutral TTL cache for remote target metadata fetches.
+
+    Phase 0 (PRD v4.1 §4.1 / §18): this site previously did
+    ``import streamlit as st`` + ``@st.cache_data(ttl=3600)`` inside the
+    function body and bound the result as ``RemoteDiscoveryEngine.fetch_data``
+    at import time. Importing the module was fine, but *calling*
+    ``fetch_data`` raised ``ImportError`` in any environment without
+    Streamlit installed -- i.e. the scientific ingestion path was hard-
+    coupled to the web framework, violating the engine-boundary
+    invariant ("the engine must not depend on ... Streamlit").
+
+    The replacement is a small thread-safe TTL cache with no framework
+    dependency, preserving the original 3600 s TTL so UI behaviour
+    ("re-fetch after an hour sees fresh data") is unchanged. The engine
+    invariant it protects is asserted by tests/characterize/
+    test_ingestion_contract.py and tests/phase0/.
+    """
+    key = (target_name, mission)
+    now = _monotonic_clock()
+    with _FETCH_CACHE_LOCK:
+        entry = _FETCH_CACHE.get(key)
+        if entry is not None and now - entry[0] < _FETCH_CACHE_TTL_S:
+            return entry[1]
+
+    result = RemoteDiscoveryEngine._fetch_data_impl(target_name, mission)
+
+    with _FETCH_CACHE_LOCK:
+        _FETCH_CACHE[key] = (now, result)
+    return result
+
+
+def _clear_fetch_cache() -> None:
+    """Drop every cached fetch result (test/refresh hook)."""
+    with _FETCH_CACHE_LOCK:
+        _FETCH_CACHE.clear()
+
 
 RemoteDiscoveryEngine.fetch_data = staticmethod(_cached_fetch_data)
 

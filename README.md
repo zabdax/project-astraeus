@@ -11,7 +11,7 @@
 
 **Autonomous Scientific Tool for Research, Analysis, and Experimental Understanding of Space**
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.12%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.41-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![NumPy](https://img.shields.io/badge/NumPy-2.2-013243?logo=numpy&logoColor=white)](https://numpy.org/)
@@ -176,8 +176,11 @@ Raw Photometric Data (TESS / Kepler / CSV)
 
 ### Prerequisites
 
-- Python **3.10+**
-- `pip` or `conda`
+- Python **3.12+**. The support range is exactly the set of interpreters
+  the CI gate actually exercises (currently 3.12). It widens only after an
+  additional version passes the suite — the project no longer advertises a
+  "3.10+" floor that was never tested.
+- `pip`
 
 ### 1. Clone the repository
 
@@ -198,11 +201,50 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 3. Install the package
 
 ```bash
-pip install -r requirements.txt
+pip install .
 ```
+
+The package is a real installable distribution: `pyproject.toml` is the
+authoritative dependency declaration, and the scientific backends
+`wotan` and `transitleastsquares` are **required runtime dependencies**.
+A missing backend now fails closed with an explicit error instead of
+silently degrading the science.
+
+```bash
+$ python -m astraeus --version
+astraeus 0.0.2
+
+$ python -m astraeus capabilities
+{
+  "batman": true,
+  "wotan": true,
+  "tls": true,
+  "snapshot_version": 1
+}
+```
+
+`python -m astraeus` works from any working directory; artifact paths
+resolve under `ASTRAEUS_DATA_DIR`, an in-repo checkout, or
+`$XDG_DATA_HOME/astraeus` — never relative to the current directory.
+
+**`batman` is optional.** It is GPL-3.0 while ASTRAEUS is MIT-licensed, so
+adopting it as a required dependency is a pending licensing decision.
+Install it explicitly to enable high-precision transit subtraction:
+
+```bash
+pip install ".[batman]"
+```
+
+Without it the engine uses a labelled trapezoid fallback (recorded as
+`subtraction_backend: "trapezoid"` on results, never misreported as
+`batman`).
+
+> `requirements.txt` remains as a development convenience mirror of
+> `pyproject.toml`; the two must not contradict. For test tooling install
+> `pip install -e ".[dev]"`.
 
 ### 4. (Optional) Configure the AI Co-Pilot
 

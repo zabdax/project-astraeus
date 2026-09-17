@@ -1,0 +1,103 @@
+# ASTRAEUS packaging metadata.
+#
+# This file is the AUTHORITATIVE dependency declaration for the project
+# (PRD v4.1 §2.3 / Phase 0 Objective B). `requirements.txt` is kept only
+# as a development convenience and must not contradict what is declared
+# here.
+#
+# Licensing note (PRD §13.3 -- UNRESOLVED USER DECISION, do not reopen
+# here): `batman` is GPL-3.0. ASTRAEUS is currently MIT-licensed and the
+# Apache-2.0 switch is a pending user decision. `batman` is therefore an
+# OPTIONAL extra (`astraeus[batman]`), never a required runtime
+# dependency, so installing ASTRAEUS never implicitly accepts a GPL
+# obligation. The trapezoid subtraction fallback remains available and
+# is now explicitly labelled in results as `subtraction_backend` so a
+# fallback run is never represented as the preferred backend.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "astraeus"
+dynamic = ["version"]
+description = "Exoplanet transit detection, vetting, and analysis engine"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Zubayer Hasan Shaad" }]
+keywords = ["exoplanets", "transits", "astronomy", "BLS", "TLS", "photometry"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    # --- Scientific core -------------------------------------------------
+    "numpy==2.2.6",
+    "scipy==1.15.3",
+    "astropy==6.1.7",
+    "pandas==2.2.3",
+    # --- Scientific backends (Phase 0: previously UNDECLARED, which let a
+    #     missing backend silently change science -- see PRD §4.2) -------
+    # wotan: transit-preserving detrending. Absence previously fell back
+    # silently to a scipy median filter (a different estimator).
+    "wotan>=1.10",
+    # transitleastsquares: the load-bearing false-positive gate. Absence
+    # previously produced tls_valid=True (fail-open) -- the worst
+    # silent-degradation site in the codebase.
+    "transitleastsquares>=1.32",
+    # --- Fitting / modelling --------------------------------------------
+    "emcee==3.1.6",
+    # --- Visualization / reporting --------------------------------------
+    "matplotlib==3.10.9",
+    "plotly==5.24.1",
+    "kaleido==0.2.1",
+    "reportlab>=4.1.0,<4.2.0",
+    # --- Data access -----------------------------------------------------
+    "lightkurve>=2.4.0",
+    "requests==2.32.3",
+    "boto3>=1.28.0",  # anonymous S3 fallback for MAST/TESS bulk products
+    # --- Reference UI ----------------------------------------------------
+    # Streamlit is the QA/reference implementation until Phase 3 exit
+    # (PRD §30 / decision register) and is imported by the existing test
+    # suite. The ENGINE boundary no longer imports it (verified by
+    # tests/phase0/test_streamlit_independence.py); this dependency
+    # exists so `streamlit run app.py` keeps working.
+    "streamlit==1.41.1",
+]
+
+[project.optional-dependencies]
+# GPL-3.0. Optional on purpose -- see the licensing note at the top of
+# this file and PRD §13.3. Enables the high-precision batman transit
+# subtraction model; without it the engine uses the labelled trapezoid
+# fallback.
+batman = ["batman>=2.5.1"]
+# Test/development tooling. Not required at runtime.
+dev = [
+    "pytest>=8.0,<10",
+]
+
+[project.scripts]
+# Console-script entrypoint, equivalent to `python -m astraeus`.
+astraeus = "astraeus.__main__:main"
+
+[tool.setuptools.dynamic]
+# Single authoritative version source: astraeus/__init__.py
+version = { attr = "astraeus.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["astraeus*"]
+
+[tool.pytest.ini_options]
+# Mirrors pytest.ini, which remains the legacy entry point. Phase 0 does
+# not alter the marker scheme or the deprecated/ exclusion.
+markers = [
+    "smoke: fast end-to-end pipeline smoke tests (sub-minute CI gate)",
+    "network: tests requiring live network access (NASA Exoplanet Archive, MAST)",
+    "slow: long-running tests (stress, bench, multi-minute)",
+]
+addopts = "--ignore=deprecated"
