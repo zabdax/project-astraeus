@@ -239,12 +239,20 @@ class RemoteDiscoveryEngine:
             meta["kepler_segments"] = data.get("kepler_segments", 0)
             meta["tess_segments"] = data.get("tess_segments", 0)
 
+        # P1-D (PRD v4.1 §18 item 4): forward the time-unit label instead
+        # of dropping it.  ``lightkurve_client.py:759/928`` emits "BJD" and
+        # ``download_combined_fusion`` emits nothing at all; this seam used
+        # to rebuild the dict without the key, so the unit was asserted by
+        # convention downstream (``detection.py:324-329``) rather than
+        # carried by the data.  The canonical ``Dataset``
+        # (astraeus/contracts/dataset.py) now reads it from here.
         return {
             "status": "success",
             "metadata": meta,
             "time": data["time"],
             "flux": data["flux"],
             "flux_err": data["flux_err"],
+            "time_unit": data.get("time_unit", "BJD"),
             "archive_error": archive_error,
             "mast_error": mast_error,
         }

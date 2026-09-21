@@ -249,3 +249,37 @@ def universal_load_lightcurve(
     """Unified Data Factory ingestion function for exoplanet light curve data."""
     return DataFactory.load(source_type, source_path_or_id, **kwargs)
 
+
+def load_dataset(
+    source_type: str,
+    source_path_or_id: str,
+    *,
+    target_name: str | None = None,
+    mission: str = "Kepler",
+    **kwargs,
+) -> "Dataset":
+    """P1-D: load a light curve as the canonical :class:`Dataset`.
+
+    The existing tuple-returning loaders stay exactly as they are -- they
+    are pinned by ``tests/characterize/test_data_loader_contract.py`` --
+    and this wrapper adopts their output onto the seam
+    (PRD v4.1 §8.1: one authoritative type for both ingestion stacks and
+    both pipelines).
+    """
+    from astraeus.contracts.dataset import Dataset, Mission, TargetRef, TimeUnit
+
+    time, flux, flux_err = DataFactory.load(source_type, source_path_or_id, **kwargs)
+    name = target_name or source_path_or_id
+    return Dataset.from_arrays(
+        time,
+        flux,
+        flux_err,
+        target=TargetRef(name=name, mission=Mission(mission) if mission in Mission._value2member_map_ else Mission.UNKNOWN),
+        # Factory loaders already convert to BJD via time_units when the
+        # source unit is known (``DataFactory.load`` above); otherwise the
+        # label stays explicit rather than assumed.
+        time_unit=TimeUnit.BJD,
+        source=f"loader:{source_type}",
+        sort=True,
+    )
+
