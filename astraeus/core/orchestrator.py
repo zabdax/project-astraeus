@@ -152,19 +152,35 @@ def subtract_planetary_signal(flux, time, period, epoch, duration, depth_ppm, me
 
     return cleaned_flux
 
-def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
+def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1, on_event=None):
     """
     Orchestrator wrapper to perform a multi-planet search on a given lightcurve.
     This tracks the iteration count and maintains the 'current_working_flux' state.
-    
+
     Args:
         raw_lightcurve (dict or object): Contains at least 'time' and 'flux' arrays.
         max_signals (int): Maximum number of planets/signals to search for.
         snr_floor (float): The minimum SNR threshold for considering a candidate valid.
-        
+        on_event (callable, optional): P1-F worker hook.  Called as
+            ``on_event(event_type, **payload)`` at each lifecycle point using
+            the stable JSONL vocabulary of ``astraeus.jobs.events``
+            (running / iteration / candidate / warning / done).  The loop's
+            behaviour is identical with or without a subscriber; the hook is
+            how the worker subprocess reports *measured* progress instead of
+            a fake bar (PRD v4.1 §5.1, §18).
+
     Returns:
         list: A list of discovered planetary properties (dictionaries).
     """
+    def _emit(event_type, **payload):
+        # No-op without a subscriber: the loop stays usable in-process.
+        if on_event is not None:
+            try:
+                on_event(event_type, **payload)
+            except Exception:  # pragma: no cover - telemetry must never break a run
+                pass
+
+    _emit("running", max_signals=max_signals, snr_floor=snr_floor)
     # Extract time and flux from raw_lightcurve
     if isinstance(raw_lightcurve, dict):
         time = np.asarray(raw_lightcurve.get('time', []), dtype=np.float64)
@@ -195,6 +211,8 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
         iteration += 1
         if iteration > max_signals + max_duplicate_retries:
             print(f"[Orchestrator] Maximum iteration budget exhausted ({iteration - 1} iterations). Stopping.")
+            _emit("warning", code="ITERATION_BUDGET_EXHAUSTED",
+                  message=f"iteration budget exhausted after {iteration - 1} iterations")
             break
             
         if len(active_time) < 10:
@@ -204,6 +222,12 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
         print(f"\n{'='*70}")
         print(f"[Orchestrator] === ITERATION {iteration} === (Found {len(discovered_planetary_properties)}/{max_signals} candidates)")
         print(f"{'='*70}")
+        # SEARCHING is the dominant cost (~150 s serial TLS on Kepler-90),
+        # so iteration count is the one progress signal that is actually
+        # meaningful (PRD §5.1 progress table).
+        _emit("iteration", iteration=iteration,
+              max_iterations=max_signals + max_duplicate_retries,
+              found=len(discovered_planetary_properties), max_signals=max_signals)
             
         # We wrap the existing main pipeline execution function
         # detect_transit_candidate returns a dictionary with candidate information
@@ -260,8 +284,12 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
         if snr < snr_floor or not vetting_status.startswith("Verified Planet Candidate") or not tls_valid:
             if not tls_valid and vetting_status.startswith("Verified Planet Candidate"):
                 print(f"[Orchestrator] TLS-rejected candidate bypassed the classifier gate (SNR={snr:.2f}, tls_valid={tls_valid}, status='{vetting_status}'). Halting to preserve the load-bearing TLS gate (R8 fix).")
+                _emit("warning", code="TLS_REJECTED_BYPASS",
+                      message="TLS-rejected candidate bypassed the classifier gate; halting")
             else:
                 print(f"[Orchestrator] Signal significance floor reached (SNR={snr:.2f}, status='{vetting_status}'). Halting iterative search.")
+                _emit("warning", code="SNR_FLOOR_REACHED",
+                      message=f"significance floor reached (SNR={snr:.2f}, status='{vetting_status}')")
             break
         
         # GUARDRAIL 2 (Duplicate Period Detection)
@@ -306,6 +334,9 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
         discovered_planetary_properties.append(result)
         discovered_periods.append(best_period)
         print(f"[Orchestrator] [OK] ACCEPTED candidate #{len(discovered_planetary_properties)}: Period={best_period:.4f}d")
+        _emit("candidate", index=len(discovered_planetary_properties) - 1,
+              period_days=float(best_period) if best_period is not None else None,
+              snr=float(snr), vetting_status=str(vetting_status))
 
         # Subtract the transit out of the current_working_flux for the next iteration
         if best_period is not None and transit_time is not None and duration is not None and depth is not None:
@@ -358,7 +389,10 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1):
     
     print(f"\n[Orchestrator] Consolidated Discovery Payload:")
     print(json.dumps(serializable_results, indent=2))
-            
+
+    _emit("done", n_candidates=len(discovered_planetary_properties),
+          n_iterations=iteration, all_peaks_rejected=len(discovered_planetary_properties) == 0)
+
     return discovered_planetary_properties
 
 import multiprocessing
@@ -414,172 +448,89 @@ def cancel_job(job_id: str):
 # ---------------------------------------------------------------------------
 def _subprocess_search_worker(result_queue, raw_lightcurve, max_signals, snr_floor):
     """
-    Runs the iterative multi-planet detection loop inside a child process.
+    Runs the multi-planet detection loop inside a child process, reporting
+    progress over *result_queue*.
+
+    P1-I (PRD v4.1 §2.5): this is an **adapter**, not a second copy of the
+    search loop.  The sync and async paths had drifted apart -- most
+    importantly GUARDRAIL 1, which retried marginal candidates with
+    subtraction here while breaking immediately in
+    ``run_multi_planet_search``.  Two copies of a load-bearing scientific
+    guardrail is how a bypass silently reappears in one path and not the
+    other (the exact R8 vetting-override class of bug this codebase has
+    already been burned by).  Now there is one implementation, and this
+    function only:
+
+    * enforces the async path's own contract -- insufficient data is a
+      FAILED job with a reason, not an empty result list (the sync loop
+      treats it as "stop and return []"; ``_monitor_worker``'s callers
+      depend on the distinction, see ``tests/test_j2_orchestrator_states``);
+    * translates the single loop's ``on_event`` progress into the queue
+      messages the monitor thread expects;
+    * converts the sync loop's fail-closed exception (``BackendUnavailable``)
+      back into the queue's terminal error message.
+
+    The sync semantics are authoritative: they are the path real data and
+    the P1-F worker use, so unifying onto them is what "retire the drift"
+    means (PRD §2.5, §16).
 
     Communicates back to the parent via *result_queue*:
-        {'type': 'running'}                     – worker has started
-        {'type': 'iteration', 'n': int}         – beginning iteration n
-        {'type': 'candidate', 'data': dict}     – accepted candidate
-        {'type': 'done'}                        – search finished normally
-        {'type': 'error', 'error': str}         – search failed
+        {'type': 'running'}                     - worker has started
+        {'type': 'iteration', 'iteration': int} - beginning iteration n
+        {'type': 'candidate', 'data': dict}     - accepted candidate
+        {'type': 'done'}                        - search finished normally
+        {'type': 'error', 'error': str}         - search failed
     """
     try:
-        from astraeus.analysis.detection import detect_transit_candidate
-        from astraeus.core.orchestrator import subtract_planetary_signal
-
-        result_queue.put({"type": "running"})
-
-        # --- Extract arrays ---------------------------------------------------
         if isinstance(raw_lightcurve, dict):
             time_arr = np.asarray(raw_lightcurve.get("time", []), dtype=np.float64)
             flux = np.asarray(raw_lightcurve.get("flux", []), dtype=np.float64)
-            target_name = raw_lightcurve.get("target_name", "Unknown")
-            data_source = raw_lightcurve.get("data_source", "Unknown")
-            metadata = raw_lightcurve.get("metadata", {})
         else:
             time_arr = np.asarray(getattr(raw_lightcurve, "time", []), dtype=np.float64)
             flux = np.asarray(getattr(raw_lightcurve, "flux", []), dtype=np.float64)
-            target_name = getattr(raw_lightcurve, "target_name", "Unknown")
-            data_source = getattr(raw_lightcurve, "data_source", "Unknown")
-            metadata = getattr(raw_lightcurve, "metadata", {})
 
+        # The sync loop treats short arrays as "stop and return []"; the
+        # async contract is a FAILED job with a reason the monitor can show.
         if len(time_arr) < 10 or len(flux) < 10:
             raise ValueError("Insufficient data points")
 
-        # --- State -----------------------------------------------------------
-        discovered_planetary_properties = []
-        discovered_periods = []
-        active_time = time_arr.copy()
-        current_working_flux = flux.copy()
+        result_queue.put({"type": "running"})
 
-        duplicate_retries = 0
-        max_duplicate_retries = 3
-        _GUARDRAIL1_MARGINAL_TOLERANCE = 3
-        guardrail1_consecutive_marginal = 0
-        iteration = 0
+        def _to_queue(event_type, **payload):
+            # Forward only *measured* progress.  Candidate records are emitted
+            # from the returned list below, which carries the full per-result
+            # payload the monitor's callers expect; the loop's candidate
+            # event is a progress signal, not the record.
+            if event_type == "iteration":
+                result_queue.put({"type": "iteration", "iteration": payload.get("iteration", 0)})
 
-        while len(discovered_planetary_properties) < max_signals:
-            iteration += 1
-            if iteration > max_signals + max_duplicate_retries:
-                break
-
-            result_queue.put({"type": "iteration", "iteration": iteration})
-
-            result = detect_transit_candidate(
-                active_time,
-                current_working_flux,
-                target_name,
-                data_source,
-                metadata,
-                snr_floor,
-                discovered_periods,
-            )
-
-            snr = result.get("snr", 0.0)
-            vetting_status = result.get("vetting_status", "")
-            best_period = result.get("period", 0.0)
-            transit_time = result.get("t0")
-            duration = result.get("duration")
-            depth = result.get("depth")
-
-            # PHASE 0 FAIL-CLOSED GATE (PRD v4.1 §4.2 / §4.3). The async
-            # path is the one real data eventually crosses; an
-            # environment failure here must terminate as a FAILED job
-            # with an explicit reason, never as DONE / 0 candidates.
-            # See the matching gate in run_multi_planet_search above.
-            if result.get("tls_outcome") == TlsOutcome.ENV_UNAVAILABLE.value:
-                reason = result.get("tls_environment_error") or "TLS gate could not execute"
-                logger.error(
-                    "[Worker] The required TLS cross-validation gate could "
-                    "not execute (environment failure: %s). Reporting job "
-                    "FAILED: this is NOT 'no candidates found'.", reason,
-                )
-                result_queue.put({
-                    "type": "error",
-                    "error": (
-                        f"Required scientific backend unavailable: "
-                        f"transitleastsquares ({reason}). The TLS "
-                        f"cross-validation gate could not execute; this job "
-                        f"is FAILED, not 'no candidates found'."
-                    ),
-                })
-                return
-
-            # GUARDRAIL 1
-            # R8 fix (2026-07-12): also require tls_valid=True. See the
-            # matching comment in run_multi_planet_search above for the
-            # full rationale. Defense-in-depth against the VettingEngine
-            # "Likely Planet" override that previously bypassed the
-            # load-bearing TLS gate (round-7 J7c iter 1: 489.13d
-            # spurious peak, tls_sde=4.22, vetting='Verified Planet
-            # Candidate (Likely Planet)' — orchestrator accepted it and
-            # burned an iteration slot).
-            tls_valid = bool(result.get("tls_valid", False))
-            if snr < snr_floor or not vetting_status.startswith("Verified Planet Candidate") or not tls_valid:
-                guardrail1_consecutive_marginal += 1
-                if (
-                    best_period is not None
-                    and transit_time is not None
-                    and duration is not None
-                    and depth is not None
-                    and guardrail1_consecutive_marginal < _GUARDRAIL1_MARGINAL_TOLERANCE
-                ):
-                    depth_ppm = depth * 1e6
-                    current_working_flux = subtract_planetary_signal(
-                        current_working_flux, active_time, best_period,
-                        transit_time, duration, depth_ppm, metadata,
-                    )
-                if guardrail1_consecutive_marginal >= _GUARDRAIL1_MARGINAL_TOLERANCE:
-                    break
-                continue
-
-            guardrail1_consecutive_marginal = 0
-
-            # GUARDRAIL 2  – duplicate / harmonic detection
-            is_duplicate = False
-            for prev_period in discovered_periods:
-                period_ratio = best_period / prev_period if prev_period > 0 else 0
-                if abs(period_ratio - 1.0) < 0.05:
-                    is_duplicate = True
-                    break
-                for harmonic in (0.5, 2.0):
-                    if abs(period_ratio - harmonic) < 0.05:
-                        is_duplicate = True
-                        break
-                if is_duplicate:
-                    break
-
-            if is_duplicate:
-                duplicate_retries += 1
-                if duplicate_retries > max_duplicate_retries:
-                    break
-                if best_period is not None and transit_time is not None and duration is not None and depth is not None:
-                    depth_ppm = depth * 1e6
-                    current_working_flux = subtract_planetary_signal(
-                        current_working_flux, active_time, best_period,
-                        transit_time, duration, depth_ppm, metadata,
-                    )
-                continue
-
-            # Accept candidate
-            discovered_planetary_properties.append(result)
-            discovered_periods.append(best_period)
+        # One implementation of the search loop.  Guardrails, the fail-closed
+        # TLS gate and iteration accounting all live in
+        # run_multi_planet_search; this process cannot and must not diverge
+        # from them (P1-I).
+        discovered = run_multi_planet_search(
+            raw_lightcurve,
+            max_signals=max_signals,
+            snr_floor=snr_floor,
+            on_event=_to_queue,
+        )
+        for result in discovered:
             result_queue.put({"type": "candidate", "data": result})
-
-            if best_period is not None and transit_time is not None and duration is not None and depth is not None:
-                depth_ppm = depth * 1e6
-                # record=result stamps the emitted candidate payload with
-                # the subtraction backend that actually ran (PRD §10).
-                current_working_flux = subtract_planetary_signal(
-                    current_working_flux, active_time, best_period,
-                    transit_time, duration, depth_ppm, metadata,
-                    record=result,
-                )
-            else:
-                break
 
         result_queue.put({"type": "done"})
 
+    except BackendUnavailable as exc:
+        # The sync loop raises; the async contract reports a terminal error
+        # with the reason.  Both mean FAILED, never "DONE / 0 candidates"
+        # (PRD §4.2 / §4.3).
+        result_queue.put({
+            "type": "error",
+            "error": (
+                f"Required scientific backend unavailable: "
+                f"{exc}. The cross-validation gate could not execute; this "
+                f"job is FAILED, not 'no candidates found'."
+            ),
+        })
     except Exception as e:
         result_queue.put({"type": "error", "error": str(e)})
 
