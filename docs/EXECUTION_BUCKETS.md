@@ -29,18 +29,24 @@ Phase 0 [COMPLETE @ v.0.0.3 / ac82a56]  foundation, fail-closed science, packagi
    │     └── measured 1.06x-2.08x (not 6-8x); unlock deferred to P4-G
    │
    ▼
-Phase 1  CONTRACTS (sequential — they import each other)
-   P1-A  Canonical Dataset contract        ──┐
-   P1-B  AnalysisResult v1 schema           ──┤  (P1-A → P1-B → P1-C)
-   P1-C  Provenance contract                ──┘
+Phase 1  CONTRACTS (sequential — they import each other)   [COMPLETE]
+   P1-A  Canonical Dataset contract        ──┐ [COMPLETE]
+   P1-B  AnalysisResult v1 schema           ──┤  (P1-A → P1-B → P1-C) [COMPLETE]
+   P1-C  Provenance contract                ──┘ [COMPLETE]
    │
    ├── P1-D  Ingestion consolidation (4 sites → seam)   ║ parallel with contracts
+   │        [COMPLETE] — time_unit forwarded; adopters at loader + dashboard
    │
    ├── P1-E  Job persistence (SQLite WAL)     ── depends on nothing
+   │        [COMPLETE] — SQLite store replaces JOB_REGISTRY; owner_id indexed
    ├── P1-F  Worker / IPC (Popen + JSONL)     ── depends on P05-A's decision
+   │        [COMPLETE] — worker + asyncio supervisor; cancel/timeout/restart
    ├── P1-G  Real-data async integration      ── depends on P1-D + P1-F
+   │        [COMPLETE] — ingestion_bridge.py; real data crosses the boundary
    ├── P1-H  FastAPI + JWT API layer          ── depends on P1-B + P1-C + P1-E
+   │        [COMPLETE] — astraeus/api/; optional `api` extra; 34 tests
    ├── P1-I  Search-loop unification          ── depends on P1-F
+   │        [COMPLETE] — async worker delegates to the single sync loop
    │
    ▼
 Phase 2  VERTICAL SLICE
@@ -120,15 +126,15 @@ distribution, or credibility.
 | ID | Bucket | Phase | Tag | Effort | Dep type | Depends on |
 |---|---|---|---|---|---|---|
 | P05-A | TLS multiprocessing benchmark | 0.5 | `[VALIDATION]` | 3–5 d | VALIDATION | Phase 0 — **COMPLETE**: measured 1.06x-2.08x at 8 threads (not the projected 6-8x); nested-pool mechanism confirmed; unlock deferred to P4-G. See `benchmarks/results/P05A_HANDOFF.md`. |
-| P1-A | Canonical `Dataset` contract | 1 | `[CONTRACT]` | 3–4 d | HARD | Phase 0 |
-| P1-B | `AnalysisResult` v1 schema + alias map | 1 | `[CONTRACT]` | 4–5 d | CONTRACT | P1-A |
-| P1-C | Provenance contract | 1 | `[CONTRACT]` | 2–3 d | CONTRACT | P1-B |
-| P1-D | Ingestion consolidation onto the seam | 1 | `[INFRA]` | 3–4 d | HARD | Phase 0 |
-| P1-E | Job persistence (SQLite WAL) | 1 | `[INFRA]` | 3 d | — | — |
-| P1-F | Worker / IPC architecture | 1 | `[INFRA]` | 5–7 d | VALIDATION | P05-A |
-| P1-G | Real-data async integration | 1 | `[INFRA]` | 3–4 d | HARD | P1-D, P1-F |
-| P1-H | FastAPI + JWT API layer | 1 | `[INFRA]` | 4–5 d | CONTRACT | P1-B, P1-C, P1-E |
-| P1-I | Search-loop unification | 1 | `[INFRA]` | 2–3 d | HARD | P1-F |
+| P1-A | Canonical `Dataset` contract | 1 | `[CONTRACT]` | 3–4 d | HARD | Phase 0 — **COMPLETE**. Handoff: `docs/handoffs/P1-A_dataset_contract.md` |
+| P1-B | `AnalysisResult` v1 schema + alias map | 1 | `[CONTRACT]` | 4–5 d | CONTRACT | P1-A — **COMPLETE**. Handoff: `docs/handoffs/P1-B_analysis_result.md` |
+| P1-C | Provenance contract | 1 | `[CONTRACT]` | 2–3 d | CONTRACT | P1-B — **COMPLETE**. Handoff: `docs/handoffs/P1-C_provenance.md` |
+| P1-D | Ingestion consolidation onto the seam | 1 | `[INFRA]` | 3–4 d | HARD | Phase 0 — **COMPLETE**. Handoff: `docs/handoffs/P1-D_ingestion_consolidation.md` |
+| P1-E | Job persistence (SQLite WAL) | 1 | `[INFRA]` | 3 d | — | — — **COMPLETE**. Handoff: `docs/handoffs/P1-E_job_persistence.md` |
+| P1-F | Worker / IPC architecture | 1 | `[INFRA]` | 5–7 d | VALIDATION | P05-A — **COMPLETE**. Handoff: `docs/handoffs/P1-F_worker_ipc.md` |
+| P1-G | Real-data async integration | 1 | `[INFRA]` | 3–4 d | HARD | P1-D, P1-F — **COMPLETE**. Handoff: `docs/handoffs/P1-G_real_data_async.md` |
+| P1-H | FastAPI + JWT API layer | 1 | `[INFRA]` | 4–5 d | CONTRACT | P1-B, P1-C, P1-E — **COMPLETE**. Handoff: `docs/handoffs/P1-H_api_layer.md` |
+| P1-I | Search-loop unification | 1 | `[INFRA]` | 2–3 d | HARD | P1-F — **COMPLETE**. Handoff: `docs/handoffs/P1-I_search_loop_unification.md` |
 | P2-A | Vertical slice backend | 2 | `[VALIDATION]` | 3–4 d | HARD | P1-G, P1-H |
 | P2-B | Vertical slice frontend | 2 | `[UX]` | 3 d | HARD | P2-A |
 | P3-A | Frontend foundation | 3 | `[UX]` | 4–5 d | HARD | P2-B |
@@ -509,7 +515,15 @@ plan's "~149.7 s on Kepler-90 defaults" was measured under a BLS-narrowed
 828-period window, not TLS defaults -- true defaults exceeded a 900 s
 budget single-threaded on the 1240 d baseline.
 
-The next isolated task is **P1-A**, the canonical `Dataset` contract. P1-F
-(worker/IPC) may now be scoped from the measured numbers rather than from
-the projected speedup, and the unlock lands only as P4-G behind a feature
-flag.
+**Phase 1 is COMPLETE** (all nine buckets, verified by the full fast gate).
+Every bucket's exit gate is demonstrated rather than asserted, and each has
+a handoff manifest under `docs/handoffs/` naming what the next bucket may
+rely on. The next isolated task is **P2-A, the vertical-slice backend**: it
+composes the P1-H API layer with the P1-G real-data bridge to run one real
+target end to end through the worker + supervisor, which is what proves the
+Phase 1 architecture. P3-A may generate its API client from P1-H's OpenAPI
+schema in parallel once P2-B lands.
+
+The P1-F worker/IPC redesign was scoped from P05-A's measured numbers
+rather than the projected speedup; the TLS unlock lands only as P4-G
+behind a feature flag, on the now-unified search loop (P1-I).

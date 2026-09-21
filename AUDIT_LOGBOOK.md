@@ -223,3 +223,190 @@ Verified real but deliberately NOT changed in this pass, with rationale:
 Full non-network suite (`py -m pytest -q -m "not network and not slow"`)
 launched for the post-fix verdict. RESULT: _pending_ (recorded below when
 complete).
+
+## Entry 9 — Suite-wide test-pollution hunt (2026-08-21)
+
+First full post-fix run: **279 passed / 8 failed**. Triage (each failure
+re-run in isolation and in neighbor combinations):
+
+1. `test_experiment_history_cycle` — REAL contract drift: batch A's
+   namespaced-restore fix (a deliberate improvement so Restore cannot hijack
+   the Simulator's `snr` widget state) changed the restore contract, but the
+   pre-existing test still asserted raw `planet_radius`/`period` keys. Test
+   updated to the `restored_param_*` contract. FIXED.
+2. Six `tests/test_ingestion_audit_fixes.py` failures — ORDER POLLUTION, not
+   code regressions (all passed in isolation; passed beside i2+i3, i1+i4,
+   history+fetched). Root cause found in the captured tracebacks:
+   - `assert res is _TIMEOUT_SENTINEL` failed with two DIFFERENT object ids,
+     and timeout tests hit `'_FakeSearch' object has no attribute 'table'` on
+     the cache-fallback path.
+   - **Polluter: `tests/characterize/test_reliability_invariants.py`
+     (`importlib.reload(lkc)`)**. `reload()` re-executes the module in place,
+     rebinding every attribute, so tests holding collection-time references
+     to the old `LightkurveClient` / `_TIMEOUT_SENTINEL` / helper functions
+     diverge from the rebound globals the code resolves through — silently
+     bypassing their monkeypatches (hence the real local FITS cache being
+     consulted in a "timeout" test). Same class of leak in
+     `tests/characterize/test_ingestion_contract.py` (`importlib.reload(ing_mod)`).
+   - **FIX**: both reload sites now snapshot the module `__dict__` before the
+     reload and restore it verbatim afterwards (env reset + restore moved into
+     `finally`), so the reload remains observable inside those tests but
+     invisible to the rest of the suite. The reload calls are preserved (an
+     intermediate edit of mine dropped one — caught and corrected).
+   - Verified: `pytest tests/characterize/ tests/test_ingestion_audit_fixes.py`
+     → 71 passed (the exact previously-failing order).
+3. `tools/diagnostics/...::test_scenario_C_async_ingestion` — PRE-EXISTING
+   fast-gate flake: it performs a live NASA Exoplanet Archive fetch but was
+   never network-marked (it failed in the pre-fix baseline full run, and
+   passed solo twice). Now `@pytest.mark.network`.
+4. `tests/test_fetched_analyze_button.py` also de-flaked: its Analyze click
+   runs a real TLS validation under a 30s AppTest timeout, which could be
+   exceeded under full-suite CPU load; raised to 120s (no assertion weakened).
+
+## Entry 10 — Final verification (2026-08-21)
+
+Definitive full-suite rerun launched (after fixing the reload pollution,
+the history contract, and the two flakes). RESULT: _pending_.
+
+**FINAL RESULT: 286 passed, 1 skipped, 0 failed, 37 deselected — exit 0
+(1881s / 31m21s).** Baseline for comparison: 168 passed, 1 FAILED, 1 skipped
+(2300s). The audit fixed the pre-existing failure AND added ~118 net passing
+tests, with zero regressions.
+
+Verification history:
+| Run | Result |
+|-----|--------|
+| Baseline (HEAD a8423ab, pre-fix) | 168 passed / 1 FAILED / 1 skipped |
+| Post-fix run 1 | 279 passed / 8 failed (1 real contract drift + 6 reload-pollution + 1 flake) |
+| Post-fix run 2 (after fixes) | 281 passed / 6 failed (pollution only) |
+| **Final (all triage fixes applied)** | **286 passed / 0 failed / 1 skipped** |
+
+NOTE for the user: commit `3eafbd4` ("Full-codebase v0.0.2 audit: fix 81
+findings") was created outside this session and swept in two of my temporary
+output files (`audit_final_pytest*.txt`) plus test-polluted
+`logs/experiments.json` entries (debug targets `m10dbg`). Working tree has been
+cleaned: the temp files are removed and the experiment log restored to its
+pre-audit state (a8423ab). Anyone amending/rewriting that commit may want to
+drop those three paths from it as well.
+
+### Cumulative change inventory
+- 26 production files modified under `astraeus/` + `app.py` + `ui/` + CI workflow.
+- 6 new test files: test_audit_regression.py (17), test_science_audit_fixes.py (12),
+  test_ingestion_audit_fixes.py (31), test_analysis_audit_fixes.py (20),
+  test_ui_audit_fixes.py (33), test_detector_experiment_log_integration.py (1).
+- Test collection grew from 205 → 240 in the fast gate (chaos shim + new suites).
+- Logbook: this file.
+
+## Entry 11 — Phase 1 execution: all nine buckets (2026-09-18)
+
+Executed Phase 1 of `docs/EXECUTION_BUCKETS.md` (P1-A through P1-I) against
+the governing spec `PRD_v4.1_web_platform.md`, on branch `v.0.0.3`.
+
+**Session recovery note.** The primary session implementing P1-E/P1-F died
+mid-verification (`TerminalStreamChunkError: Inference request failed.`
+after ~80 min of work) leaving unverified claims behind. State was
+reconstructed from the on-disk rollout/artifacts, and every exit claim was
+re-verified rather than trusted. That mattered: the session's final edits
+(a real zero-candidate bug fix in `analysis_result.py`) had landed but had
+**not** been wired into the worker, and four worker/supervisor tests were
+still failing. Completing the wiring is what turned them green.
+
+### What landed
+- **Contracts (P1-A/B/C)**: `astraeus/contracts/` — canonical `Dataset`
+  (hash covers arrays, not metadata), `AnalysisResult` v1 with the full
+  legacy alias map, and the run-level bridge `from_legacy_run` (ONE result
+  per job, 0..N candidates — the "DONE / 0 candidates" gate), plus
+  `Provenance`.
+- **Infrastructure (P1-D/E/F/G)**: ingestion consolidation onto the seam
+  (restores the dropped `time_unit`), SQLite WAL job store with `owner_id`,
+  the Popen+JSONL worker + asyncio supervisor, and the real-data
+  ingestion bridge.
+- **API (P1-H)**: `astraeus/api/` — FastAPI + JWT, owner-scoped job
+  endpoints, SSE event stream, fail-closed auth, target-ID validation.
+  Optional `api` extra; the engine boundary does not import the web stack.
+- **Unification (P1-I)**: `_subprocess_search_worker` is now an adapter that
+  delegates to the single `run_multi_planet_search`, retiring the drifted
+  GUARDRAIL 1 / fail-closed-gate duplication. The daemon Process mechanism
+  is unchanged (still pinned by the characterization tests).
+
+### Bugs found by failing tests and fixed (not by inspection)
+1. **Windows cancel was a no-op.** `taskkill` was invoked with a stray empty
+   argv token and its result trusted unconditionally, so `terminate()` never
+   ran, the worker survived, and orphaned TLS children held the stdout pipe
+   open. Fixed: clean argv, trust only exit code 0, and stop the pump once
+   the handle is terminated. Full supervisor suite: 428 s → 43 s.
+2. **Zero-candidate runs produced no result.** The worker still used the
+   per-candidate loop, so an empty search left the job non-terminal. Wired
+   to `from_legacy_run`.
+3. **Event-trail race.** Both the worker and the supervisor appended events,
+   colliding on `(job_id, seq)`. The worker is now the sole writer; the
+   supervisor feeds live subscribers only.
+4. **JSONL channel pollution.** The engine's `print()` progress output wrote
+   to the worker's stdout (the event channel) — logger rebinding did not
+   cover `print()`. The pipeline call now redirects stdout to the job's
+   capture file.
+5. **Duplicated terminal events.** The orchestrator's own `running`/`done`
+   were forwarded AND emitted by the worker. The worker owns the lifecycle
+   vocabulary.
+6. **Provenance mislabel.** The dashboard adopter's `source` branch was dead
+   (a `None` check that could never fire after the zero-fill), mislabelling
+   uploaded data as archive data.
+7. **P1-I broke the in-process fail-closed patching (found by the final
+   gate).** The Phase 0 async fail-closed tests monkeypatch
+   `detection.detect_transit_candidate` and relied on the old worker's
+   deferred in-function import to pick that up in-process. Once the worker
+   delegated to `run_multi_planet_search` — which resolves the name from
+   the orchestrator's namespace — the patch became invisible and the async
+   path silently stopped failing closed under those tests. Fixed by
+   patching the binding the unified loop actually resolves (both names, so
+   the helper stays correct either way). This is precisely the class of
+   regression the "prove the guardrail on BOTH loops" rule in
+   `test_fail_closed.py` exists to catch.
+
+### Verification
+| Gate | Result |
+|------|--------|
+| Contracts + store (fast) | 92 passed |
+| Worker/supervisor (real pipeline) | 15 passed in 43 s |
+| API layer | 34 passed |
+| P1-I unification (incl. sync/async parity) | 4 passed |
+| Full fast gate, mid-Phase-1 (before API + P1-I) | 463 passed, 1 skipped, 0 failed |
+| Full fast gate, final (all buckets) | 501 passed, 1 skipped, 0 failed (see below) |
+
+Every bucket has a handoff manifest under `docs/handoffs/`. The final full
+gate is re-run at the close of this entry after the fail-closed fix, since
+item 7 above was found by it.
+
+### Known follow-ups (not regressions)
+- The P1-I unification retires the async path's marginal-subtraction retry,
+  making both paths agree with sync semantics. This is a documented
+  Streamlit-visible behaviour change on the async path only (PRD §8).
+- `python-multipart` / `sse_starlette` are intentionally not dependencies
+  (inline JSON datasets + plain `StreamingResponse` cover the needs).
+- DEC-LIC (the `batman` GPL decision) remains open and blocks P4-D/P4-E.
+
+## Entry 12 — Phase 1 revision: fresh verification + commit (2026-09-22)
+
+Revised all nine Phase 1 buckets against their handoff manifests on branch
+`v.0.0.3`. Targeted gates re-run fresh (not trusted from Entry 11):
+
+| Gate | Result |
+|------|--------|
+| `tests/contracts/` + `tests/jobs/test_store.py` | 92 passed |
+| `tests/api/` | 34 passed |
+| `tests/phase0/test_fail_closed.py` | 5 passed (P1-I both-namespaces patch holds) |
+| `tests/test_p1i_search_loop_unification.py` | 4 passed |
+| `tests/jobs/test_worker_supervisor.py` | 15 passed |
+| Full fast gate (`pytest -q -m "not network and not slow"`) | **505 passed, 1 skipped, 37 deselected, 0 failed** (1659.90 s) |
+
+Delta vs Entry 11's 501: +4 (P1-I unification suite counted in full
+collection). No failures, no regressions. Engine boundary re-checked: no
+`streamlit`/`fastapi` imports in `astraeus/contracts/` or `astraeus/jobs/`
+(`provenance.py` records a version string only).
+
+Phase 1 committed in six logical commits (contracts → ingestion seam →
+jobs/worker → API → unification tests → docs/specs). Untracked `jobs/`
+(root artifact output) and `full_gate_phase1_verify.log` excluded.
+Next isolated task remains **P2-A vertical-slice backend** (prep done:
+Kepler-90 cached curve in `benchmarks/cache/`, `WorkerSpec` +
+`create_app()` composition plan).
