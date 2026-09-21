@@ -110,10 +110,14 @@ def _drain_queue(queue, timeout: float = 30.0):
 
 def _patch_worker_detection_to_env_failure(monkeypatch):
     """Force every detection inside the worker to report an environment
-    failure.  The worker resolves `detect_transit_candidate` from its
-    module at call time, so patching the module attribute is enough when
-    the worker runs in-process (as it does here)."""
+    failure.  Since P1-I unified the search loops, the async worker
+    delegates to ``run_multi_planet_search``, which resolves
+    ``detect_transit_candidate`` from the *orchestrator's* namespace, so
+    that is the binding we must patch for an in-process run.  The detection
+    module attribute is patched too so the helper stays correct for any
+    caller that resolves the name lazily."""
     from astraeus.analysis import detection as detection_mod
+    from astraeus.core import orchestrator as orchestrator_mod
 
     real_detection = detection_mod.detect_transit_candidate
 
@@ -128,6 +132,7 @@ def _patch_worker_detection_to_env_failure(monkeypatch):
         return result
 
     monkeypatch.setattr(detection_mod, "detect_transit_candidate", _env_failing_detection)
+    monkeypatch.setattr(orchestrator_mod, "detect_transit_candidate", _env_failing_detection)
 
 
 def test_async_worker_reports_error_not_done(monkeypatch):
