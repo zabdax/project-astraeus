@@ -76,6 +76,14 @@ dependencies = [
 # subtraction model; without it the engine uses the labelled trapezoid
 # fallback.
 batman = ["batman>=2.5.1"]
+# The web API layer (P1-H). Optional because Streamlit remains the
+# reference UI until Phase 3 exit (PRD §16 / decision register); the
+# engine boundary does not import it. Install with the `api` extra.
+api = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "PyJWT>=2.8",
+]
 # Test/development tooling. Not required at runtime.
 dev = [
     "pytest>=8.0,<10",
@@ -84,6 +92,8 @@ dev = [
 [project.scripts]
 # Console-script entrypoint, equivalent to `python -m astraeus`.
 astraeus = "astraeus.__main__:main"
+# The web API layer (P1-H). Serves on loopback by default.
+astraeus-api = "astraeus.api.main:main"
 
 [tool.setuptools.dynamic]
 # Single authoritative version source: astraeus/__init__.py
