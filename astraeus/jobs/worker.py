@@ -280,12 +280,17 @@ def run_worker(spec: WorkerSpec, *, stdout: Any = None) -> int:
         }
         # The orchestrator reports *measured* progress; remember the last
         # iteration count so the run-level summary is honest rather than
-        # inferred from the candidate list (PRD §5.1, §18).
-        run_state: dict[str, Any] = {"iteration": 0}
+        # inferred from the candidate list (PRD §5.1, §18).  P2-A: also
+        # accumulate every examined peak's TLS outcome (accepted or
+        # rejected) so the run-level TlsSummary states truthfully whether
+        # the gate ran -- rejected peaks never reach the candidate list.
+        run_state: dict[str, Any] = {"iteration": 0, "examined_tls": []}
 
         def _on_event(event_type: str, **payload: Any) -> None:
             if event_type == "iteration" and payload.get("iteration"):
                 run_state["iteration"] = payload["iteration"]
+            if event_type == "progress" and "tls_outcome" in payload:
+                run_state["examined_tls"].append(payload["tls_outcome"])
             # The worker owns the lifecycle vocabulary on the wire: its own
             # "running"/"done" events carry the job id, result ids and
             # dataset id, which the loop cannot know.  Forwarding the
@@ -329,6 +334,7 @@ def run_worker(spec: WorkerSpec, *, stdout: Any = None) -> int:
             max_signals=spec.max_signals,
             snr_floor=spec.snr_floor,
             n_iterations=run_state["iteration"] or None,
+            examined_tls_outcomes=run_state["examined_tls"] or None,
             status=JobStatus.COMPLETED,
         )
         provenance = provenance.model_copy(

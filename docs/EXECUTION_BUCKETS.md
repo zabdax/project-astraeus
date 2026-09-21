@@ -51,6 +51,7 @@ Phase 1  CONTRACTS (sequential — they import each other)   [COMPLETE]
    ▼
 Phase 2  VERTICAL SLICE
    P2-A  Backend slice (one real target e2e)   ── depends on P1-G + P1-H
+         [COMPLETE] — Kepler-90 cached curve API→worker→COMPLETED + honest TLS
    P2-B  Frontend slice (minimal honest UI)    ── depends on P2-A
    │
    ▼
@@ -135,7 +136,7 @@ distribution, or credibility.
 | P1-G | Real-data async integration | 1 | `[INFRA]` | 3–4 d | HARD | P1-D, P1-F — **COMPLETE**. Handoff: `docs/handoffs/P1-G_real_data_async.md` |
 | P1-H | FastAPI + JWT API layer | 1 | `[INFRA]` | 4–5 d | CONTRACT | P1-B, P1-C, P1-E — **COMPLETE**. Handoff: `docs/handoffs/P1-H_api_layer.md` |
 | P1-I | Search-loop unification | 1 | `[INFRA]` | 2–3 d | HARD | P1-F — **COMPLETE**. Handoff: `docs/handoffs/P1-I_search_loop_unification.md` |
-| P2-A | Vertical slice backend | 2 | `[VALIDATION]` | 3–4 d | HARD | P1-G, P1-H |
+| P2-A | Vertical slice backend | 2 | `[VALIDATION]` | 3–4 d | HARD | P1-G, P1-H — **COMPLETE**. Handoff: `docs/handoffs/P2-A_vertical_slice_backend.md` |
 | P2-B | Vertical slice frontend | 2 | `[UX]` | 3 d | HARD | P2-A |
 | P3-A | Frontend foundation | 3 | `[UX]` | 4–5 d | HARD | P2-B |
 | P3-B | Investigate route | 3 | `[UX]` | 5–7 d | CONTRACT | P3-A |

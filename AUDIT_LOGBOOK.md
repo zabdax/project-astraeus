@@ -410,3 +410,38 @@ jobs/worker → API → unification tests → docs/specs). Untracked `jobs/`
 Next isolated task remains **P2-A vertical-slice backend** (prep done:
 Kepler-90 cached curve in `benchmarks/cache/`, `WorkerSpec` +
 `create_app()` composition plan).
+
+## Entry 13 — P2-A vertical slice backend (2026-09-22)
+
+Executed P2-A against `docs/EXECUTION_BUCKETS.md` on branch `v.0.0.3`.
+
+### What landed
+- `tests/test_p2a_vertical_slice.py` (slow-marked): cached Kepler-90
+  curve (45,853 pts, 1240 d, offline) through API → supervisor → worker
+  subprocess → engine. **1 passed in 107 s.**
+- Rejected-peak TLS honesty fix (found by the test failing, not by
+  inspection): every examined peak now emits a `progress` assessment
+  event; the worker accumulates them; `from_legacy_run` accepts
+  `examined_tls_outcomes` and folds them into the run-level
+  `TlsSummary` with no candidate entries and no double-counting.
+  Backwards-compatible (`None` → old behavior); P1-F vocabulary set
+  unchanged; legacy Streamlit worker path untouched.
+
+### Bugs found by failing tests and fixed
+1. Wrong TLS path asserted (`result.tls.outcome` — the run level is a
+   `TlsSummary` roll-up, per-candidate detail is on `candidates[i].tls`).
+   Test bug; fixed before any expensive run.
+2. Run recorded `tls.attempted=False` on a COMPLETED job where TLS had
+   demonstrably executed (probe: BLS P=616.4 d SNR=16.37 → TLS
+   `ran_fail` SDE=4.34 → R8 gate `is_candidate=False`). Real honesty
+   gap: rejected peaks' dicts are discarded, so `from_legacy_run([])`
+   saw no outcomes. Fixed as above; the same run now records
+   `attempted=True, n_ran_fail=1`.
+
+### Verification
+| Gate | Result |
+|------|--------|
+| P2-A slice (real Kepler-90) | 1 passed, 107 s |
+| Regression (contracts + jobs + api + fail_closed + P1-I) | 150 passed, 0 failed (110 s) |
+
+Handoff: `docs/handoffs/P2-A_vertical_slice_backend.md`. Next: **P2-B**.

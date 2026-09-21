@@ -1015,6 +1015,7 @@ def from_legacy_run(
     error: str | None = None,
     error_kind: str | None = None,
     capability_snapshot: dict[str, Any] | None = None,
+    examined_tls_outcomes: list[str | Any] | None = None,
 ) -> AnalysisResult:
     """The run-level bridge: ONE ``AnalysisResult`` for the whole search.
 
@@ -1026,6 +1027,14 @@ def from_legacy_run(
     distinguishable from a broken pipeline).  A clean zero-candidate run
     is therefore a ``COMPLETED`` result with an empty list, never a job
     left in a non-terminal state.
+
+    P2-A: ``examined_tls_outcomes`` carries the TLS outcome of every
+    examined peak (accepted or rejected), collected by the worker from the
+    loop's ``progress`` events.  Rejected peaks never reach
+    ``candidate_dicts``, so without this the run-level ``TlsSummary``
+    reads "attempted: False" for a gate that demonstrably executed
+    (Kepler-90: BLS P=616d, TLS ``ran_fail``).  These outcomes fold into
+    the summary counts only -- no candidate entries are created.
     """
     target_id = target_id or (candidate_dicts[0].get("target_name") if candidate_dicts else "Unknown")
     dataset_id = dataset_id or (dataset.dataset_id if dataset is not None else "unknown")
@@ -1059,8 +1068,23 @@ def from_legacy_run(
                 )
             )
 
-    # Roll the per-candidate TLS outcomes into the run-level summary.
-    outcomes = [c.tls.outcome for c in collected]
+    # Roll the TLS outcomes into the run-level summary.  P2-A: rejected
+    # peaks never become candidates, so their examined outcomes arrive
+    # separately.  When present, the examined list is the complete peak
+    # record (every candidate came from an examined peak) and supersedes
+    # the candidate-derived list -- appending would double-count accepted
+    # peaks.  Unknown values are ignored (defensive: engine strings).
+    examined: list[TlsOutcome] = []
+    for raw_outcome in examined_tls_outcomes or []:
+        try:
+            examined.append(
+                raw_outcome
+                if isinstance(raw_outcome, TlsOutcome)
+                else TlsOutcome(str(raw_outcome))
+            )
+        except ValueError:
+            continue
+    outcomes = examined if examined else [c.tls.outcome for c in collected]
     tls_summary = TlsSummary(
         attempted=any(
             o is not TlsOutcome.NOT_ATTEMPTED for o in outcomes

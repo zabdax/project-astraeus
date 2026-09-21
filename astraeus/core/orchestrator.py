@@ -248,6 +248,18 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1, on_eve
         transit_time = result.get('t0')
         duration = result.get('duration')
         depth = result.get('depth')
+
+        # P2-A (PRD §5/§7 honesty): every examined peak's TLS assessment is
+        # measured progress, accepted or not.  The worker accumulates these
+        # into the run-level TlsSummary so a run whose peaks were all
+        # rejected still states truthfully that TLS ran -- previously the
+        # rejected peak's dict was discarded and the record read
+        # "attempted: False" for a gate that had executed (Kepler-90:
+        # BLS P=616d accepted by vetting, rejected by TLS ran_fail).
+        _emit("progress", iteration=iteration,
+              tls_outcome=result.get('tls_outcome'),
+              tls_sde=result.get('tls_sde'),
+              vetting_status=str(vetting_status))
         
         print(f"[Orchestrator] Iteration {iteration} result: Period={best_period:.4f}d, SNR={snr:.2f}, Duration={duration:.4f}d, Depth={depth:.6f}, Status={vetting_status}")
 
