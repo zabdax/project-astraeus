@@ -8,10 +8,12 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "gen:api": "openapi-typescript openapi.json -o lib/api-generated.d.ts"
   },
   "dependencies": {
     "next": "16.3.5",
+    "openapi-fetch": "^0.17.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -19,6 +21,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "openapi-typescript": "^7.13.0",
     "typescript": "^5.9.0",
     "vitest": "^3.0.0"
   }

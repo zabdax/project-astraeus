@@ -29,6 +29,24 @@ npm test            # vitest: client contract tests
 npm run build       # production build
 ```
 
+## Regenerating the API client (P3-A)
+
+Wire shapes come from the API's OpenAPI schema — never hand-edit them:
+
+```bash
+# 1. Export the schema from the Python API (from the repo root):
+py -c "import json; from astraeus.api.main import create_app; \
+  from astraeus.api.auth import AuthState, DEFAULT_OWNER; \
+  json.dump(create_app(auth=AuthState.for_testing({DEFAULT_OWNER:'k'})).openapi(), \
+  open('web/openapi.json','w'), indent=2)"
+# 2. Regenerate types:
+npm run gen:api
+```
+
+`openapi.json` is committed as the pinned snapshot the client was
+generated from. Domain shapes (`AnalysisResult`, candidates) mirror
+`astraeus/contracts/` and are pinned by `lib/api.test.ts`.
+
 ## Scope notes (read before extending)
 
 - The hand-written client (`lib/api.ts`) is slice scaffolding. **P3-A

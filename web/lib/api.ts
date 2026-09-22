@@ -1,12 +1,14 @@
 /**
  * Minimal typed client for the ASTRAEUS FastAPI layer (P1-H).
  *
- * P2-B scope note: this client is hand-written for the vertical slice.
- * P3-A replaces it with a client generated from the API's OpenAPI schema.
- * Field names mirror `astraeus/api/schemas.py` and
- * `astraeus/contracts/analysis_result.py` exactly — if the API drifts,
- * the vitest suite (`lib/api.test.ts`) fails rather than the UI lying.
+ * P3-A: wire shapes (`JobResponse`, `InlineDataset`, …) come from the
+ * generated OpenAPI schema (`lib/api-generated.d.ts`, via
+ * `npm run gen:api`). Domain shapes (`AnalysisResult`, `CandidateEvidence`)
+ * mirror `astraeus/contracts/analysis_result.py` — the API serialises them
+ * as untyped dicts, so the vitest suite pins the key paths the UI reads.
+ * If the API drifts, `gen:api` + `typecheck` fail rather than the UI lying.
  */
+import type { components } from "./api-generated";
 
 export const API_URL =
   process.env.NEXT_PUBLIC_ASTRAEUS_API_URL ?? "http://127.0.0.1:8000";
@@ -18,30 +20,10 @@ export type JobStatus =
   | "FAILED"
   | "CANCELLED";
 
-export interface JobResponse {
-  job_id: string;
-  owner_id: string;
-  target_name: string;
-  mission: string | null;
-  status: JobStatus | string;
-  stage: string;
-  progress: number;
-  iteration: number | null;
-  max_iterations: number | null;
-  n_candidates: number | null;
-  result_id: string | null;
-  error: string | null;
-  error_kind: string | null;
-  created_at: string;
-  updated_at: string;
-}
+export type JobResponse = components["schemas"]["JobResponse"];
+export type JobListResponse = components["schemas"]["JobListResponse"];
 
-export interface InlineDataset {
-  time: number[];
-  flux: number[];
-  flux_err?: number[] | null;
-  target_name: string;
-}
+export type InlineDataset = components["schemas"]["InlineDataset"];
 
 export interface WorkerEvent {
   type: string;
@@ -193,6 +175,10 @@ export function submitTarget(
 
 export function getJob(token: string, jobId: string): Promise<JobResponse> {
   return request<JobResponse>(token, `/jobs/${jobId}`);
+}
+
+export function listJobs(token: string, limit = 50): Promise<JobListResponse> {
+  return request<JobListResponse>(token, `/jobs?limit=${limit}`);
 }
 
 export function getResult(token: string, jobId: string): Promise<ResultResponse> {
