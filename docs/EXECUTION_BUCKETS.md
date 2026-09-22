@@ -157,7 +157,7 @@ distribution, or credibility.
 | P4-E | Subtraction geometry + detrending window | 4 | `[SCIENCE]` | 2–3 d | CONTRACT | P4-D, `[DEC-LIC]` — **COMPLETE** (window provenance; subtraction frozen). Handoff: `docs/handoffs/P4-E_detrend_window.md` |
 | P4-F | Inference wiring (Candidate → MCMC) | 4 | `[SCIENCE]` | 5–7 d | HARD | P4-A — **COMPLETE** (inference stays null in v1). Handoff: `docs/handoffs/P4-F_inference_wiring.md` |
 | P4-G | TLS multiprocessing unlock landing | 4 | `[SCIENCE]` | 1–2 d | VALIDATION | P05-A, P1-F — **COMPLETE** (code, default-off; prod needs Linux gate). Handoff: `docs/handoffs/P4-G_tls_unlock.md` |
-| P5-A | Validation corpus + IR CI gate | 5 | `[VALIDATION]` | 4–5 d | VALIDATION | P4-* |
+| P5-A | Validation corpus + IR CI gate | 5 | `[VALIDATION]` | 4–5 d | VALIDATION | P4-* — **COMPLETE** (slow gate). Handoff: `docs/handoffs/P5-A_validation_corpus.md` |
 | P5-B | Deployment (Compose + Caddy + Fly) | 5 | `[RELEASE]` | 3–4 d | HARD | P5-A |
 | P5-C | Research credibility (ASCL/Zenodo/JOSS) | 5 | `[RELEASE]` | 3–4 d | HARD | P5-B |
 

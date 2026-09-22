@@ -601,4 +601,13 @@ infeasible, parallel completes. In-pipeline equivalence green.
 Regression: 89 passed + 1 pre-existing order-pollution failure
 (proven on pristine tree via stash; full-gate order unaffected,
 documented in the report). Linux re-measure gates production use.
-Handoff: `docs/handoffs/P4-G_tls_unlock.md`. Phase 4 code done.
+Handoff: `docs/handoffs/P4-G_tls_unlock.md`.
+
+## Entry 24 — P5-A validation corpus (2026-09-22)
+
+Corpus + injection gate, slow-marked for the weekly gate: 4 passed
+in 1414 s. Pins measured by probe (deleted after): Kepler_4d exact
+recovery + ran_pass; Kepler_90 honest negative; TRAPPIST_1
+alias-miss with SDE 7.68 correctly rejected on period disagreement.
+Injections recover within 5% with TLS executed. Handoff:
+`docs/handoffs/P5-A_validation_corpus.md`. Next: **P5-B/C**.
