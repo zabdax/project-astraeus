@@ -67,6 +67,21 @@ def _noise_curve(n: int = 120, days: float = 10.0, seed: int = 7) -> dict:
     return {"time": time, "flux": flux, "target_name": "TINY-API-NOISE"}
 
 
+# -- CORS (P2-B browser slice) -------------------------------------------------
+
+
+def test_preflight_allows_loopback_slice_origin(client):
+    resp = client.options(
+        "/jobs",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "POST",
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.headers.get("access-control-allow-origin") == "http://localhost:3000"
+
+
 # -- unauthenticated / health --------------------------------------------
 
 

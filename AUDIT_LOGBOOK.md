@@ -445,3 +445,26 @@ Executed P2-A against `docs/EXECUTION_BUCKETS.md` on branch `v.0.0.3`.
 | Regression (contracts + jobs + api + fail_closed + P1-I) | 150 passed, 0 failed (110 s) |
 
 Handoff: `docs/handoffs/P2-A_vertical_slice_backend.md`. Next: **P2-B**.
+
+## Entry 14 — P2-B frontend slice (2026-09-22)
+
+Built the first browser UI over the Phase 1 API on branch `v.0.0.3`:
+`web/` (Next.js 16 App Router + strict TS, one route `/`): connect →
+target-fetch or CSV-upload → run → SSE progress with polling backstop
+→ evidence with epistemic badges → provenance drawer → result download.
+Hand-written typed client (`lib/api.ts`, P3-A replaces with generated);
+thin theme (P3-A owns the real one); tokens memory-only.
+
+Backend touch (additive): loopback CORS in `astraeus/api/main.py`
+(`ASTRAEUS_CORS_ORIGINS` override), locked by a preflight test.
+
+### Verification
+| Gate | Result |
+|------|--------|
+| `tsc --noEmit` (strict) | clean |
+| `npm test` (vitest) | 7 passed |
+| `npm run build` (`/` prerendered) | green |
+| `tests/api` fast subset (incl. new CORS test) | 19 passed |
+| Live HTTP smoke (real uvicorn: token → noise → result) | SMOKE OK — COMPLETED, 0 candidates, `tls.attempted=True n_ran_fail=1`, provenance attached |
+
+Handoff: `docs/handoffs/P2-B_frontend_slice.md`. Next: **P3-A**.

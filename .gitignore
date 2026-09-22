@@ -121,8 +121,14 @@ AGENTS.md
 /scratch_session_state.txt
 /pytest_out.txt
 
-# --- Bucket 7: untracked regenerable artifacts (root-only) ---
-# Sibling of the already-ignored test.html (Plotly debug export).
+# --- P2-B: Next.js slice artifacts (regenerable) ---
+/web/.next/
+/web/out/
+*.tsbuildinfo
+# --- Dev-server runtime (regenerable; tests use tmp_path) ---
+/artifacts/
+*.db*
+# --- Bucket 7: untracked regenerable artifacts (root-only) ---# Sibling of the already-ignored test.html (Plotly debug export).
 test3d.html
 # Root-level duplicate of logs/experiments.json. Anchored to the repo
 # root so it does NOT affect logs/experiments.json.

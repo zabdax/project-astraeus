@@ -96,6 +96,12 @@ def create_app(
 
     app.include_router(build_router())
 
+    # P2-B: the browser slice talks to this API cross-origin (Next.js on
+    # :3000, API on :8000). Bearer tokens ride the Authorization header,
+    # never cookies, so credentials stay disabled. Loopback-only by
+    # default; override with ASTRAEUS_CORS_ORIGINS in deployments.
+    _add_cors(app)
+
     @app.get("/health", tags=["meta"])
     def health() -> dict[str, Any]:
         # Unauthenticated by design: a load balancer needs a liveness probe
@@ -108,6 +114,34 @@ def create_app(
         }
 
     return app
+
+
+def _add_cors(app) -> None:
+    """Cross-origin access for the browser slice (P2-B).
+
+    Additive only: same-origin clients (tests, CLI, server-side callers)
+    are unaffected. The default allowlist is loopback dev origins; the
+    API itself still binds loopback by default (``astraeus-api``), so
+    opening CORS wider without also binding wider exposes nothing.
+    """
+    from fastapi.middleware.cors import CORSMiddleware
+
+    origins = [
+        o.strip()
+        for o in os.environ.get(
+            "ASTRAEUS_CORS_ORIGINS",
+            "http://localhost:3000,http://127.0.0.1:3000",
+        ).split(",")
+        if o.strip()
+    ]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["authorization", "content-type"],
+        allow_credentials=False,
+        max_age=600,
+    )
 
 
 def _make_lifespan(supervisor: Any):
