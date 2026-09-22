@@ -541,4 +541,16 @@ verdict and fail-closed `MCMCConvergenceError` (both opt-in; legacy
 tuples byte-identical), named constants, seeded gate tests, version
 `0.0.2 → 0.0.3` as the versioned scientific change. Measured: seeded
 mock gives acc 0.545 + tau ~[51,54] → effective ~7 < 50, unconverged
-on both gates. Handoff: `docs/handoffs/P4-A_mcmc_gates.md`. Next: **P4-B**.
+on both gates. Handoff: `docs/handoffs/P4-A_mcmc_gates.md`.
+
+## Entry 18 — P4-B FAP calibration via subagent (2026-09-22)
+
+Delegated per subagent-orchestrator (disjoint with the P4-C worker):
+measurement-only calibration, no gate change. Validated on return —
+fresh run of the new suite (3 passed), scope check (docstring-only
+floor references, no gate wiring), forbidden files untouched.
+Measured: noise max 2.895 / signal min 9.042 / recommended 5.969;
+operational 7.0 in the same gap, unchanged, now evidenced; Kepler_4d
+cross-check conf 80.2 at 3.212 d vs archive 3.2136 d. Report
+force-added (`reports/` is otherwise ignored). Handoff:
+`docs/handoffs/P4-B_fap_calibration.md`.
