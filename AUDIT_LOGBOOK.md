@@ -610,4 +610,17 @@ in 1414 s. Pins measured by probe (deleted after): Kepler_4d exact
 recovery + ran_pass; Kepler_90 honest negative; TRAPPIST_1
 alias-miss with SDE 7.68 correctly rejected on period disagreement.
 Injections recover within 5% with TLS executed. Handoff:
-`docs/handoffs/P5-A_validation_corpus.md`. Next: **P5-B/C**.
+`docs/handoffs/P5-A_validation_corpus.md`.
+
+## Entry 25 — P5-B/C deployment + credibility (2026-09-22)
+
+- P5-B: Dockerfile (pip hardened after a ReadTimeout kill),
+  compose (fail-closed key, health-gated Caddy), Caddyfile,
+  .dockerignore. `compose config` green; image built (2.31 GB);
+  container smoke: `/health ok`, v0.0.3, auth on. Handoff:
+  `docs/handoffs/P5-B_deployment.md`.
+- P5-C: CITATION.cff, ASCL draft, JOSS paper+bib (submissions are
+  operator work, stated). Handoff: `docs/handoffs/P5-C_credibility.md`.
+- P4-A follow-up fix: legacy sampler reads lazy again (stub-sampler
+  contract), verified 6/6, committed as `a43448d`.
+- Final full gate launched at close; result recorded in Entry 26.

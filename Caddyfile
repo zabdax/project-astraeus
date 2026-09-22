@@ -1,0 +1,10 @@
+# P5-B: Caddy is the only ingress. The API never sees the internet
+# directly; auth (bearer) still applies at the API layer.
+{
+	auto_https off
+}
+
+:80 {
+	encode gzip
+	reverse_proxy api:8000
+}

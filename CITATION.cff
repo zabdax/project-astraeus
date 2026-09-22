@@ -1,0 +1,19 @@
+# P5-C: GitHub ↔ Zenodo bridge. Tagging a release mints a DOI automatically.
+cff-version: 1.2.0
+message: "If you use ASTRAEUS, please cite it as below."
+type: software
+title: "ASTRAEUS: Autonomous Scientific Tool for Research, Analysis, and Experimental Understanding of Space"
+version: 0.0.3
+date-released: 2026-09-22
+authors:
+  - family-names: Shaad
+    given-names: Zubayer Hasan
+    email: mdzubayerhasanshaad99@gmail.com
+repository-code: "https://github.com/zabdax/project-astraeus"
+license: MIT
+keywords:
+  - exoplanets
+  - transits
+  - photometry
+  - transit-timing-variations
+  - bayesian-inference

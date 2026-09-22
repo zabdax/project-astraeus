@@ -1,0 +1,43 @@
+# ASTRAEUS deployment (P5-B): API + Caddy on one host.
+# Bring up:  ASTRAEUS_API_KEY=<key> docker compose up --build -d
+# The key is REQUIRED (fail-closed auth): compose refuses to start
+# without it (${VAR:?} errors at interpolate time).
+name: astraeus
+
+services:
+  api:
+    build: .
+    image: astraeus-api:local
+    environment:
+      ASTRAEUS_API_KEY: ${ASTRAEUS_API_KEY:?set ASTRAEUS_API_KEY before starting}
+      ASTRAEUS_SINGLE_USER: "1"
+      ASTRAEUS_DATA_DIR: /data
+      ASTRAEUS_CORS_ORIGINS: ${ASTRAEUS_CORS_ORIGINS:-}
+    volumes:
+      - astraeus-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=10)"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  astraeus-data:
+  caddy-data:
+  caddy-config:
