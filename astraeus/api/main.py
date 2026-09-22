@@ -96,6 +96,11 @@ def create_app(
 
     app.include_router(build_router())
 
+    # P3-G: evidence-grounded copilot stream (AI-INTERPRETED, never a gate).
+    from astraeus.api.copilot import build_copilot_router
+
+    app.include_router(build_copilot_router())
+
     # P2-B: the browser slice talks to this API cross-origin (Next.js on
     # :3000, API on :8000). Bearer tokens ride the Authorization header,
     # never cookies, so credentials stay disabled. Loopback-only by

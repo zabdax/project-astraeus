@@ -124,6 +124,7 @@ AGENTS.md
 # --- P2-B: Next.js slice artifacts (regenerable) ---
 /web/.next/
 /web/out/
+/web/test-results/
 *.tsbuildinfo
 # --- Dev-server runtime (regenerable; tests use tmp_path) ---
 /artifacts/

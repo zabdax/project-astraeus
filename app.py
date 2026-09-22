@@ -271,8 +271,18 @@ def main():
     
     _check_headless_prerequisites()
     _initialize_session_state()
-    
+
     inject_page_styles()
+
+    # P3-I: Streamlit is the frozen legacy reference UI. It stays green
+    # until Phase 3 exit (PRD §16) but is read-only heritage: new product
+    # work lands in `web/`. The banner states that outright so nobody
+    # mistakes this surface for the current product.
+    st.info(
+        "Legacy reference UI — new development happens in the web frontend "
+        "(`web/`, `npm run dev`). This Streamlit surface is frozen except "
+        "for reference/QA fixes."
+    )
     
     with workbench_layout() as (selected_feature, main_panel, right_panel):
         if selected_feature == "Discover":

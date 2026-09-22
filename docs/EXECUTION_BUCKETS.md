@@ -57,6 +57,8 @@ Phase 2  VERTICAL SLICE
    │
    ▼
 Phase 3  PRODUCT FRONTEND                          (after P3-A, routes are parallel)
+   [COMPLETE — all routes, copilot, QA, freeze; see handoffs P3-A..P3-I]
+   P3-A  Frontend foundation (Next.js, client gen, theme) [COMPLETE]
    P3-A  Frontend foundation (Next.js, client gen, theme)
    ├── P3-B  Investigate route
    ├── P3-C  Analyses route
@@ -139,15 +141,15 @@ distribution, or credibility.
 | P1-I | Search-loop unification | 1 | `[INFRA]` | 2–3 d | HARD | P1-F — **COMPLETE**. Handoff: `docs/handoffs/P1-I_search_loop_unification.md` |
 | P2-A | Vertical slice backend | 2 | `[VALIDATION]` | 3–4 d | HARD | P1-G, P1-H — **COMPLETE**. Handoff: `docs/handoffs/P2-A_vertical_slice_backend.md` |
 | P2-B | Vertical slice frontend | 2 | `[UX]` | 3 d | HARD | P2-A — **COMPLETE**. Handoff: `docs/handoffs/P2-B_frontend_slice.md` |
-| P3-A | Frontend foundation | 3 | `[UX]` | 4–5 d | HARD | P2-B |
-| P3-B | Investigate route | 3 | `[UX]` | 5–7 d | CONTRACT | P3-A |
-| P3-C | Analyses route | 3 | `[UX]` | 3–4 d | CONTRACT | P3-A, P1-H |
-| P3-D | Simulate route | 3 | `[UX]` | 4–5 d | CONTRACT | P3-A |
-| P3-E | Settings route + BYOK | 3 | `[UX]` | 2–3 d | CONTRACT | P3-A |
-| P3-F | Visualization integration | 3 | `[UX]` | 4–5 d | CONTRACT | P3-A |
-| P3-G | Copilot (SSE) | 3 | `[UX]` | 4–5 d | CONTRACT | P3-A, P1-H |
-| P3-H | E2E QA + Streamlit side-by-side | 3 | `[VALIDATION]` | 3–4 d | HARD | P3-B…G |
-| P3-I | Streamlit freeze (`--legacy`) | 3 | `[INFRA]` | 1–2 d | HARD | P3-H |
+| P3-A | Frontend foundation | 3 | `[UX]` | 4–5 d | HARD | P2-B — **COMPLETE**. Handoff: `docs/handoffs/P3-A_frontend_foundation.md` |
+| P3-B | Investigate route | 3 | `[UX]` | 5–7 d | CONTRACT | P3-A — **COMPLETE**. Handoff: `docs/handoffs/P3-B_investigate_route.md` |
+| P3-C | Analyses route | 3 | `[UX]` | 3–4 d | CONTRACT | P3-A, P1-H — **COMPLETE**. Handoff: `docs/handoffs/P3-C_analyses_route.md` |
+| P3-D | Simulate route | 3 | `[UX]` | 4–5 d | CONTRACT | P3-A — **COMPLETE**. Handoff: `docs/handoffs/P3-D_simulate_route.md` |
+| P3-E | Settings route + BYOK | 3 | `[UX]` | 2–3 d | CONTRACT | P3-A — **COMPLETE**. Handoff: `docs/handoffs/P3-E_settings_route.md` |
+| P3-F | Visualization integration | 3 | `[UX]` | 4–5 d | CONTRACT | P3-A — **COMPLETE**. Handoff: `docs/handoffs/P3-F_visualization.md` |
+| P3-G | Copilot (SSE) | 3 | `[UX]` | 4–5 d | CONTRACT | P3-A, P1-H — **COMPLETE**. Handoff: `docs/handoffs/P3-G_copilot.md` |
+| P3-H | E2E QA + Streamlit side-by-side | 3 | `[VALIDATION]` | 3–4 d | HARD | P3-B…G — **COMPLETE** (Playwright spec collected, browsers CI-only). Handoff: `docs/handoffs/P3-H_e2e_qa.md` |
+| P3-I | Streamlit freeze (`--legacy`) | 3 | `[INFRA]` | 1–2 d | HARD | P3-H — **COMPLETE**. Handoff: `docs/handoffs/P3-I_streamlit_freeze.md` |
 | P4-A | MCMC convergence gates | 4 | `[SCIENCE]` | 4–5 d | VALIDATION | P3-H |
 | P4-B | Detection-floor FAP calibration | 4 | `[SCIENCE]` | 3–4 d | VALIDATION | P3-H |
 | P4-C | Weighted χ² + odd/even + ephemeris | 4 | `[SCIENCE]` | 3–4 d | VALIDATION | P3-H |

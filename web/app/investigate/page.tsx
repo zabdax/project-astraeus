@@ -10,6 +10,8 @@
  * carries MEASURED / DERIVED and TLS states truthfully whether it ran.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import CopilotPanel from "../../components/CopilotPanel";
+import LightCurve from "../../components/LightCurve";
 import {
   API_URL,
   cancelJob,
@@ -266,6 +268,9 @@ export default function InvestigatePage() {
             </div>
           )}
         </div>
+        {source === "csv" && dataset && (
+          <LightCurve x={dataset.time} y={dataset.flux} title="Uploaded light curve" xlabel="time" />
+        )}
         <div className="row">
           <div>
             <label htmlFor="maxsignals">Max signals (1–10)</label>
@@ -403,6 +408,7 @@ export default function InvestigatePage() {
           </div>
         </section>
       )}
+      {phase === "done" && result && token && <CopilotPanel token={token} result={result} />}
       {phase === "done" && !result && error && <p className="error">{error}</p>}
 
       <section className="panel">

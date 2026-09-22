@@ -468,3 +468,48 @@ Backend touch (additive): loopback CORS in `astraeus/api/main.py`
 | Live HTTP smoke (real uvicorn: token → noise → result) | SMOKE OK — COMPLETED, 0 candidates, `tls.attempted=True n_ran_fail=1`, provenance attached |
 
 Handoff: `docs/handoffs/P2-B_frontend_slice.md`. Next: **P3-A**.
+
+## Entry 15 — Full Phase 3 (2026-09-22)
+
+Built the product frontend on branch `v.0.0.3`, P3-A first then
+B/C/D/E/F/G in dependency order, H/I to close.
+
+### What landed
+- **P3-A**: shell nav + landing, generated OpenAPI client
+  (`openapi.json` + `api-generated.d.ts` + `gen:api`), theme tokens,
+  memory-only session lib. Committed separately (`01eced9`).
+- **P3-B/C/D/E**: Investigate (slice promoted + copilot + CSV chart),
+  Analyses (durable jobs + provenance + download + cancel), Simulate
+  (seeded labelled-synthetic sandbox + submit), Settings (connection +
+  opt-in BYOK reserved for copilot).
+- **P3-F**: uPlot `LightCurve` + client phase-fold/binning with tests;
+  raw + folded previews in Simulate, CSV preview in Investigate.
+- **P3-G**: POST `/copilot/explain` SSE (evidence digest → text →
+  done; UNAVAILABLE streamed when unconfigured, never mocked) +
+  `CopilotPanel` (AI-INTERPRETED, abort). Fast tests, no LLM in CI.
+- **P3-H**: `docs/WEB_PARITY.md` checklist; Playwright smoke spec
+  written + collected — browsers CDN-blocked in this sandbox
+  (evidenced), so execution is CI/dev-only, stated in the handoff.
+- **P3-I**: Streamlit legacy banner in `app.py` (frozen reference).
+
+### Bugs found by failing tests and fixed
+1. Simulate page duplicated submit button (two edits collided) —
+   caught by build, removed.
+2. Fold test tolerance too tight (binning averages ramps; precision
+   3→2 with documented rationale).
+3. Vitest collected the Playwright spec as a failed suite —
+   `vitest.config.ts` excludes `e2e/`; runners never overlap.
+4. CORS preflight verified live (OPTIONS 200 + allow-origin).
+
+### Verification
+| Gate | Result |
+|------|--------|
+| `tsc --noEmit` strict | clean |
+| `npm test` (vitest) | 13 passed (7 client + 4 synthetic + 2 fold) |
+| `npm run build` (5 routes prerendered) | green |
+| `tests/api` (incl. copilot + CORS) | 37 passed |
+| UI flow + workbench nav (banner check) | 1 passed, 1 skipped |
+| Live HTTP smoke (P2-B, real uvicorn) | SMOKE OK |
+| Playwright e2e | collected, browsers CI-only (stated) |
+
+Next: **Phase 4** (science accuracy, flag-guarded vs frozen baseline).

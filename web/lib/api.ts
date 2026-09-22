@@ -193,6 +193,57 @@ export function eventsUrl(jobId: string): string {
   return `${API_URL}/jobs/${jobId}/events`;
 }
 
+export interface CopilotEvent {
+  kind: "evidence" | "text" | "error" | "done";
+  digest?: string;
+  delta?: string;
+  detail?: string;
+  error_kind?: string;
+}
+
+/** Stream an evidence-grounded explanation. Calls onEvent per SSE record. */
+export async function explainResult(
+  token: string,
+  result: AnalysisResult,
+  question: string,
+  provider: string | null,
+  onEvent: (ev: CopilotEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const resp = await fetch(`${API_URL}/copilot/explain`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      result,
+      question,
+      provider: provider === "none" ? null : provider,
+    }),
+    signal,
+  });
+  if (!resp.ok || !resp.body) {
+    throw new Error(`copilot ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
+  }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split("\n\n");
+    buf = lines.pop() ?? "";
+    for (const chunk of lines) {
+      for (const line of chunk.split("\n")) {
+        const ev = parseEventLine(line);
+        if (ev) onEvent(ev as unknown as CopilotEvent);
+      }
+    }
+  }
+}
+
 /** Parse a two-column (time,flux[,flux_err]) CSV upload into an inline dataset. */
 export function parseLightCurveCsv(text: string, targetName: string): InlineDataset {
   const time: number[] = [];
