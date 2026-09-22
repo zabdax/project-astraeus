@@ -624,3 +624,20 @@ Injections recover within 5% with TLS executed. Handoff:
 - P4-A follow-up fix: legacy sampler reads lazy again (stub-sampler
   contract), verified 6/6, committed as `a43448d`.
 - Final full gate launched at close; result recorded in Entry 26.
+
+## Entry 26 — Closeout: full gate green, all phases complete (2026-09-22)
+
+Final `pytest -q -m "not network and not slow"`: **609 passed,
+1 skipped, 43 deselected, 0 failed** (19m26s). Covers everything
+landed since the 508 baseline (P4-A–G, P4-A lazy fix, P4-F wiring,
+P5-A corpus file in slow selection, copilot/CORS tests).
+
+Delivered this session, all committed on `v.0.0.3`: Phase 1 revision
+(6 commits), P2-A slice + TLS-honesty fix, P2-B Next.js slice, full
+Phase 3 (foundation, 4 routes, viz, copilot, QA, freeze), Phase 4
+(A–G + follow-up fix), Phase 5 (corpus, deployment, credibility).
+
+Standing exceptions (all stated in handoffs): Playwright browsers
+run in CI only; Linux TLS re-measure gates production enablement;
+ASCL/Zenodo/JOSS submissions are operator work. Run
+`codegenome analyze` — the graph predates contracts/jobs/api/web.
