@@ -22,8 +22,11 @@ These tests pin the *source-level* contract that prevents a future
 contributor from silently re-introducing the nested-pool regression.
 They are intentionally textual — a true behavioral test would have to
 re-run the full nested-pool check (slow, network/IO-coupled). The
-contract is: the literal token ``use_threads=1`` is present in
-``model.power(...)`` at the call site.
+contract (J2c, extended by P4-G): every ``model.power(...)`` call site
+passes either the literal ``use_threads=1`` (serial, daemon-safe) or
+the validated ``_tls_thread_count()`` resolver (default 1, capped,
+daemon-forced serial) — never a bare default, ``cpu_count()``, or
+unvalidated value.
 """
 from __future__ import annotations
 
@@ -71,10 +74,18 @@ def _find_tls_power_calls(source: str) -> list[ast.Call]:
 
 
 def test_tls_power_call_passes_use_threads_1():
-    """The production TLS call must pass ``use_threads=1`` to prevent
-    nested-multiprocessing-pool from inside the daemon worker. This is
-    a literal source-level contract: a future contributor removing the
-    kwarg re-introduces the AssertionError. See module docstring."""
+    """Every production TLS call threads safely (J2c + P4-G contract).
+
+    Allowed ``use_threads`` values in ``detection.py`` are EXACTLY:
+    - the literal ``1`` (serial, daemon-safe everywhere), or
+    - a call to the validated ``_tls_thread_count()`` resolver, which
+      defaults to 1, caps at cpu_count, and forces 1 for daemonic
+      callers (making the nested-pool crash impossible by
+      construction).
+    Anything else — a bare variable, ``cpu_count()``, a literal > 1 —
+    re-introduces the AssertionError or an unreviewed default. See
+    module docstring and the P4-G handoff.
+    """
     source = _read(DETECTION_PY)
     power_calls = _find_tls_power_calls(source)
     assert power_calls, "no model.power(...) call found in detection.py"
@@ -88,17 +99,20 @@ def test_tls_power_call_passes_use_threads_1():
             f"Got kwargs: {list(kwargs)}"
         )
         value = kwargs["use_threads"]
-        # Accept either the literal 1, the unary-plus form, or a constant
-        # expression that evaluates to 1. Refuse any value > 1 or any
-        # expression that depends on multiprocessing.cpu_count().
-        assert isinstance(value, ast.Constant), (
-            f"use_threads kwarg must be a constant, got {ast.dump(value)}"
+        if isinstance(value, ast.Constant):
+            assert value.value == 1, (
+                f"use_threads literal must be 1; got {value.value!r}. "
+                "Higher literals bypass the validated resolver."
+            )
+            continue
+        assert isinstance(value, ast.Call), (
+            f"use_threads must be the literal 1 or a _tls_thread_count() "
+            f"call, got {ast.dump(value)}"
         )
-        assert value.value == 1, (
-            f"use_threads must be 1 inside the daemon worker; got {value.value!r}. "
-            "TLS's cpu_count() default spawns a Pool that is forbidden in daemon "
-            "processes (Windows AssertionError: 'daemonic processes are not "
-            "allowed to have children')."
+        func = value.func
+        assert isinstance(func, ast.Name) and func.id == "_tls_thread_count", (
+            "use_threads may only come from the validated "
+            f"_tls_thread_count() resolver, got {ast.dump(value)}"
         )
 
 

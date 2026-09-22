@@ -152,7 +152,7 @@ def subtract_planetary_signal(flux, time, period, epoch, duration, depth_ppm, me
 
     return cleaned_flux
 
-def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1, on_event=None):
+def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1, on_event=None, tls_threads=None):
     """
     Orchestrator wrapper to perform a multi-planet search on a given lightcurve.
     This tracks the iteration count and maintains the 'current_working_flux' state.
@@ -161,6 +161,10 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1, on_eve
         raw_lightcurve (dict or object): Contains at least 'time' and 'flux' arrays.
         max_signals (int): Maximum number of planets/signals to search for.
         snr_floor (float): The minimum SNR threshold for considering a candidate valid.
+        tls_threads (int, optional): P4-G unlock. Thread count forwarded
+            to the TLS gate (resolved by ``_tls_thread_count``: default
+            serial, env-gated, daemon-forced serial). None keeps the
+            legacy serial behavior.
         on_event (callable, optional): P1-F worker hook.  Called as
             ``on_event(event_type, **payload)`` at each lifecycle point using
             the stable JSONL vocabulary of ``astraeus.jobs.events``
@@ -238,7 +242,8 @@ def run_multi_planet_search(raw_lightcurve, max_signals=5, snr_floor=7.1, on_eve
             data_source=data_source,
             metadata=metadata,
             snr_threshold=snr_floor,
-            known_periods=discovered_periods
+            known_periods=discovered_periods,
+            tls_threads=tls_threads,
         )
         
         # Read the returned dictionary from the run. Extract the calculated SNR and vetting status.

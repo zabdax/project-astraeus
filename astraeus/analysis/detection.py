@@ -26,7 +26,43 @@ from astraeus.core.constants import (
 logger = get_logger("detection")
 
 
-def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=DETECTION_SNR_THRESHOLD_DEFAULT, known_periods=None, require_backends: bool = True):
+def _tls_thread_count(requested: int | None = None) -> int:
+    """Resolve how many threads TLS may use (P4-G unlock, default serial).
+
+    Precedence: explicit argument > ``ASTRAEUS_TLS_THREADS`` env > 1.
+    Unparseable/non-positive values fall back to 1; large values are
+    capped at ``os.cpu_count()``. Daemonic processes ALWAYS get 1: TLS
+    spawns a ``multiprocessing.Pool`` above 1 thread, which is forbidden
+    inside daemonic workers — forcing serial here makes the J2
+    nested-pool crash impossible by construction rather than by
+    convention. Production enablement additionally requires the Linux
+    re-measure (P05-A caveat); this box's numbers are Windows-only.
+    """
+    import multiprocessing
+    import os
+
+    if requested is None:
+        try:
+            requested = int(os.environ.get("ASTRAEUS_TLS_THREADS", "1"))
+        except (TypeError, ValueError):
+            return 1
+    try:
+        requested = int(requested)
+    except (TypeError, ValueError):
+        return 1
+    if requested < 1:
+        return 1
+    if multiprocessing.current_process().daemon:
+        logger.warning(
+            "[TLS] Daemonic caller forced to use_threads=1 "
+            "(nested Pool forbidden; ASTRAEUS_TLS_THREADS ignored)."
+        )
+        return 1
+    cpu = os.cpu_count() or 1
+    return min(requested, max(cpu, 1))
+
+
+def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unknown", metadata=None, snr_threshold=DETECTION_SNR_THRESHOLD_DEFAULT, known_periods=None, require_backends: bool = True, tls_threads: int | None = None):
     """Run the blind search + vetting pipeline on one light curve.
 
     ``require_backends=True`` (the default) is the *production* contract:
@@ -116,39 +152,37 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
                 elif tls_period_max < 0.5:
                     # Period too short for TLS — skip validation
                     raise ValueError("period_min < period_max required")
-                # ARCHITECTURAL CONSTRAINT (J2c nested-pool fix, 2026-07-06):
-                # detect_transit_candidate runs inside
-                # astraeus.core.orchestrator._subprocess_search_worker, which
-                # is spawned with daemon=True (see orchestrator.py:
-                # submit_multi_planet_search). On Windows, multiprocessing
-                # forbids daemonic processes from spawning their own children;
-                # TLS's default use_threads=cpu_count() path instantiates
-                # multiprocessing.Pool(processes=use_threads) (see
-                # transitleastsquares/main.py:141) and raises
-                # AssertionError: "daemonic processes are not allowed to
-                # have children". Forcing use_threads=1 keeps TLS single-
-                # threaded inside the worker, which the J2c profile
-                # (logs/j2c_tls_profiling_result.json, scratch/
-                # nested_pool_check.py, logs/nested_pool_check_*.json)
-                # threaded inside the worker. Cost: the J2c profile measured
-                # ~80s per call on a synthetic 45,853-cadence curve in the
-                # 0.95x-1.05x BLS-narrowed window; on the real Kepler-90
-                # stitch the same profile measured ~149.7s single-threaded
-                # for the 828-period narrowed window (its "A_default_full"
-                # arm -- despite the label, NOT TLS defaults). The
-                # authoritative, re-runnable measurement on all 8 cached real
-                # targets is benchmarks/tls_multiprocessing_benchmark.py
-                # (bucket P05-A, PRD v4.1 Phase 0.5). Do NOT remove this
-                # kwarg or relax it to cpu_count(): it is a contract, not
-                # a perf preference. Locked by tests/characterize/
-                # test_tls_call_path_contract.py. The unlock is gated on the
-                # P05-A measurement and lands only as bucket P4-G.
-                results = model.power(
-                    period_min=tls_period_min,
-                    period_max=tls_period_max,
-                    show_progress_bar=False,
-                    use_threads=1,
-                )
+                # ARCHITECTURAL CONSTRAINT (J2c nested-pool fix, 2026-07-06;
+                # P4-G unlock, 2026-09-22): the DEFAULT path below is serial
+                # (literal use_threads=1) and daemon-safe everywhere,
+                # including the legacy daemon=True orchestrator worker. The
+                # parallel branch is reachable ONLY through
+                # _tls_thread_count(), which forces 1 for daemonic callers
+                # and defaults to 1 unless ASTRAEUS_TLS_THREADS (or the
+                # tls_threads argument) opts in. The non-daemon Popen
+                # worker (P1-F) is the only production path that can take
+                # the parallel branch. Measured unlock on Windows (P05-A):
+                # 1.06x-2.08x, bit-identical SDE/period — a performance
+                # change, never a scientific one. Production enablement
+                # requires the Linux re-measure. Do NOT pass
+                # cpu_count() or any unvalidated value here; the
+                # characterization test allows exactly Constant(1) or the
+                # _tls_thread_count() resolver.
+                _tls_threads = _tls_thread_count(tls_threads)
+                if _tls_threads <= 1:
+                    results = model.power(
+                        period_min=tls_period_min,
+                        period_max=tls_period_max,
+                        show_progress_bar=False,
+                        use_threads=1,
+                    )
+                else:
+                    results = model.power(
+                        period_min=tls_period_min,
+                        period_max=tls_period_max,
+                        show_progress_bar=False,
+                        use_threads=_tls_thread_count(tls_threads),
+                    )
                 tls_fap = results.FAP
                 tls_sde = results.SDE
                 tls_period = results.period

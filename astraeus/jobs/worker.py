@@ -85,6 +85,7 @@ class WorkerSpec:
         snr_floor: float = 7.1,
         config: dict | None = None,
         fetch_real_data: bool = False,
+        tls_threads: int | None = None,
     ) -> None:
         self.job_id = job_id
         self.target_name = target_name
@@ -97,6 +98,9 @@ class WorkerSpec:
         self.snr_floor = snr_floor
         self.config = dict(config or {})
         self.fetch_real_data = fetch_real_data
+        # P4-G unlock: forwarded to the TLS gate (None = resolver default,
+        # i.e. serial unless ASTRAEUS_TLS_THREADS opts in).
+        self.tls_threads = tls_threads
 
     def to_dict(self) -> dict:
         return {
@@ -111,6 +115,7 @@ class WorkerSpec:
             "snr_floor": self.snr_floor,
             "config": self.config,
             "fetch_real_data": self.fetch_real_data,
+            "tls_threads": self.tls_threads,
         }
 
     @classmethod
@@ -315,6 +320,7 @@ def run_worker(spec: WorkerSpec, *, stdout: Any = None) -> int:
                 max_signals=spec.max_signals,
                 snr_floor=spec.snr_floor,
                 on_event=_on_event,
+                tls_threads=spec.tls_threads,
             )
         emit("stage", stage=_stage(JobStage.SEARCHING), status="ok")
 

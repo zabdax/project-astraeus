@@ -589,5 +589,16 @@ bugs fixed (optimizer needs a mocked best-fit on tiny arrays; canned
 medians must satisfy R_planet validation). Bridge maps
 period/epoch/depth/a/guesses with stated assumptions; retrieval
 threads P4-A flags and carries the report; `inference` stays null in
-v1. Handoff: `docs/handoffs/P4-F_inference_wiring.md`. Next: **P4-G**
-needs Linux; **Phase 5** otherwise.
+v1. Handoff: `docs/handoffs/P4-F_inference_wiring.md`.
+
+## Entry 23 — P4-G TLS unlock (2026-09-22)
+
+Flag-gated unlock landed (default serial; daemon-forced serial by
+construction): resolver + two-branch call + plumbing + evolved
+characterization contract. Measured on Windows spawn/8 cores:
+1.06x–2.09x bit-identical on 6 pairs; AU Mic + WASP-12 b serially
+infeasible, parallel completes. In-pipeline equivalence green.
+Regression: 89 passed + 1 pre-existing order-pollution failure
+(proven on pristine tree via stash; full-gate order unaffected,
+documented in the report). Linux re-measure gates production use.
+Handoff: `docs/handoffs/P4-G_tls_unlock.md`. Phase 4 code done.
