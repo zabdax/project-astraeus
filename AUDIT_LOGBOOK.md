@@ -572,4 +572,11 @@ Dispatched after DEC-LIC (forward model only; subtraction frozen).
 Validated on return: fresh combined run (new + transit-model +
 physics: 28 passed); diff reviewed (default substitution + provenance
 docstring + re-export; frozen files untouched). Handoff:
-`docs/handoffs/P4-D_limb_darkening.md`. Next: **P4-E**.
+`docs/handoffs/P4-D_limb_darkening.md`.
+
+## Entry 21 — P4-E detrend window via subagent (2026-09-22)
+
+Dispatched on the P4-D contract; validated on return (fresh 49 +
+15; oracle-proofed zero numeric change; frozen files untouched;
+network-marked timeout unrelated). Handoff:
+`docs/handoffs/P4-E_detrend_window.md`. Next: **P4-F**.

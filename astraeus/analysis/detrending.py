@@ -25,6 +25,14 @@ New behaviour:
 
 The detrending mathematics (window scaling, sigma clipping, biweight)
 are UNCHANGED -- this phase fixes observability, not the algorithm.
+
+P4-E addition (observability only, zero numeric change): the
+transit-preserving window rule is parameterized as
+:func:`window_for_duration` (window scales with a duration-like
+timescale, clamped to the frozen 0.5/1.5-day bounds; arithmetic
+identical to the previously inline expression) and
+:meth:`DetrendingEngine.detrend_report` records which window rule
+produced the value consumed by the estimator.
 """
 
 import logging
@@ -45,6 +53,64 @@ METHOD_WOTAN_BIWEIGHT = "wotan:biweight"
 METHOD_SCIPY_MEDIAN = "scipy:median_filter"
 METHOD_NONE = "none"
 
+# P4-E: detrending-window provenance labels. These state WHICH window
+# rule produced the ``window_length_days`` value consumed by the wotan /
+# median estimators -- observability only, no numeric effect. The
+# rotation-clamped labels mirror the frozen MIN/MAX bounds; the st_rad
+# labels mirror the frozen stellar-radius thresholds (< 0.3 / >= 0.8).
+WINDOW_SOURCE_ST_RAD_SMALL = "st_rad:small"
+WINDOW_SOURCE_ST_RAD_INTERPOLATED = "st_rad:interpolated"
+WINDOW_SOURCE_ST_RAD_LARGE = "st_rad:large"
+WINDOW_SOURCE_ROTATION_SCALED = "rotation:scaled"
+WINDOW_SOURCE_ROTATION_CLAMPED_MIN = "rotation:clamped-min"
+WINDOW_SOURCE_ROTATION_CLAMPED_MAX = "rotation:clamped-max"
+
+#: All documented ``window_source`` values (see :meth:`DetrendingEngine.detrend_report`).
+WINDOW_SOURCES = frozenset(
+    {
+        WINDOW_SOURCE_ST_RAD_SMALL,
+        WINDOW_SOURCE_ST_RAD_INTERPOLATED,
+        WINDOW_SOURCE_ST_RAD_LARGE,
+        WINDOW_SOURCE_ROTATION_SCALED,
+        WINDOW_SOURCE_ROTATION_CLAMPED_MIN,
+        WINDOW_SOURCE_ROTATION_CLAMPED_MAX,
+    }
+)
+
+
+def window_for_duration(duration_days: float) -> float:
+    """Transit-preserving detrending window for a duration-like timescale.
+
+    The window scales linearly with the input duration (half its value)
+    and is clamped to the frozen transit-preserving bounds
+    (:data:`DetrendingEngine.MIN_TRANSIT_PRESERVING_WINDOW_DAYS` /
+    :data:`DetrendingEngine.MAX_TRANSIT_PRESERVING_WINDOW_DAYS`,
+    0.5/1.5 days). The 0.5 factor keeps the window several times wider
+    than a typical transit so transits are preserved while slower
+    stellar variability is removed.
+
+    This is the P4-E parameterization of the previously inline
+    ``min(MAX, max(MIN, duration * 0.5))`` expression: the arithmetic is
+    byte-identical (same operation order, so even NaN edge behaviour is
+    preserved) -- it only gives the rule a name, bounds documentation,
+    and a unit-testable entry point. Zero numeric behavior change.
+
+    Args:
+        duration_days: Duration-like timescale in days. In the current
+            call shape this is the stellar rotation period; future call
+            shapes may pass a measured transit duration directly.
+
+    Returns:
+        Window length in days, always within [0.5, 1.5].
+    """
+    return min(
+        DetrendingEngine.MAX_TRANSIT_PRESERVING_WINDOW_DAYS,
+        max(
+            DetrendingEngine.MIN_TRANSIT_PRESERVING_WINDOW_DAYS,
+            duration_days * 0.5,
+        ),
+    )
+
 # Probed through the module at CALL TIME (never a rebound copy) so the
 # fail-closed gate and the branch decision cannot disagree: one source
 # of truth, and a test/override patches exactly one name.
@@ -55,6 +121,48 @@ def _wotan_available() -> bool:
 class DetrendingEngine:
     MIN_TRANSIT_PRESERVING_WINDOW_DAYS = 0.5
     MAX_TRANSIT_PRESERVING_WINDOW_DAYS = 1.5
+
+    @staticmethod
+    def window_for_duration(duration_days: float) -> float:
+        """Class-level alias of :func:`window_for_duration`.
+
+        Provided so callers already holding ``DetrendingEngine`` do not
+        need a second import; the module-level function is canonical and
+        this delegates to it (single implementation, identical numbers).
+        """
+        return window_for_duration(duration_days)
+
+    @staticmethod
+    def _window_for_params(
+        stellar_rotation_period_days: float, st_rad: float | None = None
+    ) -> tuple[float, str]:
+        """Resolve ``(window_length_days, window_source)`` for a detrend call.
+
+        P4-E provenance helper. The VALUES reproduce the pre-P4-E inline
+        branching bit-for-bit (the st_rad thresholds/threshold arithmetic
+        and the rotation clamp are copied verbatim); only the adjacent
+        ``window_source`` label is new. ``detrend_with_method`` routes its
+        window computation through here, so every existing call shape
+        feeds its estimator the identical number as before.
+        """
+        # Dynamic Window Scaling based on stellar radius (frozen values).
+        if st_rad is not None:
+            if st_rad < 0.3:
+                return 0.5, WINDOW_SOURCE_ST_RAD_SMALL
+            elif st_rad >= 0.8:
+                return 2.0, WINDOW_SOURCE_ST_RAD_LARGE
+            else:
+                return (
+                    0.5 + ((2.0 - 0.5) / (0.8 - 0.3)) * (st_rad - 0.3),
+                    WINDOW_SOURCE_ST_RAD_INTERPOLATED,
+                )
+        raw = stellar_rotation_period_days * 0.5
+        window_length_days = window_for_duration(stellar_rotation_period_days)
+        if raw < DetrendingEngine.MIN_TRANSIT_PRESERVING_WINDOW_DAYS:
+            return window_length_days, WINDOW_SOURCE_ROTATION_CLAMPED_MIN
+        elif raw > DetrendingEngine.MAX_TRANSIT_PRESERVING_WINDOW_DAYS:
+            return window_length_days, WINDOW_SOURCE_ROTATION_CLAMPED_MAX
+        return window_length_days, WINDOW_SOURCE_ROTATION_SCALED
 
     @staticmethod
     def estimate_stellar_rotation(time: np.ndarray, flux: np.ndarray) -> float:
@@ -100,21 +208,13 @@ class DetrendingEngine:
         clean_flux[positive_outliers] = median_flux
 
         # Dynamic Window Scaling based on stellar radius
-        if st_rad is not None:
-            if st_rad < 0.3:
-                window_length_days = 0.5
-            elif st_rad >= 0.8:
-                window_length_days = 2.0
-            else:
-                window_length_days = 0.5 + ((2.0 - 0.5) / (0.8 - 0.3)) * (st_rad - 0.3)
-        else:
-            window_length_days = min(
-                DetrendingEngine.MAX_TRANSIT_PRESERVING_WINDOW_DAYS,
-                max(
-                    DetrendingEngine.MIN_TRANSIT_PRESERVING_WINDOW_DAYS,
-                    stellar_rotation_period_days * 0.5,
-                ),
-            )
+        # P4-E: routed through _window_for_params, which reproduces the
+        # pre-P4-E inline values bit-for-bit and additionally reports
+        # WHICH rule produced them (see detrend_report). The estimator
+        # receives the identical number as before this bucket.
+        window_length_days, _window_source = DetrendingEngine._window_for_params(
+            stellar_rotation_period_days, st_rad=st_rad
+        )
 
         # ---- Preferred backend: wotan biweight ---------------------------
         # A missing wotan in a *production* run is a hard failure, not a
@@ -180,3 +280,44 @@ class DetrendingEngine:
             return clean_flux / trend, METHOD_SCIPY_MEDIAN
 
         return clean_flux, METHOD_NONE
+
+    @staticmethod
+    def detrend_report(
+        time: np.ndarray,
+        flux: np.ndarray,
+        stellar_rotation_period_days: float,
+        st_rad: float = None,
+        require_wotan: bool = False,
+    ) -> dict:
+        """Detrend provenance report (P4-E observability, no new physics).
+
+        Runs the identical pipeline as :meth:`detrend_with_method` and
+        returns ``{"method", "window_days", "window_source"}``:
+
+        * ``method`` -- the estimator label, always equal to what
+          ``detrend_with_method`` returns for the same inputs;
+        * ``window_days`` -- the ``window_length_days`` value actually
+          consumed by that estimator;
+        * ``window_source`` -- which window rule produced it (one of the
+          ``WINDOW_SOURCE_*`` constants: ``st_rad:small`` /
+          ``st_rad:interpolated`` / ``st_rad:large`` for the frozen
+          stellar-radius branch, ``rotation:scaled`` /
+          ``rotation:clamped-min`` / ``rotation:clamped-max`` for the
+          transit-preserving rotation clamp).
+
+        Tuple shapes are untouched: ``detrend`` still returns a bare
+        array and ``detrend_with_method`` still returns a 2-tuple. The
+        fail-closed ``require_wotan`` gate propagates unchanged.
+        """
+        _, method = DetrendingEngine.detrend_with_method(
+            time, flux, stellar_rotation_period_days, st_rad=st_rad,
+            require_wotan=require_wotan,
+        )
+        window_length_days, window_source = DetrendingEngine._window_for_params(
+            stellar_rotation_period_days, st_rad=st_rad
+        )
+        return {
+            "method": method,
+            "window_days": window_length_days,
+            "window_source": window_source,
+        }
