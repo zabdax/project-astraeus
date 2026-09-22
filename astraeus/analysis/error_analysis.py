@@ -149,12 +149,16 @@ def run_mcmc(
     # Transpose to get shape (n_params, 3) if there are multiple parameters
     percentiles = percentiles.T
 
-    mean_acc = float(np.mean(sampler.acceptance_fraction))
+    mean_acc: float | None = None
+    if return_acceptance:
+        mean_acc = float(np.mean(sampler.acceptance_fraction))
 
     # P4-A convergence gates (opt-in verdict + opt-in enforcement; the
     # legacy numbers above are byte-identical either way).
     report: dict | None = None
     if return_convergence or require_converged:
+        if mean_acc is None:
+            mean_acc = float(np.mean(sampler.acceptance_fraction))
         try:
             tau = sampler.get_autocorr_time(tol=0, quiet=True)
         except Exception:
