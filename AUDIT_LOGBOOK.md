@@ -554,3 +554,14 @@ operational 7.0 in the same gap, unchanged, now evidenced; Kepler_4d
 cross-check conf 80.2 at 3.212 d vs archive 3.2136 d. Report
 force-added (`reports/` is otherwise ignored). Handoff:
 `docs/handoffs/P4-B_fap_calibration.md`.
+
+## Entry 19 — P4-C vetting diagnostics via subagent (2026-09-22)
+
+Second parallel worker (disjoint with P4-B): additive-only diagnostics
+in `vetting.py` — optional `flux_err` weighting, `odd_even_depth_test`,
+`ephemeris_match` — with legacy path byte-identical and the
+`snr > 10.0` literal deliberately preserved. Validated on return:
+legacy χ² hunk reviewed line-by-line, fresh combined run (new +
+hardening: 26 passed). Diagnostics available, pipeline wiring
+deferred to a separate gated change. Handoff:
+`docs/handoffs/P4-C_vetting_diagnostics.md`.

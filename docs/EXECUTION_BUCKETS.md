@@ -152,7 +152,7 @@ distribution, or credibility.
 | P3-I | Streamlit freeze (`--legacy`) | 3 | `[INFRA]` | 1–2 d | HARD | P3-H — **COMPLETE**. Handoff: `docs/handoffs/P3-I_streamlit_freeze.md` |
 | P4-A | MCMC convergence gates | 4 | `[SCIENCE]` | 4–5 d | VALIDATION | P3-H — **COMPLETE** (v0.0.3). Handoff: `docs/handoffs/P4-A_mcmc_gates.md` |
 | P4-B | Detection-floor FAP calibration | 4 | `[SCIENCE]` | 3–4 d | VALIDATION | P3-H — **COMPLETE** (measurement only; floor unchanged). Handoff: `docs/handoffs/P4-B_fap_calibration.md` |
-| P4-C | Weighted χ² + odd/even + ephemeris | 4 | `[SCIENCE]` | 3–4 d | VALIDATION | P3-H |
+| P4-C | Weighted χ² + odd/even + ephemeris | 4 | `[SCIENCE]` | 3–4 d | VALIDATION | P3-H — **COMPLETE** (available, not yet wired). Handoff: `docs/handoffs/P4-C_vetting_diagnostics.md` |
 | P4-D | Limb-darkening single source of truth | 4 | `[SCIENCE]` | 4–5 d | VALIDATION | P3-H, `[DEC-LIC]` |
 | P4-E | Subtraction geometry + detrending window | 4 | `[SCIENCE]` | 2–3 d | CONTRACT | P4-D, `[DEC-LIC]` |
 | P4-F | Inference wiring (Candidate → MCMC) | 4 | `[SCIENCE]` | 5–7 d | HARD | P4-A |
