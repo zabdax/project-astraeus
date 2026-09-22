@@ -14,7 +14,7 @@ must stay cheap and must never pull in a scientific backend or the web
 framework. Submodules import their own dependencies lazily.
 """
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 # The engine boundary (PRD v4.1 §4.1): the package must not depend on a
 # web framework at import time. Importing ``astraeus`` therefore never

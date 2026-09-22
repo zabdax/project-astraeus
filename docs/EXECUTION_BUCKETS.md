@@ -150,7 +150,7 @@ distribution, or credibility.
 | P3-G | Copilot (SSE) | 3 | `[UX]` | 4–5 d | CONTRACT | P3-A, P1-H — **COMPLETE**. Handoff: `docs/handoffs/P3-G_copilot.md` |
 | P3-H | E2E QA + Streamlit side-by-side | 3 | `[VALIDATION]` | 3–4 d | HARD | P3-B…G — **COMPLETE** (Playwright spec collected, browsers CI-only). Handoff: `docs/handoffs/P3-H_e2e_qa.md` |
 | P3-I | Streamlit freeze (`--legacy`) | 3 | `[INFRA]` | 1–2 d | HARD | P3-H — **COMPLETE**. Handoff: `docs/handoffs/P3-I_streamlit_freeze.md` |
-| P4-A | MCMC convergence gates | 4 | `[SCIENCE]` | 4–5 d | VALIDATION | P3-H |
+| P4-A | MCMC convergence gates | 4 | `[SCIENCE]` | 4–5 d | VALIDATION | P3-H — **COMPLETE** (v0.0.3). Handoff: `docs/handoffs/P4-A_mcmc_gates.md` |
 | P4-B | Detection-floor FAP calibration | 4 | `[SCIENCE]` | 3–4 d | VALIDATION | P3-H |
 | P4-C | Weighted χ² + odd/even + ephemeris | 4 | `[SCIENCE]` | 3–4 d | VALIDATION | P3-H |
 | P4-D | Limb-darkening single source of truth | 4 | `[SCIENCE]` | 4–5 d | VALIDATION | P3-H, `[DEC-LIC]` |
@@ -174,7 +174,7 @@ marks a decision gate the user must resolve before that bucket starts (see
 
 | ID | Item | Kind | Resolved by | Blocks | Effort |
 |---|---|---|---|---|---|
-| DEC-LIC | `batman` licensing decision — whether the GPL-licensed `batman` package may become a required runtime dependency, or must stay optional/behind a flag, or be replaced | **USER DECISION / decision gate** | the user (with legal review as needed) — recorded in `AUDIT_LOGBOOK.md` | P4-D, P4-E (subtraction implementation), and any P5-B/P5-C step that ships a license declaration covering `batman` | user decision, no engineering estimate |
+| DEC-LIC | `batman` licensing decision — whether the GPL-licensed `batman` package may become a required runtime dependency, or must stay optional/behind a flag, or be replaced | **USER DECISION / decision gate — RESOLVED 2026-09-22: keep OPTIONAL (status quo)** | the user — recorded in `AUDIT_LOGBOOK.md` Entry 16 | P4-D, P4-E (subtraction implementation), and any P5-B/P5-C step that ships a license declaration covering `batman` | user decision, no engineering estimate |
 
 **Rules that make this a gate rather than a bucket:**
 

@@ -172,3 +172,28 @@ DETECTION_SNR_THRESHOLD_DEFAULT = 5.0
 # snr_threshold) so that the noise test, which passes
 # snr_threshold=5.0 explicitly, is still rejected.
 DETECTION_CONFIDENCE_FLOOR = 7.0
+
+# ---------------------------------------------------------------------------
+# MCMC convergence gates (P4-A — versioned scientific change, v0.0.3).
+#
+# `run_mcmc` previously returned posteriors with no convergence verdict:
+# the acceptance fraction was computed only on request and never
+# evaluated, and no autocorrelation check existed. The suite carried the
+# symptom for months — emcee's own "poorly tuned (should be between 0.2
+# and 0.5)" warning on the standard mock config — while `test_mcmc.py`
+# downgraded it to a `warnings.warn`. These constants turn the warning
+# into a verdict. Do NOT tune them without a sampling reference; the
+# acceptance band is emcee's documented guidance and the effective-size
+# floor is standard Goodman–Weare practice (N/tau >= 50 for stable
+# quantiles).
+# ---------------------------------------------------------------------------
+
+# Ensemble acceptance-fraction band (emcee guidance).
+MCMC_ACCEPTANCE_MIN = 0.2
+MCMC_ACCEPTANCE_MAX = 0.5
+
+# Minimum effective samples per parameter after burn-in discard.
+MCMC_MIN_EFFECTIVE_SAMPLES = 50
+
+# Fraction of steps discarded as burn-in (pre-existing behavior, now named).
+MCMC_BURNIN_FRACTION = 0.2

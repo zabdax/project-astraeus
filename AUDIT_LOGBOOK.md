@@ -513,3 +513,32 @@ B/C/D/E/F/G in dependency order, H/I to close.
 | Playwright e2e | collected, browsers CI-only (stated) |
 
 Next: **Phase 4** (science accuracy, flag-guarded vs frozen baseline).
+
+## Entry 16 — DEC-LIC resolved: `batman` stays optional (2026-09-22)
+
+User decision on the external gate of `EXECUTION_BUCKETS.md` §2.1:
+**keep `batman` (GPL-3.0) optional — status quo.**
+
+Consequences, recorded so Phase 4 sessions need no re-derivation:
+- No bucket may make `batman` a required runtime dependency; the
+  `astraeus[batman]` extra + labelled trapezoid fallback stand.
+- P4-D (limb-darkening single source of truth) covers the *forward*
+  model; P4-E leaves the subtraction implementation (`orchestrator.py`
+  batman-or-trapezoid) unchanged.
+- P5-B/P5-C ship license declarations excluding `batman` (MIT-only).
+- Revisit trigger: a paper-grade precision need demonstrated by
+  measurement (same bar as the P05-A unlock rule).
+
+## Entry 17 — P4-A MCMC convergence gates (2026-09-22)
+
+First Phase 4 science bucket, executed after a fresh green full gate
+(508 passed, 0 failed). TDD: tests written first, watched fail on
+collection, implementation green on first run (4 passed, 23 s); legacy
+`test_mcmc.py` untouched and green (1 passed).
+
+What landed: acceptance-band + autocorrelation gates with a `converged`
+verdict and fail-closed `MCMCConvergenceError` (both opt-in; legacy
+tuples byte-identical), named constants, seeded gate tests, version
+`0.0.2 → 0.0.3` as the versioned scientific change. Measured: seeded
+mock gives acc 0.545 + tau ~[51,54] → effective ~7 < 50, unconverged
+on both gates. Handoff: `docs/handoffs/P4-A_mcmc_gates.md`. Next: **P4-B**.
