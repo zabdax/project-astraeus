@@ -579,4 +579,15 @@ docstring + re-export; frozen files untouched). Handoff:
 Dispatched on the P4-D contract; validated on return (fresh 49 +
 15; oracle-proofed zero numeric change; frozen files untouched;
 network-marked timeout unrelated). Handoff:
-`docs/handoffs/P4-E_detrend_window.md`. Next: **P4-F**.
+`docs/handoffs/P4-E_detrend_window.md`.
+
+## Entry 22 — P4-F inference wiring (2026-09-22)
+
+Implemented directly (single integration, no parallel split): TDD
+red→green (7 passed, incl. a real seeded sampler run); two fixture
+bugs fixed (optimizer needs a mocked best-fit on tiny arrays; canned
+medians must satisfy R_planet validation). Bridge maps
+period/epoch/depth/a/guesses with stated assumptions; retrieval
+threads P4-A flags and carries the report; `inference` stays null in
+v1. Handoff: `docs/handoffs/P4-F_inference_wiring.md`. Next: **P4-G**
+needs Linux; **Phase 5** otherwise.

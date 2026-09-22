@@ -155,7 +155,7 @@ distribution, or credibility.
 | P4-C | Weighted χ² + odd/even + ephemeris | 4 | `[SCIENCE]` | 3–4 d | VALIDATION | P3-H — **COMPLETE** (available, not yet wired). Handoff: `docs/handoffs/P4-C_vetting_diagnostics.md` |
 | P4-D | Limb-darkening single source of truth | 4 | `[SCIENCE]` | 4–5 d | VALIDATION | P3-H, `[DEC-LIC]` — **COMPLETE** (forward model only; subtraction frozen). Handoff: `docs/handoffs/P4-D_limb_darkening.md` |
 | P4-E | Subtraction geometry + detrending window | 4 | `[SCIENCE]` | 2–3 d | CONTRACT | P4-D, `[DEC-LIC]` — **COMPLETE** (window provenance; subtraction frozen). Handoff: `docs/handoffs/P4-E_detrend_window.md` |
-| P4-F | Inference wiring (Candidate → MCMC) | 4 | `[SCIENCE]` | 5–7 d | HARD | P4-A |
+| P4-F | Inference wiring (Candidate → MCMC) | 4 | `[SCIENCE]` | 5–7 d | HARD | P4-A — **COMPLETE** (inference stays null in v1). Handoff: `docs/handoffs/P4-F_inference_wiring.md` |
 | P4-G | TLS multiprocessing unlock landing | 4 | `[SCIENCE]` | 1–2 d | VALIDATION | P05-A, P1-F |
 | P5-A | Validation corpus + IR CI gate | 5 | `[VALIDATION]` | 4–5 d | VALIDATION | P4-* |
 | P5-B | Deployment (Compose + Caddy + Fly) | 5 | `[RELEASE]` | 3–4 d | HARD | P5-A |

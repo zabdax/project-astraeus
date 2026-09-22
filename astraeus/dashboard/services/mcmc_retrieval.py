@@ -11,6 +11,7 @@ from scipy.signal import savgol_filter
 
 from astraeus.analysis.error_analysis import run_mcmc
 from astraeus.analysis.optimization import find_best_fit
+from astraeus.core.constants import MCMC_MIN_EFFECTIVE_SAMPLES
 from astraeus.core.transit_model import generate_model_flux
 from astraeus.data.preprocessing import detrend_lightcurve, phase_fold_data
 
@@ -33,6 +34,11 @@ class MCMCConfig:
     u2_guess: float
     n_steps: int
     n_walkers: int = 32
+    # P4-F: P4-A gate plumbing (appended with defaults; existing
+    # constructions are unaffected).
+    seed: int | None = None
+    require_converged: bool = False
+    min_effective: int = MCMC_MIN_EFFECTIVE_SAMPLES
 
 
 @dataclass(frozen=True)
@@ -47,6 +53,9 @@ class MCMCRetrievalResult:
     flat_samples: np.ndarray
     t0_used: float
     t0_was_estimated: bool
+    # P4-F: convergence verdict attached when the sampler was asked for
+    # it (None on the legacy path).
+    convergence: dict | None = None
 
 
 def run_retrieval(
@@ -94,7 +103,7 @@ def run_retrieval(
         param_names=param_names,
     )
 
-    flat_samples, percentiles = run_mcmc(
+    flat_samples, percentiles, _acceptance, convergence = run_mcmc(
         best_fit_theta=best_fit_theta,
         time=time_u,
         flux=folded_flux,
@@ -104,6 +113,11 @@ def run_retrieval(
         n_walkers=config.n_walkers,
         n_steps=config.n_steps,
         progress_callback=progress_callback,
+        return_acceptance=True,
+        return_convergence=True,
+        seed=config.seed,
+        require_converged=config.require_converged,
+        min_effective=config.min_effective,
     )
     median_params = percentiles[:, 1]
     theoretical_flux = generate_retrieval_model(time_u, fixed_params, param_names, median_params)
@@ -117,6 +131,7 @@ def run_retrieval(
         flat_samples=flat_samples,
         t0_used=float(t0_used),
         t0_was_estimated=t0_was_estimated,
+        convergence=convergence,
     )
 
 
