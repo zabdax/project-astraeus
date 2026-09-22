@@ -10,6 +10,10 @@ from astraeus.core.geometry import (
     calculate_circle_overlap_area,
     calculate_sky_separation,
 )
+from astraeus.core.limb_darkening import (
+    FORWARD_MODEL_DEFAULT_U1,
+    FORWARD_MODEL_DEFAULT_U2,
+)
 from astraeus.core.validation import (
     require_convertible_unit,
     require_non_negative_quantity,
@@ -29,8 +33,8 @@ def generate_geometric_transit(
     separation: u.Quantity,
     R_star: u.Quantity,
     R_planet: u.Quantity,
-    u1: float = 0.0,
-    u2: float = 0.0,
+    u1: float = FORWARD_MODEL_DEFAULT_U1,
+    u2: float = FORWARD_MODEL_DEFAULT_U2,
 ) -> u.Quantity:
     """Calculate relative flux drop for a transit with quadratic limb darkening.
 
@@ -52,6 +56,9 @@ def generate_geometric_transit(
     ``separation``, ``R_star``, and ``R_planet`` must be Astropy length
     quantities with compatible units. Radii must be strictly positive.
     The limb darkening coefficients ``u1`` and ``u2`` are dimensionless floats.
+    Their defaults come from the P4-D single source of truth
+    (``astraeus.core.limb_darkening.FORWARD_MODEL_DEFAULT_U1/U2``:
+    uniform-disk legacy, bit-identical to the previous ``0.0`` literals).
     The returned relative flux drop is an Astropy dimensionless quantity.
     """
 
@@ -122,8 +129,8 @@ def generate_model_flux(
     inclination: u.Quantity,
     R_star: u.Quantity,
     R_planet: u.Quantity,
-    u1: float = 0.0,
-    u2: float = 0.0,
+    u1: float = FORWARD_MODEL_DEFAULT_U1,
+    u2: float = FORWARD_MODEL_DEFAULT_U2,
 ) -> np.ndarray:
     """Generate theoretical flux for the given physical parameters."""
     

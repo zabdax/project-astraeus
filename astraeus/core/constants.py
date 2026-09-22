@@ -197,3 +197,18 @@ MCMC_MIN_EFFECTIVE_SAMPLES = 50
 
 # Fraction of steps discarded as burn-in (pre-existing behavior, now named).
 MCMC_BURNIN_FRACTION = 0.2
+
+# ---------------------------------------------------------------------------
+# Limb-darkening defaults mirror (P4-D — single source of truth).
+#
+# The canonical values, validation, and resolve() entry point live in
+# astraeus.core.limb_darkening. This section only re-exports the scalar
+# defaults for callers that already import from constants; do NOT add new
+# limb-darkening numbers anywhere else.
+# ---------------------------------------------------------------------------
+from astraeus.core.limb_darkening import (  # noqa: E402
+    DEFAULT_U1 as LIMB_DARKENING_DEFAULT_U1,
+    DEFAULT_U2 as LIMB_DARKENING_DEFAULT_U2,
+    FORWARD_MODEL_DEFAULT_U1 as LIMB_DARKENING_FORWARD_DEFAULT_U1,
+    FORWARD_MODEL_DEFAULT_U2 as LIMB_DARKENING_FORWARD_DEFAULT_U2,
+)

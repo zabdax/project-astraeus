@@ -565,3 +565,11 @@ legacy χ² hunk reviewed line-by-line, fresh combined run (new +
 hardening: 26 passed). Diagnostics available, pipeline wiring
 deferred to a separate gated change. Handoff:
 `docs/handoffs/P4-C_vetting_diagnostics.md`.
+
+## Entry 20 — P4-D limb-darkening source via subagent (2026-09-22)
+
+Dispatched after DEC-LIC (forward model only; subtraction frozen).
+Validated on return: fresh combined run (new + transit-model +
+physics: 28 passed); diff reviewed (default substitution + provenance
+docstring + re-export; frozen files untouched). Handoff:
+`docs/handoffs/P4-D_limb_darkening.md`. Next: **P4-E**.
