@@ -51,22 +51,28 @@ export function generateSyntheticCurve(p: SyntheticParams): SyntheticCurve {
   const rng = mulberry32(p.seed);
   const time: number[] = [];
   const flux: number[] = [];
-  const ramp = 0.1 * p.duration_days;
+  const model = transitModel(p);
   for (let i = 0; i < p.n_points; i++) {
     const t = (i / Math.max(p.n_points - 1, 1)) * p.baseline_days;
     time.push(t);
-    // Phase relative to epoch, folded on the period.
-    const phase = ((((t - p.epoch_bjd) % p.period_days) + p.period_days) % p.period_days) - p.period_days / 2;
-    const d = Math.abs(phase);
-    const half = p.duration_days / 2;
-    let drop = 0;
-    if (d <= half - ramp) drop = p.depth_fraction;
-    else if (d <= half + ramp) drop = p.depth_fraction * (1 - (d - (half - ramp)) / (2 * ramp));
-    flux.push(1 - drop + gaussian(rng) * p.noise_sigma);
+    flux.push(model(t) + gaussian(rng) * p.noise_sigma);
   }
   return {
     time,
     flux,
     target_name: `SYNTHETIC P=${p.period_days}d depth=${Math.round(p.depth_fraction * 1e6)}ppm`,
+  };
+}
+
+/** Noiseless transit model (shared by the curve, residuals, and fold). */
+export function transitModel(p: SyntheticParams): (t: number) => number {
+  const ramp = 0.1 * p.duration_days;
+  const half = p.duration_days / 2;
+  return (t: number) => {
+    const phase = ((((t - p.epoch_bjd) % p.period_days) + p.period_days) % p.period_days) - p.period_days / 2;
+    const d = Math.abs(phase);
+    if (d <= half - ramp) return 1 - p.depth_fraction;
+    if (d <= half + ramp) return 1 - p.depth_fraction * (1 - (d - (half - ramp)) / (2 * ramp));
+    return 1;
   };
 }

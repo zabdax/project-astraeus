@@ -1,6 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import Nav from "../components/Nav";
 import "./globals.css";
+
+const display = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const mono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "ASTRAEUS",
@@ -17,19 +33,14 @@ const NAV = [
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${display.variable} ${mono.variable}`}>
       <body>
         <header className="topbar">
           <Link href="/" className="brand">
+            <span className="brand-mark" aria-hidden />
             ASTRAEUS
           </Link>
-          <nav aria-label="primary">
-            {NAV.map((item) => (
-              <Link key={item.href} href={item.href} className="navlink">
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <Nav />
         </header>
         {children}
       </body>

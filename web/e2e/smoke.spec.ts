@@ -8,15 +8,16 @@ import { expect, test } from "@playwright/test";
 
 test("landing shows routes and API status", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "ASTRAEUS" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Investigate/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Analyses/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Find planets in starlight/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Investigate/ }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /Analyses/ }).first()).toBeVisible();
+  await expect(page.getByText("Pipeline status")).toBeVisible();
 });
 
-test("investigate renders the four honest steps", async ({ page }) => {
+test("investigate renders the honest workspace", async ({ page }) => {
   await page.goto("/investigate");
-  await expect(page.getByRole("heading", { name: "ASTRAEUS — Investigate" })).toBeVisible();
-  await expect(page.getByText("1 · Connect")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Investigate a light curve" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Run search" })).toBeVisible();
   await expect(page.getByText("What this page will not show")).toBeVisible();
   await expect(page.getByText(/No “planet probability”/)).toBeVisible();
 });

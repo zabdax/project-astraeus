@@ -10,10 +10,12 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import LightCurve from "../../components/LightCurve";
+import OrbitView from "../../components/OrbitView";
 import { getJob, submitInlineDataset } from "../../lib/api";
 import { binFolded, foldToPhase } from "../../lib/fold";
+import { circularDurationDays, impactParameter, semiMajorAxisAu } from "../../lib/orbit";
 import { ConnectBox, SessionProvider, useSession } from "../../lib/session";
-import { generateSyntheticCurve, type SyntheticParams } from "../../lib/synthetic";
+import { generateSyntheticCurve, transitModel, type SyntheticParams } from "../../lib/synthetic";
 
 const DEFAULTS: SyntheticParams = {
   period_days: 10,
@@ -29,6 +31,7 @@ const DEFAULTS: SyntheticParams = {
 function SimulateInner() {
   const { token } = useSession();
   const [params, setParams] = useState<SyntheticParams>(DEFAULTS);
+  const [inclination, setInclination] = useState(89.5);
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +41,21 @@ function SimulateInner() {
     const pts = foldToPhase(curve.time, curve.flux, params.period_days, params.epoch_bjd);
     return binFolded(pts, 60);
   }, [curve, params.period_days, params.epoch_bjd]);
+  // Live derived numbers (solar host stated; circular orbit stated).
+  const kpi = useMemo(() => {
+    const a = semiMajorAxisAu(params.period_days, 1.0);
+    const k = Math.sqrt(Math.max(params.depth_fraction, 0));
+    return {
+      a,
+      depthPpm: params.depth_fraction * 1e6,
+      impact: impactParameter(a, inclination, 1.0),
+      duration: circularDurationDays(params.period_days, k, a, inclination, 1.0),
+    };
+  }, [params.period_days, params.depth_fraction, inclination]);
+  const residuals = useMemo(() => {
+    const model = transitModel(params);
+    return curve.time.map((t, i) => curve.flux[i] - model(t));
+  }, [curve, params]);
   const set = (k: keyof SyntheticParams) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setParams((p) => ({ ...p, [k]: Number(e.target.value) }));
 
@@ -108,17 +126,55 @@ function SimulateInner() {
             <label>Seed</label>
             <input type="number" step={1} value={params.seed} onChange={set("seed")} />
           </div>
+          <div>
+            <label>Inclination (°)</label>
+            <input
+              type="number"
+              step={0.1}
+              value={inclination}
+              onChange={(e) => setInclination(Number(e.target.value))}
+            />
+          </div>
         </div>
-        <p className="muted">
-          {curve.time.length.toLocaleString()} points · depth {Math.round(params.depth_fraction * 1e6).toLocaleString()}{" "}
-          ppm · model trapezoid + seeded Gaussian
-        </p>
+        <dl className="numbers-strip" aria-label="derived system numbers">
+          <div>
+            <dt>{kpi.a.toFixed(4)} AU</dt>
+            <dd>semi-major axis (Kepler III, 1 M☉ stated)</dd>
+          </div>
+          <div>
+            <dt>{Math.round(kpi.depthPpm).toLocaleString()} ppm</dt>
+            <dd>transit depth</dd>
+          </div>
+          <div>
+            <dt>{Number.isNaN(kpi.duration) ? "no transit" : `${kpi.duration.toFixed(3)} d`}</dt>
+            <dd>duration (circular geometry)</dd>
+          </div>
+          <div>
+            <dt>{kpi.impact.toFixed(3)}</dt>
+            <dd>impact parameter b</dd>
+          </div>
+        </dl>
+      </section>
+      <section className="panel">
+        <h2>
+          System <span className="badge ai">SYNTHETIC</span>
+        </h2>
+        <OrbitView
+          elements={{
+            period_days: params.period_days,
+            semi_major_axis_au: kpi.a,
+            eccentricity: 0,
+            inclination_deg: inclination,
+            stellar_radius_rsun: 1.0,
+          }}
+        />
       </section>
       <section className="panel">
         <h2>
           Preview <span className="badge ai">SYNTHETIC</span>
         </h2>
         <LightCurve x={curve.time} y={curve.flux} title="Injected light curve" xlabel="time (d)" />
+        <LightCurve x={curve.time} y={residuals} title="Residuals (curve minus noiseless model)" xlabel="time (d)" />
         <LightCurve
           x={folded.phase}
           y={folded.flux}

@@ -1,17 +1,15 @@
 "use client";
 
 /**
- * P2-B vertical slice: Investigate (minimal honest UI).
- *
- * One real user journey against the P1-H API over the P2-A backend slice:
- * connect → data (target fetch or CSV upload) → run → measured progress
- * (SSE) → evidence with epistemic labels (PRD §10) → provenance →
- * download. No planet probability is invented anywhere; every number
- * carries MEASURED / DERIVED and TLS states truthfully whether it ran.
+ * Investigate: the blind search as a four-step workspace.
+ * Connect → data → run → evidence. Numbers carry epistemic badges;
+ * TLS states truthfully whether it ran; nothing here invents a planet.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChartLineUp, Database, DownloadSimple, Key, Play, X } from "@phosphor-icons/react";
 import CopilotPanel from "../../components/CopilotPanel";
 import LightCurve from "../../components/LightCurve";
+import { binFolded, foldToPhase } from "../../lib/fold";
 import {
   API_URL,
   cancelJob,
@@ -40,6 +38,18 @@ function Badge({ epistemic }: { epistemic: EpistemicClass }) {
 function fmt(v: number | null | undefined, digits = 4): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return "—";
   return v.toFixed(digits);
+}
+
+function StepHead({ n, icon: Icon, title }: { n: number; icon: typeof Key; title: string }) {
+  return (
+    <h2 className="step-head">
+      <span className="step-n" aria-hidden>
+        {n}
+      </span>
+      <Icon size={16} weight="duotone" aria-hidden />
+      {title}
+    </h2>
+  );
 }
 
 export default function InvestigatePage() {
@@ -111,7 +121,7 @@ export default function InvestigatePage() {
             ? await submitInlineDataset(token, dataset, { max_signals: maxSignals, snr_floor: snrFloor })
             : null;
       if (!res) {
-        setError("upload a CSV light curve first");
+        setError("Upload a CSV light curve first, then run the search.");
         return;
       }
       setJob(res);
@@ -125,8 +135,6 @@ export default function InvestigatePage() {
   function watchJob(jobId: string) {
     if (!token) return;
     const t = token;
-    // SSE trail (replay-then-live) for honest progress; polling as the
-    // terminal-state backstop so a dropped stream can never stick the UI.
     try {
       const es = new EventSource(eventsUrl(jobId));
       esRef.current = es;
@@ -153,7 +161,7 @@ export default function InvestigatePage() {
             setResult(r.result);
             setResultProvenance(r.provenance);
           } else {
-            setError(j.error ?? `job ${j.status.toLowerCase()}`);
+            setError(j.error ?? `Job ${j.status.toLowerCase()}. Check the API log for the reason.`);
           }
           setPhase("done");
         }
@@ -189,236 +197,283 @@ export default function InvestigatePage() {
   }
 
   const terminal = job !== null && ["COMPLETED", "FAILED", "CANCELLED"].includes(job.status);
+  const running = phase === "running" && !terminal;
+
+  // Folded view of the submitted curve at the first candidate's ephemeris.
+  // Available only when the arrays are in hand (CSV path); the target path
+  // never downloads photometry to the browser, and the UI states that.
+  const firstCandidate = result && result.candidates.length > 0 ? result.candidates[0] : null;
+  const foldedResult = useMemo(() => {
+    if (!dataset || !firstCandidate?.period_days || !firstCandidate?.epoch_bjd) return null;
+    const pts = foldToPhase(dataset.time, dataset.flux, firstCandidate.period_days, firstCandidate.epoch_bjd);
+    return binFolded(pts, 80);
+  }, [dataset, firstCandidate]);
 
   return (
     <main>
-      <h1>ASTRAEUS — Investigate</h1>
+      <p className="eyebrow">Blind search</p>
+      <h1>Investigate a light curve</h1>
       <p className="subtitle">
-        Minimal honest UI over the transit-search API (P2-B slice). API:{" "}
-        <span className="mono">{API_URL}</span>
+        One job, one dataset, measured progress. API: <span className="mono">{API_URL}</span>
       </p>
 
-      {/* ---- 1. Connect ---- */}
-      <section className="panel">
-        <h2>1 · Connect</h2>
-        {token ? (
-          <p className="muted">Authenticated — token held in memory only, never stored.</p>
-        ) : (
-          <div className="row">
-            <div>
-              <label htmlFor="apikey">API key (single-user deployment)</label>
-              <input
-                id="apikey"
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="ASTRAEUS_API_KEY value"
-              />
-            </div>
-            <div style={{ alignSelf: "end", flexGrow: 0 }}>
-              <button onClick={connect} disabled={!apiKey}>
-                Connect
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
+      <div className="workspace">
+        <div className="rail">
+          <section className="panel">
+            <StepHead n={1} icon={Key} title="Connect" />
+            {token ? (
+              <p className="muted" style={{ margin: 0 }}>
+                Authenticated — token lives in memory, never stored.
+              </p>
+            ) : (
+              <>
+                <label htmlFor="apikey">API key for this deployment</label>
+                <input
+                  id="apikey"
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="ASTRAEUS_API_KEY value"
+                />
+                <button onClick={connect} disabled={!apiKey}>
+                  Connect
+                </button>
+              </>
+            )}
+          </section>
 
-      {/* ---- 2. Data ---- */}
-      <section className="panel">
-        <h2>2 · Data — one job consumes one dataset</h2>
-        <div className="row">
-          <div>
+          <section className="panel">
+            <StepHead n={2} icon={Database} title="Data" />
             <label htmlFor="source">Source</label>
             <select id="source" value={source} onChange={(e) => setSource(e.target.value as "target" | "csv")}>
               <option value="target">Real fetch (MAST / archive)</option>
               <option value="csv">CSV upload (time,flux[,flux_err])</option>
             </select>
-          </div>
-          {source === "target" ? (
-            <>
+            {source === "target" ? (
+              <div className="row" style={{ marginTop: 10 }}>
+                <div>
+                  <label htmlFor="target">Target</label>
+                  <input id="target" type="text" value={targetName} onChange={(e) => setTargetName(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="mission">Mission</label>
+                  <select id="mission" value={mission} onChange={(e) => setMission(e.target.value)}>
+                    <option>Kepler</option>
+                    <option>K2</option>
+                    <option>TESS</option>
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div style={{ marginTop: 10 }}>
+                  <label htmlFor="csv">Light-curve file</label>
+                  <input id="csv" type="file" accept=".csv,.txt" onChange={(e) => onCsvFile(e.target.files?.[0])} />
+                </div>
+                {dataset && (
+                  <p className="muted">
+                    {csvName}: {dataset.time.length.toLocaleString()} points, baseline{" "}
+                    {fmt(dataset.time[dataset.time.length - 1] - dataset.time[0], 1)} d
+                  </p>
+                )}
+              </>
+            )}
+          </section>
+
+          <section className="panel">
+            <StepHead n={3} icon={Play} title="Run" />
+            <div className="row">
               <div>
-                <label htmlFor="target">Target</label>
-                <input id="target" type="text" value={targetName} onChange={(e) => setTargetName(e.target.value)} />
+                <label htmlFor="maxsignals">Max signals (1–10)</label>
+                <input
+                  id="maxsignals"
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={maxSignals}
+                  onChange={(e) => setMaxSignals(Number(e.target.value))}
+                />
               </div>
               <div>
-                <label htmlFor="mission">Mission</label>
-                <select id="mission" value={mission} onChange={(e) => setMission(e.target.value)}>
-                  <option>Kepler</option>
-                  <option>K2</option>
-                  <option>TESS</option>
-                </select>
+                <label htmlFor="snrfloor">SNR floor</label>
+                <input
+                  id="snrfloor"
+                  type="number"
+                  step={0.1}
+                  value={snrFloor}
+                  onChange={(e) => setSnrFloor(Number(e.target.value))}
+                />
               </div>
-            </>
-          ) : (
-            <div>
-              <label htmlFor="csv">Light-curve file</label>
-              <input
-                id="csv"
-                type="file"
-                accept=".csv,.txt"
-                onChange={(e) => onCsvFile(e.target.files?.[0])}
-              />
-              {dataset && (
-                <p className="muted">
-                  {csvName}: {dataset.time.length.toLocaleString()} points, baseline{" "}
-                  {fmt(dataset.time[dataset.time.length - 1] - dataset.time[0], 1)} d
+            </div>
+            <button onClick={submit} disabled={!token || running} style={{ width: "100%" }}>
+              {running ? "Searching…" : "Run search"}
+            </button>
+            {!token && <p className="muted">Connect first to run.</p>}
+          </section>
+        </div>
+
+        <div className="results">
+          {(job || running) && (
+            <section className="panel">
+              <StepHead n={4} icon={ChartLineUp} title="Evidence" />
+              {job && (
+                <p>
+                  <span className={`status-dot ${job.status.toLowerCase()}`} />
+                  <span className="mono">{job.job_id}</span>
+                  <span className="muted">
+                    {" "}
+                    · {job.status} · {job.stage}
+                    {job.iteration !== null && job.max_iterations !== null
+                      ? ` · iteration ${job.iteration}/${job.max_iterations}`
+                      : ""}
+                  </span>
                 </p>
               )}
-            </div>
-          )}
-        </div>
-        {source === "csv" && dataset && (
-          <LightCurve x={dataset.time} y={dataset.flux} title="Uploaded light curve" xlabel="time" />
-        )}
-        <div className="row">
-          <div>
-            <label htmlFor="maxsignals">Max signals (1–10)</label>
-            <input
-              id="maxsignals"
-              type="number"
-              min={1}
-              max={10}
-              value={maxSignals}
-              onChange={(e) => setMaxSignals(Number(e.target.value))}
-            />
-          </div>
-          <div>
-            <label htmlFor="snrfloor">SNR floor</label>
-            <input
-              id="snrfloor"
-              type="number"
-              step={0.1}
-              value={snrFloor}
-              onChange={(e) => setSnrFloor(Number(e.target.value))}
-            />
-          </div>
-          <div style={{ alignSelf: "end", flexGrow: 0 }}>
-            <button onClick={submit} disabled={!token || phase === "running"}>
-              Run search
-            </button>
-          </div>
-        </div>
-        {error && phase !== "running" && <p className="error">{error}</p>}
-      </section>
-
-      {/* ---- 3. Progress ---- */}
-      {(phase === "running" || job) && (
-        <section className="panel">
-          <h2>3 · Progress — measured, not a bar</h2>
-          {job && (
-            <p>
-              <span className={`status-dot ${job.status.toLowerCase()}`} />
-              <span className="mono">{job.job_id}</span> · {job.status} · stage {job.stage}
-              {job.iteration !== null && job.max_iterations !== null
-                ? ` · iteration ${job.iteration}/${job.max_iterations}`
-                : ""}
-            </p>
-          )}
-          {phase === "running" && !terminal && (
-            <button className="danger" onClick={cancel}>
-              Cancel (kills the process tree)
-            </button>
-          )}
-          <div className="eventlog" aria-label="job events">
-            {events.length === 0 && <div className="muted">waiting for first event…</div>}
-            {events.slice(-30).map((ev, i) => (
-              <div key={i} className="mono muted">
-                {ev.type}
-                {typeof ev.iteration === "number" ? ` #${ev.iteration}` : ""}
-                {typeof ev.stage === "string" ? ` · ${ev.stage}` : ""}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ---- 4. Evidence ---- */}
-      {phase === "done" && result && (
-        <section className="panel">
-          <h2>4 · Evidence — never a planet probability</h2>
-          {result.candidates.length === 0 ? (
-            <p>
-              No candidates found.{" "}
-              <span className="muted">
-                TLS ran {result.tls.n_ran_pass + result.tls.n_ran_fail}×
-                {result.tls.n_env_unavailable > 0
-                  ? `, unavailable ${result.tls.n_env_unavailable}× — treat with suspicion`
-                  : ""}
-                . An empty list on a COMPLETED job is a measured negative, not a broken run.
-              </span>
-            </p>
-          ) : (
-            <table className="evidence">
-              <thead>
-                <tr>
-                  <th>Candidate</th>
-                  <th>Period (d) <Badge epistemic="MEASURED" /></th>
-                  <th>Depth <Badge epistemic="MEASURED" /></th>
-                  <th>SNR <Badge epistemic="MEASURED" /></th>
-                  <th>TLS <Badge epistemic="MEASURED" /></th>
-                  <th>Vetting</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.candidates.map((c) => {
-                  const tls = tlsOutcomeLabel(c.tls.outcome);
-                  return (
-                    <tr key={c.candidate_id}>
-                      <td className="mono">{c.candidate_id}</td>
-                      <td>{fmt(c.period_days)}</td>
-                      <td>{fmt(c.depth_fraction, 6)}</td>
-                      <td>{fmt(c.snr, 2)}</td>
-                      <td>
-                        {tls.text} <Badge epistemic={tls.epistemic} />
-                        {c.tls.sde !== null && <span className="muted"> · SDE {fmt(c.tls.sde, 2)}</span>}
-                      </td>
-                      <td>
-                        {c.vetting.verdict} <Badge epistemic="DERIVED" />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-
-          <details className="provenance">
-            <summary>Provenance — reproduce this run from its own record</summary>
-            <pre className="dump">
-              {JSON.stringify(
-                {
-                  dataset_id: result.dataset_id,
-                  capability_snapshot: result.capability_snapshot,
-                  tls_summary: result.tls,
-                  warnings: result.warnings,
-                  provenance: resultProvenance,
-                },
-                null,
-                2,
+              {running && !terminal && (
+                <button className="danger" onClick={cancel}>
+                  <X size={14} weight="bold" aria-hidden style={{ verticalAlign: "-2px", marginRight: 6 }} />
+                  Cancel (kills the process tree)
+                </button>
               )}
-            </pre>
-          </details>
-          <div className="row">
-            <div style={{ flexGrow: 0 }}>
+              {running && !result && (
+                <div aria-label="loading results" style={{ marginTop: 12 }}>
+                  <div className="skeleton" style={{ height: 34, marginBottom: 8 }} />
+                  <div className="skeleton" style={{ height: 34, marginBottom: 8 }} />
+                  <div className="skeleton" style={{ height: 34 }} />
+                </div>
+              )}
+              <div className="eventlog" aria-label="job events">
+                {events.length === 0 && <div>waiting for first event…</div>}
+                {events.slice(-30).map((ev, i) => (
+                  <div key={i}>
+                    {ev.type}
+                    {typeof ev.iteration === "number" ? ` #${ev.iteration}` : ""}
+                    {typeof ev.stage === "string" ? ` · ${ev.stage}` : ""}
+                  </div>
+                ))}
+              </div>
+              {error && phase !== "data" && <p className="error">{error}</p>}
+            </section>
+          )}
+
+          {source === "csv" && dataset && !job && (
+            <section className="panel">
+              <h2>Uploaded curve</h2>
+              <LightCurve x={dataset.time} y={dataset.flux} title="Uploaded light curve" xlabel="time" />
+            </section>
+          )}
+
+          {phase === "done" && result && (
+            <section className="panel">
+              <h2>Candidates — never a planet probability</h2>
+              {result.candidates.length === 0 ? (
+                <p>
+                  No candidates found.{" "}
+                  <span className="muted">
+                    TLS ran {result.tls.n_ran_pass + result.tls.n_ran_fail}×
+                    {result.tls.n_env_unavailable > 0
+                      ? `, unavailable ${result.tls.n_env_unavailable}× — treat with suspicion`
+                      : ""}
+                    . An empty list on a COMPLETED job is a measured negative, not a broken run.
+                  </span>
+                </p>
+              ) : (
+                <table className="evidence">
+                  <thead>
+                    <tr>
+                      <th>Candidate</th>
+                      <th>
+                        Period (d) <Badge epistemic="MEASURED" />
+                      </th>
+                      <th>
+                        Depth <Badge epistemic="MEASURED" />
+                      </th>
+                      <th>
+                        SNR <Badge epistemic="MEASURED" />
+                      </th>
+                      <th>
+                        TLS <Badge epistemic="MEASURED" />
+                      </th>
+                      <th>Vetting</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.candidates.map((c) => {
+                      const tls = tlsOutcomeLabel(c.tls.outcome);
+                      return (
+                        <tr key={c.candidate_id}>
+                          <td className="mono">{c.candidate_id}</td>
+                          <td>{fmt(c.period_days)}</td>
+                          <td>{fmt(c.depth_fraction, 6)}</td>
+                          <td>{fmt(c.snr, 2)}</td>
+                          <td>
+                            {tls.text} <Badge epistemic={tls.epistemic} />
+                            {c.tls.sde !== null && <span className="muted"> · SDE {fmt(c.tls.sde, 2)}</span>}
+                          </td>
+                          <td>
+                            {c.vetting.verdict} <Badge epistemic="DERIVED" />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+
+              {foldedResult && firstCandidate && (
+                <>
+                  <h2 style={{ marginTop: 16 }}>
+                    Folded at {firstCandidate.candidate_id} <Badge epistemic="DERIVED" />
+                  </h2>
+                  <LightCurve
+                    x={foldedResult.phase}
+                    y={foldedResult.flux}
+                    title={`Phase-folded at P=${fmt(firstCandidate.period_days)} d (80 bins)`}
+                    xlabel="phase"
+                  />
+                </>
+              )}
+              {result && result.candidates.length > 0 && !foldedResult && (
+                <p className="muted">
+                  No folded view: target-fetch jobs keep photometry server-side — only the evidence travels.
+                </p>
+              )}
+
+              <details className="provenance">
+                <summary>Provenance — reproduce this run from its own record</summary>                <pre className="dump">
+                  {JSON.stringify(
+                    {
+                      dataset_id: result.dataset_id,
+                      capability_snapshot: result.capability_snapshot,
+                      tls_summary: result.tls,
+                      warnings: result.warnings,
+                      provenance: resultProvenance,
+                    },
+                    null,
+                    2,
+                  )}
+                </pre>
+              </details>
               <button className="secondary" onClick={download}>
+                <DownloadSimple size={14} weight="bold" aria-hidden style={{ verticalAlign: "-2px", marginRight: 6 }} />
                 Download result JSON
               </button>
-            </div>
-          </div>
-        </section>
-      )}
-      {phase === "done" && result && token && <CopilotPanel token={token} result={result} />}
-      {phase === "done" && !result && error && <p className="error">{error}</p>}
+            </section>
+          )}
+          {phase === "done" && !result && error && <p className="error">{error}</p>}
+        </div>
+      </div>
 
       <section className="panel">
         <h2>What this page will not show</h2>
         <ol className="steps">
           <li>No “planet probability” — the engine computes no such quantity.</li>
-          <li>No AI interpretation in this slice — copilot lands in P3-G, labelled AI.</li>
+          <li>No AI interpretation inline — the copilot panel below is labelled AI, verify against the table.</li>
           <li>No inference section — MCMC wiring is Phase 4 work; the field stays null.</li>
         </ol>
       </section>
+
+      {phase === "done" && result && token && <CopilotPanel token={token} result={result} />}
     </main>
   );
 }
