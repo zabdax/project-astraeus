@@ -112,6 +112,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/{job_id}/artifacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the array artifacts a job holds
+         * @description Manifest of servable arrays.  A job with no result yet returns
+         *     its dataset (when stored) and an empty candidate list -- 200, not
+         *     404.  URLs are templated server-side; the client must never build
+         *     a store path.
+         */
+        get: operations["list_artifacts_jobs__job_id__artifacts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{job_id}/artifacts/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fetch decimated array data for charts
+         * @description Decimated series for charts.  Refs resolve from the job's own
+         *     records -- the request carries no path, so there is nothing to
+         *     traverse.  ``If-None-Match`` revalidates against the content ETag
+         *     (304).  ``format=npy`` returns a real ``.npy`` payload for
+         *     downloads, never raw bytes.
+         */
+        get: operations["artifact_data_jobs__job_id__artifacts_data_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/copilot/explain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stream an evidence-grounded explanation (AI-INTERPRETED) */
+        post: operations["explain_copilot_explain_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -133,6 +197,82 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ArtifactLink */
+        ArtifactLink: {
+            ref?: components["schemas"]["ArtifactRefOut"] | null;
+            /** Url */
+            url?: string | null;
+        };
+        /** ArtifactManifestResponse */
+        ArtifactManifestResponse: {
+            /** Job Id */
+            job_id: string;
+            dataset?: components["schemas"]["DatasetManifest"];
+            /** Candidates */
+            candidates?: components["schemas"]["CandidateArtifactEntry"][];
+        };
+        /**
+         * ArtifactRefOut
+         * @description Public projection of ``contracts.dataset.ArtifactRef``.
+         *
+         *     ``path`` is store-relative and informational only: the client must
+         *     use the templated ``url`` from the manifest, never build a path.
+         */
+        ArtifactRefOut: {
+            /** Store */
+            store: string;
+            /** Path */
+            path: string;
+            /** Dtype */
+            dtype: string;
+            /** Shape */
+            shape: number[];
+            /** Checksum */
+            checksum: string;
+            /** N Bytes */
+            n_bytes: number;
+        };
+        /** CandidateArtifactEntry */
+        CandidateArtifactEntry: {
+            /** Candidate Id */
+            candidate_id: string;
+            /** Period Days */
+            period_days?: number | null;
+            periodogram?: components["schemas"]["ArtifactLink"];
+            folded?: components["schemas"]["ArtifactLink"];
+            ttv?: components["schemas"]["TtvManifest"];
+        };
+        /**
+         * CopilotRequest
+         * @description Explain this result. ``provider`` overrides the server default.
+         */
+        CopilotRequest: {
+            /**
+             * Result
+             * @description AnalysisResult dict to explain
+             */
+            result: {
+                [key: string]: unknown;
+            };
+            /**
+             * Question
+             * @default Explain these transit-search results for a non-expert.
+             */
+            question: string;
+            /**
+             * Provider
+             * @description openai | anthropic | google | ollama; null = server default
+             */
+            provider?: string | null;
+        };
+        /** DatasetManifest */
+        DatasetManifest: {
+            /** Dataset Id */
+            dataset_id?: string | null;
+            ref?: components["schemas"]["ArtifactRefOut"] | null;
+            /** Url */
+            url?: string | null;
+        };
         /** ErrorResponse */
         ErrorResponse: {
             /** Detail */
@@ -279,6 +419,15 @@ export interface components {
             owner_id: string;
             /** Expires In */
             expires_in: number;
+        };
+        /** TtvManifest */
+        TtvManifest: {
+            /** N Epochs */
+            n_epochs?: number | null;
+            /** Rms Minutes */
+            rms_minutes?: number | null;
+            /** Url */
+            url?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -638,6 +787,162 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    list_artifacts_jobs__job_id__artifacts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactManifestResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    artifact_data_jobs__job_id__artifacts_data_get: {
+        parameters: {
+            query: {
+                type: "dataset" | "periodogram" | "folded" | "ttv";
+                candidate?: string;
+                format?: "json" | "npy";
+                max_points?: number;
+                stride?: number | null;
+                bins?: number;
+                t_min?: number | null;
+                t_max?: number | null;
+            };
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                    "application/octet-stream": unknown;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    explain_copilot_explain_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopilotRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                    "text/event-stream": unknown;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

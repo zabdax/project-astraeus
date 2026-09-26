@@ -22,5 +22,6 @@ VOLUME ["/data"]
 EXPOSE 8000
 # Bind 0.0.0.0: inside the container the loopback is the container's own;
 # Caddy (same compose network) is the only ingress. Never publish 8000
-# directly on a public host.
-CMD ["astraeus-api", "--host", "0.0.0.0", "--port", "8000"]
+# directly on a public host. Shell form so hosts that inject $PORT
+# (Render) are honored; the default stays 8000 for compose.
+CMD astraeus-api --host 0.0.0.0 --port ${PORT:-8000}

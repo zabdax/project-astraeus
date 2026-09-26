@@ -167,6 +167,7 @@ function SimulateInner() {
             inclination_deg: inclination,
             stellar_radius_rsun: 1.0,
           }}
+          depthFraction={params.depth_fraction}
         />
       </section>
       <section className="panel">

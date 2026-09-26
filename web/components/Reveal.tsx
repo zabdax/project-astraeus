@@ -1,9 +1,11 @@
 "use client";
 
 /**
- * Scroll reveal without a library: IntersectionObserver adds
- * `.is-in` once; CSS owns the motion (transform + opacity only).
- * Collapses to instant under prefers-reduced-motion.
+ * Scroll reveal without a library: IntersectionObserver adds `.is-in`
+ * once; CSS owns the motion (transform + opacity only). Variants keep
+ * one orchestrated language: rise (default), scale (bento cards),
+ * none (content that should just appear). Collapses to instant under
+ * prefers-reduced-motion.
  */
 import { useEffect, useRef, type ReactNode } from "react";
 
@@ -11,9 +13,10 @@ interface Props {
   children: ReactNode;
   delay?: number;
   className?: string;
+  variant?: "rise" | "scale" | "none";
 }
 
-export default function Reveal({ children, delay = 0, className = "" }: Props) {
+export default function Reveal({ children, delay = 0, className = "", variant = "rise" }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,14 +35,15 @@ export default function Reveal({ children, delay = 0, className = "" }: Props) {
           }
         }
       },
-      { threshold: 0.2 },
+      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
+  const variantClass = variant === "none" ? "" : variant === "scale" ? "reveal-scale" : "reveal";
   return (
-    <div ref={ref} className={`reveal ${className}`} style={{ transitionDelay: `${delay}ms` }}>
+    <div ref={ref} className={`${variantClass} ${className}`} style={{ transitionDelay: `${delay}ms` }}>
       {children}
     </div>
   );

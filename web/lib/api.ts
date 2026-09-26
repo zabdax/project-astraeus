@@ -193,6 +193,196 @@ export function eventsUrl(jobId: string): string {
   return `${API_URL}/jobs/${jobId}/events`;
 }
 
+// -- artifact arrays (3D-evidence program) ----------------------------------
+// Decimated series the charts render.  Every payload carries its
+// decimation receipt (n_total/n_returned/stride); ETags make repeat
+// views free via 304.
+
+export interface ArtifactRef {
+  store: string;
+  path: string;
+  dtype: string;
+  shape: number[];
+  checksum: string;
+  n_bytes: number;
+}
+
+export interface ArtifactLink {
+  ref: ArtifactRef | null;
+  url: string | null;
+}
+
+export interface CandidateArtifactEntry {
+  candidate_id: string;
+  period_days: number | null;
+  periodogram: ArtifactLink;
+  folded: ArtifactLink;
+  ttv: { n_epochs: number | null; rms_minutes: number | null; url: string | null };
+}
+
+export interface ArtifactManifest {
+  job_id: string;
+  dataset: { dataset_id: string | null; ref: ArtifactRef | null; url: string | null };
+  candidates: CandidateArtifactEntry[];
+}
+
+export interface DatasetSeries {
+  job_id: string;
+  dataset_id: string | null;
+  n_total: number;
+  n_returned: number;
+  stride: number;
+  time: number[];
+  flux: number[];
+  flux_err: number[] | null;
+  etag: string;
+}
+
+export interface PeriodogramSeries {
+  job_id: string;
+  candidate_id: string;
+  n_total: number;
+  n_returned: number;
+  stride: number;
+  periods: number[];
+  powers: number[];
+  peak: { period_days: number; power: number } | null;
+}
+
+export interface FoldedSeries {
+  job_id: string;
+  candidate_id: string;
+  period_days: number;
+  epoch_bjd: number;
+  bins: number;
+  n_total: number;
+  phase: number[];
+  flux: number[];
+  counts: number[];
+}
+
+export interface TtvSeries {
+  job_id: string;
+  candidate_id: string;
+  n_epochs: number;
+  rms_minutes: number | null;
+  residuals_min: number[];
+}
+
+const seriesEtags = new Map<string, string>();
+const seriesCache = new Map<string, unknown>();
+
+async function fetchSeries<T>(token: string, path: string): Promise<T> {
+  const url = `${API_URL}${path}`;
+  const headers: Record<string, string> = { authorization: `Bearer ${token}` };
+  const tag = seriesEtags.get(url);
+  if (tag) headers["if-none-match"] = tag;
+  const resp = await fetch(url, { headers });
+  if (resp.status === 304) {
+    const hit = seriesCache.get(url);
+    if (hit !== undefined) return hit as T;
+    // Cache lost (reload): fall through with a clean re-fetch.
+    const retry = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+    if (!retry.ok) throw new Error(`API ${retry.status} ${path}`);
+    return readSeries<T>(url, retry);
+  }
+  if (!resp.ok) {
+    throw new Error(`API ${resp.status} ${path}: ${(await resp.text()).slice(0, 200)}`);
+  }
+  return readSeries<T>(url, resp);
+}
+
+async function readSeries<T>(url: string, resp: Response): Promise<T> {
+  const tag = resp.headers.get("etag");
+  const data = (await resp.json()) as T;
+  if (tag) {
+    seriesEtags.set(url, tag);
+    seriesCache.set(url, data);
+  }
+  return data;
+}
+
+export function listArtifacts(token: string, jobId: string): Promise<ArtifactManifest> {
+  return fetchSeries<ArtifactManifest>(token, `/jobs/${jobId}/artifacts`);
+}
+
+export function getDataset(
+  token: string,
+  jobId: string,
+  opts?: { max_points?: number; t_min?: number; t_max?: number },
+): Promise<DatasetSeries> {
+  const q = new URLSearchParams({ type: "dataset" });
+  if (opts?.max_points !== undefined) q.set("max_points", String(opts.max_points));
+  if (opts?.t_min !== undefined) q.set("t_min", String(opts.t_min));
+  if (opts?.t_max !== undefined) q.set("t_max", String(opts.t_max));
+  return fetchSeries<DatasetSeries>(token, `/jobs/${jobId}/artifacts/data?${q}`);
+}
+
+export function getPeriodogram(
+  token: string,
+  jobId: string,
+  candidateId: string,
+  max_points = 2000,
+): Promise<PeriodogramSeries> {
+  const q = new URLSearchParams({ type: "periodogram", candidate: candidateId, max_points: String(max_points) });
+  return fetchSeries<PeriodogramSeries>(token, `/jobs/${jobId}/artifacts/data?${q}`);
+}
+
+export function getFolded(
+  token: string,
+  jobId: string,
+  candidateId: string,
+  bins = 80,
+): Promise<FoldedSeries> {
+  const q = new URLSearchParams({ type: "folded", candidate: candidateId, bins: String(bins) });
+  return fetchSeries<FoldedSeries>(token, `/jobs/${jobId}/artifacts/data?${q}`);
+}
+
+export function getTtv(token: string, jobId: string, candidateId: string): Promise<TtvSeries> {
+  const q = new URLSearchParams({ type: "ttv", candidate: candidateId });
+  return fetchSeries<TtvSeries>(token, `/jobs/${jobId}/artifacts/data?${q}`);
+}
+
+/**
+ * Auth-capable SSE reader for `/jobs/{id}/events`.
+ *
+ * Native EventSource cannot send an Authorization header, so the previous
+ * EventSource path silently failed against the protected route. This uses
+ * fetch + a line reader (same pattern as explainResult), with identical
+ * `parseEventLine` semantics. Callers keep their polling backstop.
+ */
+export async function streamJobEvents(
+  token: string,
+  jobId: string,
+  onEvent: (ev: WorkerEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const resp = await fetch(eventsUrl(jobId), {
+    headers: { authorization: `Bearer ${token}`, accept: "text/event-stream" },
+    signal,
+  });
+  if (!resp.ok || !resp.body) {
+    throw new Error(`events ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
+  }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const blocks = buf.split("\n\n");
+    buf = blocks.pop() ?? "";
+    for (const block of blocks) {
+      for (const line of block.split("\n")) {
+        const ev = parseEventLine(line);
+        if (ev) onEvent(ev);
+      }
+    }
+    if (signal?.aborted) break;
+  }
+}
+
 export interface CopilotEvent {
   kind: "evidence" | "text" | "error" | "done";
   digest?: string;

@@ -34,6 +34,14 @@
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Motion language: 4 tokens cover the product. Springs for chrome,
+     expo-out for reveals, short taps, page-length transitions. */
+  --ease-spring: linear(0, 0.5 1.8%, 1.01 3.6%, 1.11 7%, 1.13 11%, 1.01 24%, 1 36%);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-tap: 120ms;
+  --dur-ui: 220ms;
+  --dur-page: 450ms;
+  --stagger: 55ms;
 }
 
 * {
@@ -552,8 +560,19 @@ pre.dump {
     animation: none !important;
   }
 
+  body::after,
+  .scroll-progress {
+    display: none;
+  }
+
   .skeleton {
     background: var(--panel-2);
+  }
+
+  .reveal,
+  .reveal-scale {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -818,4 +837,445 @@ main.landing {
   .prov-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---- motion language: scroll progress, grain, reveals ---- */
+
+/* Film grain kills banding on dark gradients: 3% fixed overlay. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+/* Thin scroll progress hairline, owned by JS via --scroll (0..1). */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: calc(var(--scroll, 0) * 100%);
+  background: var(--accent);
+  z-index: 70;
+}
+
+/* Scale variant for bento cards: settles with the spring token. */
+.reveal-scale {
+  opacity: 0;
+  transform: translateY(14px) scale(0.985);
+  transition:
+    opacity 0.6s var(--ease-out-expo),
+    transform 0.6s var(--ease-spring);
+}
+
+.reveal-scale.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Count-up numbers: tabular figures, no layout shift. */
+.numbers-strip dt {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hero depth: the chart panel drifts against scroll (progressive).
+   Browsers without scroll timelines keep the static composition. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-wrap .hero-chart {
+      animation: hero-drift linear both;
+      animation-timeline: scroll();
+      animation-range: 0 480px;
+    }
+
+    @keyframes hero-drift {
+      from {
+        transform: translateY(0);
+      }
+      to {
+        transform: translateY(26px);
+      }
+    }
+
+    .stage-rail li::before {
+      animation: rail-fill linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 90%;
+      transform-origin: top;
+    }
+
+    @keyframes rail-fill {
+      from {
+        transform: scaleY(0.2);
+        opacity: 0.4;
+      }
+      to {
+        transform: scaleY(1);
+        opacity: 1;
+      }
+    }
+  }
+}
+
+/* Magnetic CTA: drifts toward the cursor, springs home. */
+@media (prefers-reduced-motion: no-preference) {
+  .cta-primary {
+    transition:
+      transform var(--dur-ui) var(--ease-spring),
+      background var(--dur-tap) ease;
+  }
+
+  .cta-primary:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* ---- orbit console: the 3D workbench ---- */
+
+.orbit-console {
+  background: #05080f;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+
+.orbit-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.orbit-toolbar button {
+  padding: 7px 14px;
+  font-size: 12.5px;
+}
+
+.orbit-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.orbit-flag .status-dot {
+  background: var(--faint);
+}
+
+.orbit-flag.on {
+  color: #cfe6ff;
+}
+
+.orbit-flag.on .status-dot {
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(108, 176, 255, 0.9);
+}
+
+.orbit-hint {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.orbit-canvas {
+  width: 100%;
+  height: 340px;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+.orbit-canvas:active {
+  cursor: grabbing;
+}
+
+.orbit-canvas:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ---- run timeline: SSE progress as a mission clock ---- */.run-meter {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-soft);
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.run-meter > span {
+  display: block;
+  height: 100%;
+  width: calc(var(--p, 0) * 100%);
+  background: var(--accent);
+  transition: width var(--dur-ui) var(--ease-out-expo);
+}
+
+.run-phase {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* ---- intro landing: 3D hero, liquid aurora, glass bento ---- */
+
+/* Glass: floating surfaces only, never behind body text. */
+.glass {
+  background: rgba(13, 20, 36, 0.62);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  border: 1px solid rgba(108, 176, 255, 0.16);
+  border-radius: var(--radius-panel);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(221, 229, 243, 0.06);
+}
+
+/* Liquid aurora: two slow blobs in palette hues (signal + starlight).
+   Transform-only drift; frozen under reduced-motion by the global rule. */
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aurora span {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+}
+
+.aurora span:first-child {
+  width: 46%;
+  aspect-ratio: 1;
+  left: -8%;
+  top: -18%;
+  background: radial-gradient(circle, rgba(108, 176, 255, 0.34), transparent 65%);
+  animation: aurora-a 16s ease-in-out infinite alternate;
+}
+
+.aurora span:last-child {
+  width: 38%;
+  aspect-ratio: 1;
+  right: -6%;
+  bottom: -22%;
+  background: radial-gradient(circle, rgba(232, 196, 106, 0.2), transparent 65%);
+  animation: aurora-b 20s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-a {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(9%, 12%) scale(1.18);
+  }
+}
+
+@keyframes aurora-b {
+  from {
+    transform: translate(0, 0) scale(1.1);
+  }
+  to {
+    transform: translate(-10%, -8%) scale(0.94);
+  }
+}
+
+/* 3D hero stage. */
+.hero3d-wrap {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-panel);
+  background: #04060c;
+  margin-bottom: 14px;
+}
+
+.hero3d {
+  position: relative;
+  height: clamp(420px, 62vh, 600px);
+}
+
+.hero3d canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.hero3d-copy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(20px, 4vw, 44px);
+  background: linear-gradient(180deg, transparent 46%, rgba(4, 6, 12, 0.82) 100%);
+  pointer-events: none;
+}
+
+.hero3d-copy > * {
+  pointer-events: auto;
+}
+
+.hero3d-copy h1 {
+  font-size: clamp(34px, 6vw, 64px);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  max-width: 16ch;
+  margin-bottom: 10px;
+}
+
+.hero3d-chip {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: var(--radius-control);
+}
+
+.hero3d-health {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: var(--radius-control);
+}
+
+.scroll-cue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  color: var(--faint);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.scroll-cue::after {
+  content: "";
+  width: 1px;
+  height: 26px;
+  background: var(--line);
+  animation: cue-drop 1.8s var(--ease-out-expo) infinite;
+}
+
+@keyframes cue-drop {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+
+/* Persona doors: three entrances, one engine. */
+.doors {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 860px) {
+  .doors {
+    grid-template-columns: 1fr;
+  }
+}
+
+.door {
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 220px;
+  transition:
+    transform var(--dur-ui) var(--ease-spring),
+    border-color var(--dur-tap) ease;
+}
+
+.door:hover {
+  transform: translateY(-3px);
+  border-color: rgba(108, 176, 255, 0.45);
+}
+
+.door:hover strong {
+  color: var(--accent);
+}
+
+.door svg {
+  color: var(--accent);
+}
+
+.door strong {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.door p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13.5px;
+  flex: 1;
+}
+
+.door .mono {
+  color: var(--faint);
+  font-size: 12px;
+}
+
+/* Feature bento. */
+.bento {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 860px) {
+  .bento {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bento-card {
+  padding: 22px;
+  transition:
+    transform var(--dur-ui) var(--ease-spring),
+    border-color var(--dur-tap) ease;
+}
+
+.bento-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(108, 176, 255, 0.35);
+}
+
+.bento-card.honest {
+  border-color: rgba(62, 207, 142, 0.25);
 }

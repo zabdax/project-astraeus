@@ -27,6 +27,17 @@ __all__ = [
     "ResultResponse",
     "ErrorResponse",
     "JobListResponse",
+    "ArtifactRefOut",
+    "ArtifactLink",
+    "TtvManifest",
+    "CandidateArtifactEntry",
+    "DatasetManifest",
+    "ArtifactManifestResponse",
+    "PeriodogramPeak",
+    "DatasetSeries",
+    "PeriodogramSeries",
+    "FoldedSeries",
+    "TtvSeries",
 ]
 
 #: PRD §13.1: target identifiers are routed to MAST/S3, so they must match a
@@ -172,3 +183,114 @@ class ErrorResponse(BaseModel):
 class JobListResponse(BaseModel):
     jobs: list[JobResponse]
     count: int
+
+
+# -- artifact arrays (3D-evidence program) -----------------------------------
+#
+# Arrays never cross the wire inline in ``AnalysisResult`` (PRD §5/§8.3);
+# these models are the *separate, explicit* download surface for the
+# browser: a manifest of what a job holds plus decimated series a chart
+# can actually render.  Every payload carries its decimation receipt
+# (``n_total``/``n_returned``/``stride``) and an immutable ETag so the
+# client can cache by content, never by URL.
+
+
+class ArtifactRefOut(BaseModel):
+    """Public projection of ``contracts.dataset.ArtifactRef``.
+
+    ``path`` is store-relative and informational only: the client must
+    use the templated ``url`` from the manifest, never build a path.
+    """
+
+    store: str
+    path: str
+    dtype: str
+    shape: list[int]
+    checksum: str
+    n_bytes: int
+
+
+class ArtifactLink(BaseModel):
+    ref: ArtifactRefOut | None = None
+    url: str | None = None
+
+
+class TtvManifest(BaseModel):
+    n_epochs: int | None = None
+    rms_minutes: float | None = None
+    url: str | None = None
+
+
+class CandidateArtifactEntry(BaseModel):
+    candidate_id: str
+    period_days: float | None = None
+    periodogram: ArtifactLink = Field(default_factory=ArtifactLink)
+    folded: ArtifactLink = Field(default_factory=ArtifactLink)
+    ttv: TtvManifest = Field(default_factory=TtvManifest)
+
+
+class DatasetManifest(BaseModel):
+    dataset_id: str | None = None
+    ref: ArtifactRefOut | None = None
+    url: str | None = None
+
+
+class ArtifactManifestResponse(BaseModel):
+    job_id: str
+    dataset: DatasetManifest = Field(default_factory=DatasetManifest)
+    candidates: list[CandidateArtifactEntry] = Field(default_factory=list)
+
+
+class PeriodogramPeak(BaseModel):
+    period_days: float
+    power: float
+
+
+class DatasetSeries(BaseModel):
+    job_id: str
+    dataset_id: str | None = None
+    type: Literal["dataset"] = "dataset"
+    time_unit: str = "BJD"
+    n_total: int
+    n_returned: int
+    stride: int
+    t_min: float | None = None
+    t_max: float | None = None
+    time: list[float]
+    flux: list[float]
+    flux_err: list[float] | None = None
+    etag: str
+
+
+class PeriodogramSeries(BaseModel):
+    job_id: str
+    candidate_id: str
+    type: Literal["periodogram"] = "periodogram"
+    n_total: int
+    n_returned: int
+    stride: int
+    periods: list[float]
+    powers: list[float]
+    peak: PeriodogramPeak | None = None
+
+
+class FoldedSeries(BaseModel):
+    job_id: str
+    candidate_id: str
+    type: Literal["folded"] = "folded"
+    period_days: float
+    epoch_bjd: float
+    bins: int
+    n_total: int
+    phase: list[float]
+    flux: list[float]
+    counts: list[int]
+
+
+class TtvSeries(BaseModel):
+    job_id: str
+    candidate_id: str
+    type: Literal["ttv"] = "ttv"
+    n_epochs: int
+    rms_minutes: float | None = None
+    residuals_min: list[float]

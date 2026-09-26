@@ -13,24 +13,45 @@ can trigger, so a request can never read another owner's rows.
 
 from __future__ import annotations
 
+import io
 import json
 import uuid
-from typing import Any, AsyncIterator
+from pathlib import Path
+from typing import Any, AsyncIterator, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import StreamingResponse
+import numpy as np
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import Response, StreamingResponse
 
+from astraeus.api.artifacts import (
+    artifact_etag,
+    decimate_1d,
+    decimate_periodogram,
+    fold_and_bin,
+    stride_for,
+)
 from astraeus.api.auth import AuthState, CurrentUser, create_access_token, require_user
 from astraeus.api.schemas import (
+    ArtifactLink,
+    ArtifactManifestResponse,
+    ArtifactRefOut,
+    CandidateArtifactEntry,
+    DatasetManifest,
+    DatasetSeries,
     ErrorResponse,
+    FoldedSeries,
     JobListResponse,
     JobResponse,
     JobSubmission,
+    PeriodogramPeak,
+    PeriodogramSeries,
     ResultResponse,
     TokenRequest,
     TokenResponse,
+    TtvManifest,
+    TtvSeries,
 )
-from astraeus.contracts.dataset import ArtifactStore, Dataset, Mission, TargetRef, TimeUnit
+from astraeus.contracts.dataset import ArtifactRef, ArtifactStore, Dataset, Mission, TargetRef, TimeUnit
 from astraeus.jobs.store import JobRecord
 
 __all__ = ["router", "build_router"]
@@ -277,12 +298,373 @@ def build_router() -> APIRouter:
             },
         )
 
+    # -- artifact arrays (3D-evidence program) ------------------------------
+
+    @router.get(
+        "/jobs/{job_id}/artifacts",
+        response_model=ArtifactManifestResponse,
+        responses={401: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+        summary="List the array artifacts a job holds",
+    )
+    def list_artifacts(
+        job_id: str,
+        request: Request,
+        user: CurrentUser = Depends(require_user_dep),
+    ) -> ArtifactManifestResponse:
+        """Manifest of servable arrays.  A job with no result yet returns
+        its dataset (when stored) and an empty candidate list -- 200, not
+        404.  URLs are templated server-side; the client must never build
+        a store path."""
+        record = _require_owned_job(request, job_id, user)
+        supervisor = _supervisor(request)
+        result = supervisor.store.get_result(job_id)
+
+        dataset = DatasetManifest(dataset_id=record.dataset_id)
+        if record.dataset_ref is not None:
+            dataset = DatasetManifest(
+                dataset_id=record.dataset_id,
+                ref=_ref_out(record.dataset_ref),
+                url=f"/jobs/{job_id}/artifacts/data?type=dataset",
+            )
+
+        candidates: list[CandidateArtifactEntry] = []
+        if result is not None:
+            for cand in result.candidates:
+                periodogram = ArtifactLink()
+                if cand.periodogram_ref is not None:
+                    periodogram = ArtifactLink(
+                        ref=_ref_out(cand.periodogram_ref),
+                        url=(
+                            f"/jobs/{job_id}/artifacts/data"
+                            f"?type=periodogram&candidate={cand.candidate_id}"
+                        ),
+                    )
+                folded = ArtifactLink(
+                    url=(
+                        f"/jobs/{job_id}/artifacts/data"
+                        f"?type=folded&candidate={cand.candidate_id}"
+                    )
+                )
+                ttv = TtvManifest()
+                if cand.ttv is not None:
+                    ttv = TtvManifest(
+                        n_epochs=cand.ttv.n_epochs,
+                        rms_minutes=cand.ttv.rms_minutes,
+                        url=(
+                            f"/jobs/{job_id}/artifacts/data"
+                            f"?type=ttv&candidate={cand.candidate_id}"
+                            if cand.ttv.artifact is not None
+                            else None
+                        ),
+                    )
+                candidates.append(
+                    CandidateArtifactEntry(
+                        candidate_id=cand.candidate_id,
+                        period_days=cand.period_days,
+                        periodogram=periodogram,
+                        folded=folded,
+                        ttv=ttv,
+                    )
+                )
+        return ArtifactManifestResponse(job_id=job_id, dataset=dataset, candidates=candidates)
+
+    @router.get(
+        "/jobs/{job_id}/artifacts/data",
+        responses={
+            401: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
+            400: {"model": ErrorResponse},
+            200: {"content": {"application/json": {}, "application/octet-stream": {}}},
+        },
+        summary="Fetch decimated array data for charts",
+    )
+    def artifact_data(
+        job_id: str,
+        request: Request,
+        type: Literal["dataset", "periodogram", "folded", "ttv"] = Query(...),
+        candidate: str = Query("c1"),
+        format: Literal["json", "npy"] = Query("json"),
+        max_points: int = Query(2000, ge=100, le=10000),
+        stride: int | None = Query(None, ge=1),
+        bins: int = Query(80, ge=0, le=500),
+        t_min: float | None = Query(None),
+        t_max: float | None = Query(None),
+        user: CurrentUser = Depends(require_user_dep),
+    ):
+        """Decimated series for charts.  Refs resolve from the job's own
+        records -- the request carries no path, so there is nothing to
+        traverse.  ``If-None-Match`` revalidates against the content ETag
+        (304).  ``format=npy`` returns a real ``.npy`` payload for
+        downloads, never raw bytes."""
+        record = _require_owned_job(request, job_id, user)
+        supervisor = _supervisor(request)
+        store = ArtifactStore(supervisor.artifact_root)
+
+        if t_min is not None and t_max is not None and not t_min < t_max:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="t_min must be strictly less than t_max",
+            )
+
+        if type == "dataset":
+            ref = record.dataset_ref
+            if ref is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="job has no dataset yet"
+                )
+            series, etag, npy_arr = _dataset_series(store, ref, job_id, record, max_points, stride, t_min, t_max)
+        else:
+            result = supervisor.store.get_result(job_id)
+            if result is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="job has no result yet"
+                )
+            cand = next((c for c in result.candidates if c.candidate_id == candidate), None)
+            if cand is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"no candidate {candidate!r} on this job",
+                )
+            if type == "periodogram":
+                if cand.periodogram_ref is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"candidate {candidate!r} has no periodogram",
+                    )
+                series, etag, npy_arr = _periodogram_series(
+                    store, cand.periodogram_ref, job_id, candidate, max_points, stride
+                )
+            elif type == "ttv":
+                if cand.ttv is None or cand.ttv.artifact is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"candidate {candidate!r} has no TTV residuals",
+                    )
+                series, etag, npy_arr = _ttv_series(
+                    store, cand.ttv.artifact, job_id, candidate, cand.ttv
+                )
+            else:  # folded: computed on demand, never persisted
+                if record.dataset_ref is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND, detail="job has no dataset yet"
+                    )
+                if cand.period_days is None or cand.epoch_bjd is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"candidate {candidate!r} has no period/epoch to fold on",
+                    )
+                series, etag, npy_arr = _folded_series(
+                    store, record.dataset_ref, job_id, record, candidate,
+                    cand.period_days, cand.epoch_bjd, bins, max_points, stride,
+                )
+
+        if request.headers.get("if-none-match") == etag:
+            return Response(status_code=status.HTTP_304_NOT_MODIFIED, headers={"ETag": etag})
+        if format == "npy":
+            buf = io.BytesIO()
+            np.save(buf, np.ascontiguousarray(npy_arr))
+            return Response(
+                content=buf.getvalue(),
+                media_type="application/octet-stream",
+                headers={
+                    "ETag": etag,
+                    "Content-Disposition": (
+                        f'inline; filename="{job_id}-{type}-{candidate}.npy"'
+                    ),
+                    "X-Checksum-Sha256": series["ref_checksum"],
+                },
+            )
+        body = dict(series["json"])
+        body["etag"] = etag
+        return Response(
+            content=json.dumps(body),
+            media_type="application/json",
+            headers={"ETag": etag, "Cache-Control": "public, max-age=31536000, immutable"},
+        )
+
     return router
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _ref_out(ref: ArtifactRef) -> ArtifactRefOut:
+    return ArtifactRefOut(
+        store=ref.store,
+        path=ref.path,
+        dtype=ref.dtype,
+        shape=list(ref.shape),
+        checksum=ref.checksum,
+        n_bytes=ref.n_bytes,
+    )
+
+
+def _jailed(store: ArtifactStore, ref: ArtifactRef) -> Path:
+    """Resolve a server-side ref, enforcing the store boundary.
+
+    Refs are generated server-side, never from client input, so a path
+    escaping the store means corruption, not a user error -- 500 with a
+    reason.  A missing file is 404 (artifact lost with an ephemeral
+    disk, PRD §8.3).
+    """
+    path = ArtifactStore.resolve(ref, store.root)
+    if not path.is_relative_to(store.root.resolve()):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="artifact reference escapes the store (store is corrupt)",
+        )
+    if not path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="artifact file not found"
+        )
+    return path
+
+
+def _dataset_series(store, ref, job_id, record, max_points, stride, t_min, t_max):
+    _jailed(store, ref)
+    try:
+        ds = store.load_dataset(ref)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    t = np.asarray(ds.time, dtype=np.float64)
+    f = np.asarray(ds.flux, dtype=np.float64)
+    e = np.asarray(ds.flux_err, dtype=np.float64) if ds.flux_err is not None else None
+    n_total = int(t.shape[0])
+    if t_min is not None or t_max is not None:
+        lo = t_min if t_min is not None else float(t[0])
+        hi = t_max if t_max is not None else float(t[-1])
+        mask = (t >= lo) & (t <= hi)
+        t, f = t[mask], f[mask]
+        e = e[mask] if e is not None else None
+    s = stride_for(int(t.shape[0]), max_points, stride)
+    ts, fs = decimate_1d(t, f, s)
+    es = decimate_1d(e, e, s)[0] if e is not None else None
+    etag = artifact_etag(ref.checksum, "dataset", max_points, s, t_min, t_max, "json")
+    payload = DatasetSeries(
+        job_id=job_id,
+        dataset_id=record.dataset_id,
+        time_unit=str(ds.time_unit.value) if hasattr(ds.time_unit, "value") else str(ds.time_unit),
+        n_total=n_total,
+        n_returned=int(ts.shape[0]),
+        stride=s,
+        t_min=float(ts[0]) if ts.shape[0] else None,
+        t_max=float(ts[-1]) if ts.shape[0] else None,
+        time=[float(v) for v in ts],
+        flux=[float(v) for v in fs],
+        flux_err=[float(v) for v in es] if es is not None else None,
+        etag=etag,
+    )
+    cols = [ts, fs] if es is None else [ts, fs, es]
+    return (
+        {"json": payload.model_dump(mode="json"), "ref_checksum": ref.checksum},
+        etag,
+        np.column_stack(cols),
+    )
+
+
+def _periodogram_series(store, ref, job_id, candidate, max_points, stride):
+    _jailed(store, ref)
+    try:
+        grid = np.asarray(store.load_array(ref), dtype=np.float64).reshape(-1, 2)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    n_total = int(grid.shape[0])
+    merged, s = decimate_periodogram(grid, max_points)
+    peak_row = merged[int(np.argmax(merged[:, 1]))]
+    etag = artifact_etag(ref.checksum, "periodogram", candidate, max_points, s, "json")
+    payload = PeriodogramSeries(
+        job_id=job_id,
+        candidate_id=candidate,
+        n_total=n_total,
+        n_returned=int(merged.shape[0]),
+        stride=s,
+        periods=[float(v) for v in merged[:, 0]],
+        powers=[float(v) for v in merged[:, 1]],
+        peak=PeriodogramPeak(period_days=float(peak_row[0]), power=float(peak_row[1])),
+    )
+    return (
+        {"json": payload.model_dump(mode="json"), "ref_checksum": ref.checksum},
+        etag,
+        np.ascontiguousarray(merged),
+    )
+
+
+def _ttv_series(store, ref, job_id, candidate, summary):
+    _jailed(store, ref)
+    try:
+        resid = np.asarray(store.load_array(ref), dtype=np.float64).ravel()
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    etag = artifact_etag(ref.checksum, "ttv", candidate, "full", "json")
+    payload = TtvSeries(
+        job_id=job_id,
+        candidate_id=candidate,
+        n_epochs=int(resid.shape[0]),
+        rms_minutes=summary.rms_minutes,
+        residuals_min=[float(v) for v in resid],
+    )
+    return (
+        {"json": payload.model_dump(mode="json"), "ref_checksum": ref.checksum},
+        etag,
+        np.ascontiguousarray(resid),
+    )
+
+
+def _folded_series(store, ref, job_id, record, candidate, period, epoch, bins, max_points, stride):
+    _jailed(store, ref)
+    try:
+        ds = store.load_dataset(ref)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    t = np.asarray(ds.time, dtype=np.float64)
+    f = np.asarray(ds.flux, dtype=np.float64)
+    n_total = int(t.shape[0])
+    if bins == 0:
+        s = stride_for(n_total, max_points, stride)
+        phase = (np.mod(np.mod(t - epoch, period) + period, period)) / period - 0.5
+        order = np.argsort(phase, kind="stable")
+        ps, fs = decimate_1d(phase[order], f[order], s)
+        etag = artifact_etag(ref.checksum, "folded", candidate, period, epoch, "scatter", s, "json")
+        return (
+            {
+                "json": {
+                    "job_id": job_id,
+                    "candidate_id": candidate,
+                    "type": "folded",
+                    "period_days": period,
+                    "epoch_bjd": epoch,
+                    "bins": 0,
+                    "n_total": n_total,
+                    "stride": s,
+                    "phase": [float(v) for v in ps],
+                    "flux": [float(v) for v in fs],
+                    "counts": [1] * int(ps.shape[0]),
+                },
+                "ref_checksum": ref.checksum,
+            },
+            etag,
+            np.column_stack([ps, fs]),
+        )
+    centres, means, counts = fold_and_bin(t, f, period, epoch, bins)
+    etag = artifact_etag(ref.checksum, "folded", candidate, period, epoch, bins, "json")
+    payload = FoldedSeries(
+        job_id=job_id,
+        candidate_id=candidate,
+        period_days=period,
+        epoch_bjd=epoch,
+        bins=bins,
+        n_total=n_total,
+        phase=[float(v) for v in centres],
+        flux=[float(v) for v in means],
+        counts=[int(v) for v in counts],
+    )
+    return (
+        {"json": payload.model_dump(mode="json"), "ref_checksum": ref.checksum},
+        etag,
+        np.column_stack([centres, means]),
+    )
 
 
 def require_user_dep(request: Request) -> CurrentUser:

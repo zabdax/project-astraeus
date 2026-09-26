@@ -4,21 +4,24 @@
  * Investigate: the blind search as a four-step workspace.
  * Connect → data → run → evidence. Numbers carry epistemic badges;
  * TLS states truthfully whether it ran; nothing here invents a planet.
+ *
+ * Session is shared (memory-only bearer token). Job progress streams
+ * over authenticated fetch-SSE with the 1.5s poll as backstop, so a
+ * dropped stream never sticks the UI in a terminal state.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChartLineUp, Database, DownloadSimple, Key, Play, X } from "@phosphor-icons/react";
 import CopilotPanel from "../../components/CopilotPanel";
+import EvidenceCharts from "../../components/EvidenceCharts";
 import LightCurve from "../../components/LightCurve";
-import { binFolded, foldToPhase } from "../../lib/fold";
 import {
   API_URL,
   cancelJob,
-  eventsUrl,
-  exchangeToken,
   getJob,
   getResult,
   parseEventLine,
   parseLightCurveCsv,
+  streamJobEvents,
   submitInlineDataset,
   submitTarget,
   tlsOutcomeLabel,
@@ -28,6 +31,7 @@ import {
   type JobResponse,
   type WorkerEvent,
 } from "../../lib/api";
+import { ConnectBox, SessionProvider, useSession } from "../../lib/session";
 
 type Phase = "connect" | "data" | "running" | "done";
 
@@ -52,10 +56,21 @@ function StepHead({ n, icon: Icon, title }: { n: number; icon: typeof Key; title
   );
 }
 
-export default function InvestigatePage() {
+function progressOf(job: JobResponse | null): number {
+  if (!job) return 0;
+  const j = job as JobResponse & { progress?: number | null; iteration?: number | null; max_iterations?: number | null };
+  if (typeof j.progress === "number" && Number.isFinite(j.progress)) {
+    return Math.min(1, Math.max(0, j.progress > 1 ? j.progress / 100 : j.progress));
+  }
+  if (typeof j.iteration === "number" && typeof j.max_iterations === "number" && j.max_iterations > 0) {
+    return Math.min(1, Math.max(0, j.iteration / j.max_iterations));
+  }
+  return 0;
+}
+
+function InvestigateInner() {
+  const { token } = useSession();
   const [phase, setPhase] = useState<Phase>("connect");
-  const [apiKey, setApiKey] = useState("");
-  const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [source, setSource] = useState<"target" | "csv">("target");
@@ -71,27 +86,24 @@ export default function InvestigatePage() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [resultProvenance, setResultProvenance] = useState<Record<string, unknown> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const esRef = useRef<EventSource | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const stopStreams = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
-    if (esRef.current) esRef.current.close();
+    abortRef.current?.abort();
     pollRef.current = null;
-    esRef.current = null;
+    abortRef.current = null;
   }, []);
 
   useEffect(() => stopStreams, [stopStreams]);
-
-  async function connect() {
-    setError(null);
-    try {
-      const t = await exchangeToken(apiKey);
-      setToken(t);
-      setPhase("data");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+  useEffect(() => {
+    if (token && phase === "connect") setPhase("data");
+    if (!token) {
+      stopStreams();
+      setPhase("connect");
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   async function onCsvFile(file: File | undefined) {
     if (!file) return;
@@ -126,30 +138,34 @@ export default function InvestigatePage() {
       }
       setJob(res);
       setPhase("running");
-      watchJob(res.job_id);
+      watchJob(token, res.job_id);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
 
-  function watchJob(jobId: string) {
-    if (!token) return;
-    const t = token;
-    try {
-      const es = new EventSource(eventsUrl(jobId));
-      esRef.current = es;
-      es.onmessage = (msg) => {
+  function watchJob(t: string, jobId: string) {
+    stopStreams();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    // Authenticated stream: EventSource cannot send a Bearer header, so
+    // fetch-SSE carries the token. Failures fall through to polling.
+    void streamJobEvents(
+      t,
+      jobId,
+      (ev) => {
+        // Guard: only well-formed worker events reach the log.
         try {
-          const ev = parseEventLine(`data: ${msg.data}`);
-          if (ev) setEvents((prev) => [...prev, ev]);
+          const check = parseEventLine(`data: ${JSON.stringify(ev)}`);
+          if (check) setEvents((prev) => [...prev.slice(-60), ev]);
         } catch {
           /* protocol violation surfaces via polling, not a stuck UI */
         }
-      };
-      es.onerror = () => es.close();
-    } catch {
-      /* EventSource unavailable — polling below still completes the job */
-    }
+      },
+      ctrl.signal,
+    ).catch(() => {
+      /* polling below still completes the job */
+    });
     pollRef.current = setInterval(async () => {
       try {
         const j = await getJob(t, jobId);
@@ -199,16 +215,6 @@ export default function InvestigatePage() {
   const terminal = job !== null && ["COMPLETED", "FAILED", "CANCELLED"].includes(job.status);
   const running = phase === "running" && !terminal;
 
-  // Folded view of the submitted curve at the first candidate's ephemeris.
-  // Available only when the arrays are in hand (CSV path); the target path
-  // never downloads photometry to the browser, and the UI states that.
-  const firstCandidate = result && result.candidates.length > 0 ? result.candidates[0] : null;
-  const foldedResult = useMemo(() => {
-    if (!dataset || !firstCandidate?.period_days || !firstCandidate?.epoch_bjd) return null;
-    const pts = foldToPhase(dataset.time, dataset.flux, firstCandidate.period_days, firstCandidate.epoch_bjd);
-    return binFolded(pts, 80);
-  }, [dataset, firstCandidate]);
-
   return (
     <main>
       <p className="eyebrow">Blind search</p>
@@ -221,25 +227,7 @@ export default function InvestigatePage() {
         <div className="rail">
           <section className="panel">
             <StepHead n={1} icon={Key} title="Connect" />
-            {token ? (
-              <p className="muted" style={{ margin: 0 }}>
-                Authenticated — token lives in memory, never stored.
-              </p>
-            ) : (
-              <>
-                <label htmlFor="apikey">API key for this deployment</label>
-                <input
-                  id="apikey"
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="ASTRAEUS_API_KEY value"
-                />
-                <button onClick={connect} disabled={!apiKey}>
-                  Connect
-                </button>
-              </>
-            )}
+            <ConnectBox />
           </section>
 
           <section className="panel">
@@ -328,6 +316,30 @@ export default function InvestigatePage() {
                       : ""}
                   </span>
                 </p>
+              )}
+              {(running || (job && !terminal)) && (
+                <>
+                  <div
+                    className="run-meter"
+                    role="progressbar"
+                    aria-label={`search progress: ${job?.stage ?? "starting"}`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(progressOf(job) * 100)}
+                    style={{ ["--p" as string]: progressOf(job) }}
+                  >
+                    <span />
+                  </div>
+                  <p className="run-phase">
+                    {job?.stage ?? "starting"}
+                    {typeof (job as { iteration?: unknown })?.iteration === "number"
+                      ? ` · iteration ${(job as { iteration: number }).iteration}`
+                        + (typeof (job as { max_iterations?: unknown })?.max_iterations === "number"
+                          ? `/${(job as { max_iterations: number }).max_iterations}`
+                          : "")
+                      : ""}
+                  </p>
+                </>
               )}
               {running && !terminal && (
                 <button className="danger" onClick={cancel}>
@@ -420,23 +432,8 @@ export default function InvestigatePage() {
                 </table>
               )}
 
-              {foldedResult && firstCandidate && (
-                <>
-                  <h2 style={{ marginTop: 16 }}>
-                    Folded at {firstCandidate.candidate_id} <Badge epistemic="DERIVED" />
-                  </h2>
-                  <LightCurve
-                    x={foldedResult.phase}
-                    y={foldedResult.flux}
-                    title={`Phase-folded at P=${fmt(firstCandidate.period_days)} d (80 bins)`}
-                    xlabel="phase"
-                  />
-                </>
-              )}
-              {result && result.candidates.length > 0 && !foldedResult && (
-                <p className="muted">
-                  No folded view: target-fetch jobs keep photometry server-side — only the evidence travels.
-                </p>
+              {result && token && (
+                <EvidenceCharts token={token} jobId={result.job_id} result={result} />
               )}
 
               <details className="provenance">
@@ -475,5 +472,13 @@ export default function InvestigatePage() {
 
       {phase === "done" && result && token && <CopilotPanel token={token} result={result} />}
     </main>
+  );
+}
+
+export default function InvestigatePage() {
+  return (
+    <SessionProvider>
+      <InvestigateInner />
+    </SessionProvider>
   );
 }

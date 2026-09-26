@@ -3,7 +3,7 @@
   "info": {
     "title": "ASTRAEUS API",
     "description": "Transit search API for ASTRAEUS. Every result carries provenance (PRD v4.1 \u00a75/\u00a77). Authenticated routes require a bearer token from POST /auth/token.",
-    "version": "0.0.2"
+    "version": "0.0.3"
   },
   "paths": {
     "/auth/token": {
@@ -406,6 +406,280 @@
         }
       }
     },
+    "/jobs/{job_id}/artifacts": {
+      "get": {
+        "summary": "List the array artifacts a job holds",
+        "description": "Manifest of servable arrays.  A job with no result yet returns\nits dataset (when stored) and an empty candidate list -- 200, not\n404.  URLs are templated server-side; the client must never build\na store path.",
+        "operationId": "list_artifacts_jobs__job_id__artifacts_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactManifestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/artifacts/data": {
+      "get": {
+        "summary": "Fetch decimated array data for charts",
+        "description": "Decimated series for charts.  Refs resolve from the job's own\nrecords -- the request carries no path, so there is nothing to\ntraverse.  ``If-None-Match`` revalidates against the content ETag\n(304).  ``format=npy`` returns a real ``.npy`` payload for\ndownloads, never raw bytes.",
+        "operationId": "artifact_data_jobs__job_id__artifacts_data_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "enum": [
+                "dataset",
+                "periodogram",
+                "folded",
+                "ttv"
+              ],
+              "type": "string",
+              "title": "Type"
+            }
+          },
+          {
+            "name": "candidate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "c1",
+              "title": "Candidate"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "json",
+                "npy"
+              ],
+              "type": "string",
+              "default": "json",
+              "title": "Format"
+            }
+          },
+          {
+            "name": "max_points",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 100,
+              "default": 2000,
+              "title": "Max Points"
+            }
+          },
+          {
+            "name": "stride",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stride"
+            }
+          },
+          {
+            "name": "bins",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 0,
+              "default": 80,
+              "title": "Bins"
+            }
+          },
+          {
+            "name": "t_min",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "T Min"
+            }
+          },
+          {
+            "name": "t_max",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "T Max"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/octet-stream": {}
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/copilot/explain": {
+      "post": {
+        "summary": "Stream an evidence-grounded explanation (AI-INTERPRETED)",
+        "operationId": "explain_copilot_explain_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopilotRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/event-stream": {}
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "422": {
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -432,6 +706,204 @@
   },
   "components": {
     "schemas": {
+      "ArtifactLink": {
+        "properties": {
+          "ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "title": "ArtifactLink"
+      },
+      "ArtifactManifestResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "dataset": {
+            "$ref": "#/components/schemas/DatasetManifest"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateArtifactEntry"
+            },
+            "type": "array",
+            "title": "Candidates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "ArtifactManifestResponse"
+      },
+      "ArtifactRefOut": {
+        "properties": {
+          "store": {
+            "type": "string",
+            "title": "Store"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "dtype": {
+            "type": "string",
+            "title": "Dtype"
+          },
+          "shape": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Shape"
+          },
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          },
+          "n_bytes": {
+            "type": "integer",
+            "title": "N Bytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "store",
+          "path",
+          "dtype",
+          "shape",
+          "checksum",
+          "n_bytes"
+        ],
+        "title": "ArtifactRefOut",
+        "description": "Public projection of ``contracts.dataset.ArtifactRef``.\n\n``path`` is store-relative and informational only: the client must\nuse the templated ``url`` from the manifest, never build a path."
+      },
+      "CandidateArtifactEntry": {
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "title": "Candidate Id"
+          },
+          "period_days": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Days"
+          },
+          "periodogram": {
+            "$ref": "#/components/schemas/ArtifactLink"
+          },
+          "folded": {
+            "$ref": "#/components/schemas/ArtifactLink"
+          },
+          "ttv": {
+            "$ref": "#/components/schemas/TtvManifest"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_id"
+        ],
+        "title": "CandidateArtifactEntry"
+      },
+      "CopilotRequest": {
+        "properties": {
+          "result": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Result",
+            "description": "AnalysisResult dict to explain"
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Question",
+            "default": "Explain these transit-search results for a non-expert."
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider",
+            "description": "openai | anthropic | google | ollama; null = server default"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "result"
+        ],
+        "title": "CopilotRequest",
+        "description": "Explain this result. ``provider`` overrides the server default."
+      },
+      "DatasetManifest": {
+        "properties": {
+          "dataset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "ref": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ArtifactRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "title": "DatasetManifest"
+      },
       "ErrorResponse": {
         "properties": {
           "detail": {
@@ -797,6 +1269,45 @@
           "expires_in"
         ],
         "title": "TokenResponse"
+      },
+      "TtvManifest": {
+        "properties": {
+          "n_epochs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Epochs"
+          },
+          "rms_minutes": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rms Minutes"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "title": "TtvManifest"
       },
       "ValidationError": {
         "properties": {

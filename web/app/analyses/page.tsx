@@ -7,6 +7,7 @@
  * its record; re-running means submitting again from Investigate.
  */
 import { useCallback, useEffect, useState } from "react";
+import EvidenceCharts from "../../components/EvidenceCharts";
 import {
   cancelJob,
   getJob,
@@ -184,9 +185,11 @@ function AnalysesInner() {
                       ))}
                     </tbody>
                   </table>
+                  {detail && token && selected && (
+                    <EvidenceCharts token={token} jobId={selected} result={result} />
+                  )}
                   <details className="provenance">
-                    <summary>Provenance</summary>
-                    <pre className="dump">
+                    <summary>Provenance</summary>                   <pre className="dump">
                       {JSON.stringify(
                         {
                           dataset_id: result.dataset_id,

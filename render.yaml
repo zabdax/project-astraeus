@@ -1,0 +1,17 @@
+# ASTRAEUS API on Render (free tier) via Blueprint.
+# One-click: dashboard.render.com -> New -> Blueprint -> select repo.
+# Set ASTRAEUS_API_KEY in the dashboard (secret); everything else is pinned here.
+services:
+  - type: web
+    name: astraeus-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ASTRAEUS_API_KEY
+        sync: false
+      - key: ASTRAEUS_CORS_ORIGINS
+        value: https://web-nevaxia.vercel.app,https://web-mu-amber-24.vercel.app
+      - key: ASTRAEUS_SINGLE_USER
+        value: 1
