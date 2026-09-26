@@ -43,6 +43,15 @@ dependencies = [
     "pandas==2.2.3",
     # --- Scientific backends (Phase 0: previously UNDECLARED, which let a
     #     missing backend silently change science -- see PRD §4.2) -------
+    # setuptools: the transitleastsquares import chain reaches
+    # `import distutils`, removed from the stdlib in Python 3.12.
+    # setuptools provides the `_distutils` shim (verified: local py3.12
+    # resolves distutils to setuptools/_distutils). A slim container
+    # without setuptools passes the find_spec probe yet fails the real
+    # import at job time -- this exact failure went live on Render
+    # (2026-09-26, "No module named 'distutils'"). Pinned as a runtime
+    # dependency, not a build nicety.
+    "setuptools>=75",
     # wotan: transit-preserving detrending. Absence previously fell back
     # silently to a scipy median filter (a different estimator).
     "wotan>=1.10",

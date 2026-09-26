@@ -9,6 +9,10 @@
 # its adoption is an unresolved user-level licensing decision (PRD
 # §13.3). Install it explicitly with `pip install batman` or
 # `pip install -e ".[batman]"` to enable high-precision subtraction.
+# setuptools provides the distutils shim that transitleastsquares needs
+# on Python 3.12 (stdlib distutils removed); mirrors pyproject.toml.
+
+setuptools>=75
 
 numpy==2.2.6
 scipy==1.15.3

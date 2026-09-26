@@ -16,7 +16,8 @@ COPY pyproject.toml README.md LICENSE ./
 COPY astraeus/ ./astraeus/
 RUN pip install --no-cache-dir --retries 10 --timeout 120 ".[api]" && \
     python -m astraeus --version && \
-    python -m astraeus capabilities
+    python -m astraeus capabilities && \
+    python -c "import wotan, transitleastsquares; print('gate imports ok')"
 
 VOLUME ["/data"]
 EXPOSE 8000
