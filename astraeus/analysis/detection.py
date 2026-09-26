@@ -192,7 +192,7 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
                     tls_outcome = TlsOutcome.RAN_PASS
                 else:
                     tls_outcome = TlsOutcome.RAN_FAIL
-        except ImportError:
+        except ImportError as exc:
             # PHASE 0 FAIL-CLOSED FIX (PRD v4.1 §4.2): this arm
             # previously set tls_valid = True ("Fail open if missing"),
             # which is the single worst silent-degradation site in the
@@ -203,10 +203,15 @@ def detect_transit_candidate(time, flux, target_name="Unknown", data_source="Unk
             # could not run. Now the gate fails closed: tls_valid stays
             # False and the outcome records env_unavailable so the
             # orchestrator can mark the run FAILED (not "0 candidates").
+            # The interpreter's own reason rides along: on a fresh host
+            # "No module named 'transitleastsquares'" vs a broken install
+            # ("libX.so: cannot open shared object file") are different
+            # operational situations and the operator must see which.
             tls_outcome = TlsOutcome.ENV_UNAVAILABLE
             tls_environment_error = (
                 "transitleastsquares is not installed; the TLS "
                 "cross-validation gate could not execute"
+                f" (import failed: {exc})"
             )
             tls_valid = False
             logger.error(

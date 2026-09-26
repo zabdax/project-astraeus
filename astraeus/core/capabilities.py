@@ -308,6 +308,25 @@ def missing_backends_allowed() -> bool:
     return os.environ.get(_ALLOW_MISSING_ENVVAR, "").strip() not in ("", "0", "false", "False")
 
 
+def _import_error_detail(backend: BackendId) -> str:
+    """The interpreter's own reason a backend cannot load.
+
+    ``find_spec`` only proves a module is *findable*; a present-but-broken
+    install (missing shared library, broken dependency) passes the probe
+    and dies on import.  Production failures must carry the real reason
+    so the operator fixes the environment instead of guessing.
+    """
+    import importlib
+
+    try:
+        importlib.import_module(_IMPORT_NAMES[backend])
+    except ImportError as exc:
+        return f"import failed: {exc}"
+    except Exception as exc:  # e.g. OSError from a missing .so at load
+        return f"import raised {type(exc).__name__}: {exc}"
+    return ""
+
+
 def require_backend(backend: BackendId) -> None:
     """Fail closed for a production scientific run.
 
@@ -319,15 +338,23 @@ def require_backend(backend: BackendId) -> None:
     an opaque failure.
     """
     if is_backend_available(backend):
-        return
+        # Findable is not loadable: verify the import for real so a
+        # broken install fails here with its reason attached, not deep
+        # inside a pipeline stage with the cause stripped.
+        detail = _import_error_detail(backend)
+        if not detail:
+            return
+    else:
+        detail = _import_error_detail(backend) or "module is not importable"
     if missing_backends_allowed():
         logger.warning(
-            "[CAPABILITY] Scientific backend '%s' is unavailable; "
+            "[CAPABILITY] Scientific backend '%s' is unavailable (%s); "
             "continuing under %s=1. This run is NOT a production "
             "scientific result and must not be reported as one.",
             backend.value,
+            detail,
             _ALLOW_MISSING_ENVVAR,
         )
         return
-    logger.error("[CAPABILITY] Required backend '%s' unavailable; failing closed.", backend.value)
-    raise BackendUnavailable(backend, "module is not importable")
+    logger.error("[CAPABILITY] Required backend '%s' unavailable (%s); failing closed.", backend.value, detail)
+    raise BackendUnavailable(backend, detail)
